@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>grapScreen — Verificación: paneles ocultos por defecto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="./live.css"/>
+<style>
+  html, body, #root { height: 100%; }
+  body { margin: 0; display: flex; background: var(--bg); }
+  .pv-sidebar {
+    width: 62px; flex-shrink: 0; background: var(--s1);
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0; gap: 16px;
+  }
+  .pv-logo { width: 30px; height: 30px; border-radius: 9px; background: var(--red); }
+  .pv-nav { display: flex; flex-direction: column; gap: 6px; }
+  .pv-nav-item {
+    width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+    color: var(--muted); font-size: 15px;
+  }
+  .pv-nav-item.on { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
+  .pv-stage { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 10px 12px 12px; }
+  .flow-editor-shell { flex: 1; min-height: 0; }
+  .flow-editor-main { min-height: 0; }
+  .pv-canvas { position: relative; flex: 1; min-height: 0; }
+  .pv-note {
+    position: absolute; left: 16px; top: 16px; z-index: 60;
+    background: var(--s1); border: 1px dashed var(--red); border-radius: 10px;
+    padding: 8px 12px; font: 600 12px 'Manrope', sans-serif; color: var(--text);
+    max-width: 420px; line-height: 1.5;
+  }
+  .pv-badge {
+    display: inline-block; background: var(--red); color: #fff;
+    border-radius: 6px; padding: 1px 7px; font-size: 10px; margin-right: 6px;
+  }
+  /* Placeholder right-hand panel, rendered only to show what opens on "+". */
+  .pv-panel-demo {
+    width: 320px; flex: 0 0 320px; display: flex; flex-direction: column;
+    min-height: 0; background: var(--s1); border: 1px solid var(--line);
+    border-radius: 16px; overflow: hidden;
+  }
+</style>
+</head>
+<body>
+<div id="root">
+  <aside class="pv-sidebar">
+    <div class="pv-logo"></div>
+    <div class="pv-nav">
+      <div class="pv-nav-item">✦</div>
+      <div class="pv-nav-item on">⇄</div>
+      <div class="pv-nav-item">▤</div>
+      <div class="pv-nav-item">◎</div>
+    </div>
+  </aside>
+
+  <div class="pv-stage">
+    <!-- Editor top bar -->
+    <div class="flow-topbar">
+      <div class="ftb-left">
+        <button class="ftb-back">&#8249;</button>
+        <div class="ftb-crumb">
+          <span class="ftb-crumb-scope">Personal</span>
+          <span class="ftb-crumb-sep">/</span>
+          <button class="ftb-crumb-name">demo_formulario_excel</button>
+        </div>
+      </div>
+      <div class="ftb-tabs">
+        <button class="ftb-tab active">Editor</button>
+        <button class="ftb-tab">Ejecuciones</button>
+      </div>
+      <div class="ftb-right">
+        <span class="ftb-saved">Guardado</span>
+        <button class="ftb-btn primary">Publicar</button>
+      </div>
+    </div>
+
+    <div class="flow-editor-shell">
+      <div class="flow-editor-main">
+        <div class="pv-canvas n8n-viewport">
+          <div class="pv-note">
+            <span class="pv-badge">1</span>Panel derecho <b>oculto</b> por defecto: el lienzo ocupa todo el ancho.
+          </div>
+
+          <!-- "+" button: now toggles the right panel, exactly like n8n -->
+          <button class="n8n-canvas-add" title="Añadir nodo">+</button>
+
+          <!-- Canvas nodes -->
+          <div class="n8n-node" style="left:60px;top:150px;--accent:#22c55e;width:120px;height:74px;position:absolute;">
+            <span class="n8n-port n8n-port-out" style="top:37px;border-color:#22c55e"></span>
+            <div class="n8n-node-icon" style="color:#22c55e;border-color:#22c55e">&#9201;</div>
+            <div class="n8n-node-body">
+              <div class="n8n-node-title">Inicio</div>
+              <div class="n8n-node-sub">Manual</div>
+            </div>
+          </div>
+
+          <div class="n8n-node" style="left:250px;top:150px;--accent:#3b82f6;width:120px;height:74px;position:absolute;">
+            <span class="n8n-port n8n-port-in" style="top:37px;border-color:#3b82f6"></span>
+            <span class="n8n-port n8n-port-out" style="top:37px;border-color:#3b82f6"></span>
+            <div class="n8n-node-icon" style="color:#3b82f6;border-color:#3b82f6">&#10003;</div>
+            <div class="n8n-node-body">
+              <div class="n8n-node-title">Form</div>
+              <div class="n8n-node-sub">Entrada</div>
+            </div>
+          </div>
+
+          <!-- Central execute button -->
+          <div class="exec-fab-wrap">
+            <button class="exec-fab">&#9654; Ejecutar Flujo</button>
+            <span class="exec-fab-hint">7 nodos</span>
+          </div>
+
+          <!-- Zoom toolbar -->
+          <div class="n8n-zoom n8n-toolbar">
+            <button>&minus;</button><span>56%</span><button>+</button>
+            <div class="n8n-toolbar-sep"></div>
+            <button>&#9723;</button>
+          </div>
+
+          <!-- Status bar -->
+          <div class="canvas-statusbar">
+            <span class="csb-item">7</span>
+            <span class="csb-sep"></span>
+            <span class="csb-item">5</span>
+          </div>
+        </div>
+
+        <!-- Bottom logs: collapsed to a single strip by default -->
+        <div class="flow-logs collapsed">
+          <div class="flogs-head">
+            <button class="flogs-toggle">&#9656; Registros <span class="flogs-badge">2</span> &#8964;</button>
+            <div class="flogs-actions">
+              <button>&#9713; Historial</button>
+              <button>Limpiar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

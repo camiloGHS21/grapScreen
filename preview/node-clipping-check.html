@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Comprobación: recorte de texto en nodos</title>
+<link rel="stylesheet" href="live.css">
+<style>
+  body { margin: 0; padding: 28px; background: var(--s3); font-family: 'Manrope', sans-serif; }
+  h1 { font-size: 15px; font-weight: 600; color: var(--text); margin: 0 0 4px; }
+  p.note { font-size: 13px; color: var(--muted); margin: 0 0 22px; }
+  .row { display: flex; gap: 34px; flex-wrap: wrap; }
+  .col { }
+  .label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+  /* The real node is position:absolute inside a sized wrapper; reproduce that. */
+  .slot { position: relative; width: 240px; height: 96px; margin-bottom: 26px; }
+  .slot .n8n-node { position: absolute; left: 0; top: 0; transform: none; }
+  .slot .n8n-node:hover { transform: none; }
+  .frame { border: 1px dashed #d33; border-radius: 12px; }
+  .verdict { font-size: 12px; margin-top: 6px; }
+</style>
+</head>
+<body>
+  <h1>Nodos con nombres largos — ¿se salen del recuadro?</h1>
+  <p class="note">Cada nodo va dentro de una caja de 240×96 con borde rojo discontinuo. Si el texto sale del borde rojo, se recorta mal.</p>
+
+  <div class="row">
+    <div class="col">
+      <div class="label">Títulos largos (el caso que fallaba)</div>
+
+      <div class="slot frame">
+        <div class="n8n-node" style="--accent:#8b5cf6">
+          <div class="n8n-node-icon" style="color:#8b5cf6;border-color:#8b5cf6">C</div>
+          <div class="n8n-node-body">
+            <div class="n8n-node-title">Condición</div>
+            <div class="n8n-node-sub">Si el pedido es mayor de 100</div>
+          </div>
+          <span class="n8n-count">1</span>
+        </div>
+      </div>
+
+      <div class="slot frame">
+        <div class="n8n-node" style="--accent:#3b82f6">
+          <div class="n8n-node-icon" style="color:#3b82f6;border-color:#3b82f6">C</div>
+          <div class="n8n-node-body">
+            <div class="n8n-node-title">Clic Izquierdo</div>
+            <div class="n8n-node-sub">X: 1288 · Y: 742</div>
+          </div>
+          <span class="n8n-count">1</span>
+        </div>
+      </div>
+
+      <div class="slot frame">
+        <div class="n8n-node" style="--accent:#f59e0b">
+          <div class="n8n-node-icon" style="color:#f59e0b;border-color:#f59e0b">E</div>
+          <div class="n8n-node-body">
+            <div class="n8n-node-title">Escribir Texto Muy Largo Que No Cabe</div>
+            <div class="n8n-node-sub">usuario@ejemplo.com</div>
+          </div>
+          <span class="n8n-count">12</span>
+        </div>
+      </div>
+
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+
+<script>
+  // Measure whether any .n8n-node's content escapes its own 240px box.
+  window.addEventListener("load", function () {
+    var bad = [];
+    document.querySelectorAll(".slot").forEach(function (slot) {
+      var node = slot.querySelector(".n8n-node");
+      var nb = node.getBoundingClientRect();
+      slot.querySelectorAll(".n8n-node-title, .n8n-node-sub").forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        if (r.right > nb.right + 0.5 || r.left < nb.left - 0.5) {
+          bad.push(el.className + ' "' + el.textContent.slice(0, 24) + '"');
+        }
+      });
+    });
+    document.getElementById("verdict").innerHTML = bad.length
+      ? '<span style="color:#c0392b">FALLA — se sale: ' + bad.join(", ") + "</span>"
+      : '<span style="color:#1D9E75">OK — ningún texto se sale de su nodo</span>';
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Main, form and recording overlay permissions","local":true,"windows":["main","form-standalone","recording-overlay"],"permissions":["core:default","core:window:default","core:event:default","opener:default"]}}

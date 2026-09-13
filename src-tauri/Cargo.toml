@@ -1,0 +1,70 @@
+[package]
+name = "grapscreen"
+version = "1.0.0"
+description = "Windows desktop automation and screen recorder"
+authors = ["Camilo Grajales"]
+edition = "2021"
+
+[lib]
+name = "grapscreen_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "devtools"] }
+tauri-plugin-opener = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-deep-link = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-os = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rfd = "0.14"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+dirs = "6"
+base64 = "0.22"
+rdev = { version = "0.5", features = ["serialize"] }
+screenshots = "0.8"
+image = "0.24"
+thiserror = "2"
+
+strsim = "0.11"
+imageproc = "0.23"
+aes-gcm = "0.10"
+sha2 = "0.10"
+rand = "0.8"
+hostname = "0.4"
+# Native HTTP client: replaces the previous shell-out to the system `curl`,
+# so HTTP Request and every AI node work without an external binary and can
+# report real transport errors. rustls avoids a system OpenSSL dependency.
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+# SQLite nodes. `bundled` compiles SQLite from source so the app never depends
+# on a sqlite3.dll being present on the machine.
+rusqlite = { version = "0.32", features = ["bundled"] }
+# Phase 11 — integrations. Email (SMTP) uses lettre with rustls to stay
+# consistent with the native HTTP client (no OpenSSL on the system).
+lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "rustls-tls"] }
+# HTML extraction with CSS selectors (html_extract node).
+scraper = "0.20"
+# XML parsing (xml_parse node) and RSS/Atom feeds (rss_read node).
+quick-xml = "0.36"
+# n8n "Crypto" core node: hashing (MD5/SHA-1/SHA-256/SHA-512) and HMAC.
+# `sha2` was already a dependency for the vault; `sha1` and `md-5` are added so
+# the node covers the same algorithms n8n offers instead of silently producing
+# a different digest.
+sha1 = "0.10"
+md-5 = "0.10"
+# n8n "Rename Keys" core node in Regex mode.
+regex = "1"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = ["Foundation", "Foundation_Collections", "Globalization", "Graphics_Imaging", "Media_Ocr", "Storage", "Storage_Streams", "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"] }
+uiautomation = { version = "0.25", features = ["all"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-graphics = "0.23.0"
+objc = "0.2.7"
+cocoa = "0.25.0"

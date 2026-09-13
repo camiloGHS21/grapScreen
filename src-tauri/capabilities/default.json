@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Main, form and recording overlay permissions",
+  "windows": ["main", "form-standalone", "recording-overlay"],
+  "permissions": ["core:default", "core:window:default", "core:event:default", "opener:default"]
+}

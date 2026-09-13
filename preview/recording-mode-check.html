@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>Modo de grabación — grapScreen</title>
+<link rel="stylesheet" href="live.css">
+<style>
+  body { margin: 0; padding: 28px; background: #f4f4f2; font-family: Manrope, system-ui, sans-serif; }
+  h1 { font: 700 15px Manrope, sans-serif; margin: 0 0 4px; color: var(--text); }
+  .lead { font: 500 12.5px Manrope, sans-serif; color: var(--muted); margin: 0 0 22px; }
+  .frame { max-width: 520px; margin: 0 auto; }
+  .modal { width: 100%; box-sizing: border-box; }
+  .sep { height: 26px; }
+  .note { font: 500 11.5px Manrope, sans-serif; color: var(--muted); margin: 8px 2px 0; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <h1>Modal de grabación — nuevo selector de modo</h1>
+  <p class="lead">La opción «Segundo plano» es la que evita que la grabación te robe el ratón y el teclado.</p>
+
+  <form class="modal">
+    <small>NUEVA GRABACIÓN EN DEMO_FORMULARIO_EXCEL</small>
+    <h2>Nombra tu automatización</h2>
+    <p>Introduce un nombre para la tarea que vas a grabar.</p>
+    <input value="Rellenar formulario y exportar" readonly>
+
+    <div style="margin-top:18px">
+      <label style="display:block;font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Modo de grabación</label>
+      <div class="rec-mode-grid">
+        <button type="button" class="rec-mode-card active">
+          <span class="rec-mode-title">Primer plano</span>
+          <span class="rec-mode-desc">Muestra un marco rojo a pantalla completa mientras grabas.</span>
+        </button>
+        <button type="button" class="rec-mode-card">
+          <span class="rec-mode-title">Segundo plano</span>
+          <span class="rec-mode-desc">Graba sin marco y oculta esta ventana: no te roba el ratón ni el teclado.</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <label class="check" style="border-top:none;background:transparent;padding:0">
+        <input type="checkbox" checked><span>✓</span> Generar video MP4
+      </label>
+    </div>
+    <div class="actions">
+      <button type="button" class="quiet">Cancelar</button>
+      <button class="save">Iniciar Grabación</button>
+    </div>
+  </form>
+
+  <div class="sep"></div>
+  <h1>Modo «Segundo plano» seleccionado</h1>
+  <p class="lead">El mismo modal con la otra opción activa.</p>
+
+  <form class="modal">
+    <small>NUEVA GRABACIÓN EN DEMO_FORMULARIO_EXCEL</small>
+    <h2>Nombra tu automatización</h2>
+    <p>Introduce un nombre para la tarea que vas a grabar.</p>
+    <input value="Rellenar formulario y exportar" readonly>
+
+    <div style="margin-top:18px">
+      <label style="display:block;font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Modo de grabación</label>
+      <div class="rec-mode-grid">
+        <button type="button" class="rec-mode-card">
+          <span class="rec-mode-title">Primer plano</span>
+          <span class="rec-mode-desc">Muestra un marco rojo a pantalla completa mientras grabas.</span>
+        </button>
+        <button type="button" class="rec-mode-card active">
+          <span class="rec-mode-title">Segundo plano</span>
+          <span class="rec-mode-desc">Graba sin marco y oculta esta ventana: no te roba el ratón ni el teclado.</span>
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-top:16px">
+      <label class="check" style="border-top:none;background:transparent;padding:0">
+        <input type="checkbox" checked><span>✓</span> Generar video MP4
+      </label>
+    </div>
+    <div class="actions">
+      <button type="button" class="quiet">Cancelar</button>
+      <button class="save">Iniciar Grabación</button>
+    </div>
+  </form>
+
+  <div class="sep"></div>
+  <h1>Aviso mientras grabas en segundo plano</h1>
+  <p class="lead">Como no hay marco rojo, este banner es el único indicador de que sigue grabando.</p>
+  <div class="rec-bg-banner" style="border-radius:12px;border:1px solid var(--line)">
+    <span class="rec-bg-dot"></span>
+    <span class="rec-bg-rec">●</span>
+    <span class="rec-bg-text"><strong>Grabando en segundo plano</strong><span class="rec-bg-name"> · Rellenar formulario y exportar</span></span>
+    <span class="rec-bg-hint">Win+Alt+K para detener</span>
+    <button type="button" class="rec-bg-cancel">Descartar</button>
+    <button type="button" class="rec-bg-stop">■ Detener y guardar</button>
+  </div>
+  <p class="note">El banner se ancla arriba del panel, a todo el ancho, para que nunca tape los controles del flujo.</p>
+</div>
+</body>
+</html>

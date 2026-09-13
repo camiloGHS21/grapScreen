@@ -1,0 +1,35 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grap3LineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF3B5C" />
+      <stop offset="100%" stop-color="#D61C4E" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Squircle Container -->
+  <rect width="512" height="512" rx="150" fill="url(#grap3LineGrad)" />
+
+  <!-- Minimalist 3-Line Emblem (Forming a stylized 'G' and Screen Flow Wave) -->
+  <g stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Top Stripe (Line 1) -->
+    <path
+      d="M 143.05 165.88 H 324.23 A 45.22 45.22 0 0 1 369.45 211.10"
+      stroke-width="39.19"
+    />
+
+    <!-- Middle Stripe (Line 2) -->
+    <path
+      d="M 143.05 256.00 H 271.15"
+      stroke-width="39.19"
+    />
+
+    <!-- Bottom Stripe (Line 3 - wraps up to form 'G') -->
+    <path
+      d="M 143.05 346.12 H 324.23 A 45.22 45.22 0 0 0 369.45 300.90 V 270.77"
+      stroke-width="39.19"
+    />
+  </g>
+
+  <!-- Minimalist Action Dot Accent -->
+  <circle cx="316.39" cy="256.00" r="22.61" fill="#ffffff" />
+</svg>

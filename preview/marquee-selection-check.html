@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<title>grapScreen — Selección por recuadro, borrar y mover</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="./live.css"/>
+<style>
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--text);
+               font-family: 'Manrope', system-ui, sans-serif; }
+  .wrap { padding: 18px 22px; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 12.5px; margin-bottom: 14px; }
+  .hints { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .hint { background: var(--s1); border: 1px solid var(--line); border-radius: 9px;
+          padding: 6px 11px; font-size: 12px; color: var(--muted); }
+  .hint b { color: var(--text); }
+
+  /* El lienzo real de la app: mismos cimientos que .n8n-viewport */
+  .n8n-viewport {
+    position: relative; width: 100%; height: 420px; overflow: hidden;
+    border: 1px solid var(--line); border-radius: 18px; background-color: var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0);
+    background-size: 24px 24px; cursor: grab; user-select: none;
+    box-shadow: inset 0 2px 12px rgba(0,0,0,.08);
+  }
+  .n8n-viewport.n8n-panning { cursor: grabbing; }
+  .n8n-world { position: absolute; top: 0; left: 0; width: 0; height: 0; }
+
+  .box { position: absolute; width: 186px; border-radius: 14px; background: var(--s1);
+         border: 2px solid var(--line); padding: 12px 13px; cursor: grab;
+         box-shadow: 0 2px 8px rgba(30,30,60,.08); transition: box-shadow .12s, border-color .12s; }
+  .box .t { font: 700 13px 'Manrope'; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .box .s { font: 500 11px 'Manrope'; color: var(--muted); margin-top: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* Refleja el !important del CSS real: la selección gana al brillo de hover. */
+  .box.selected, .box.selected:hover {
+    border-color: #5b8def !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, #5b8def 55%, transparent),
+                0 0 22px color-mix(in srgb, #5b8def 40%, transparent),
+                0 12px 32px rgba(0,0,0,.22) !important;
+  }
+
+  .note { position: absolute; background: #fff8c5; border: 2px solid #e8d97a;
+          border-radius: 10px; padding: 10px 14px; font-size: 12px; width: 150px; height: 76px; }
+  .note.selected {
+    border-color: #5b8def !important;
+    box-shadow: 0 0 0 4px color-mix(in srgb, #5b8def 50%, transparent),
+                0 0 18px color-mix(in srgb, #5b8def 35%, transparent) !important;
+  }
+
+  .badge { font: 700 11px 'Manrope'; color: var(--muted); text-transform: uppercase;
+           letter-spacing: .04em; }
+  .stat { margin-top: 12px; background: var(--s1); border: 1px solid var(--line);
+          border-radius: 12px; padding: 12px 14px; font-size: 13px; }
+  .stat b { color: var(--red); }
+  code { background: var(--s2); padding: 1px 5px; border-radius: 5px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Selección por recuadro, borrar y mover</h1>
+  <div class="sub">Reproduce la lógica de <code>useWorkspaceActions</code> + <code>useFlowchartEventListeners</code> + <code>useFlowchartDeleteActions</code> con las hojas de estilo reales.</div>
+
+  <div class="hints">
+    <span class="hint"><b>Clic derecho sostenido</b> en el fondo → recuadro de selección</span>
+    <span class="hint"><b>Shift</b> al arrastrar → añade a lo ya marcado</span>
+    <span class="hint"><b>Clic izquierdo</b> o <b>central</b> → mover el lienzo (paneo)</span>
+    <span class="hint"><b>Supr / Delete</b> → borra la selección</span>
+    <span class="hint"><b>Arrastra un nodo marcado</b> con el izquierdo → mueve todo el grupo</span>
+    <span class="hint"><b>Clic derecho</b> seco en un nodo → menú de conjunto</span>
+  </div>
+
+  <div class="n8n-viewport" id="vp">
+    <div class="n8n-world" id="world"></div>
+  </div>
+
+  <div class="stat" id="stat">Seleccionados: <b>0</b></div>
+</div>
+
+<script>
+/* ── Modelo mínimo equivalente al de la app ────────────────────────── */
+const NODE_W = 186;
+const nodes = [
+  { id: "app",        x: 40,  y: 40,  t: "Aplicación", s: "Registro de pantalla" },
+  { id: "click-1",    x: 40,  y: 140, t: "Clic",        s: "Botón Guardar" },
+  { id: "type-1",     x: 260, y: 140, t: "Escribir",    s: "campo#name" },
+  { id: "delay-1",    x: 480, y: 140, t: "Esperar",     s: "500 ms" },
+  { id: "http-1",     x: 260, y: 250, t: "HTTP Request",s: "POST /api" },
+  { id: "condition-1",x: 480, y: 250, t: "If",          s: "status == 200" },
+  { id: "end",        x: 700, y: 140, t: "Fin",         s: "Cierre" },
+];
+const layout = {};
+nodes.forEach(n => layout[n.id] = { x: n.x, y: n.y });
+
+/* Una nota adhesiva: también debe marcarse con el recuadro. */
+const note = { id: "note-1", x: 60, y: 250, w: 150, h: 76, t: "📝 Nota" };
+layout[note.id] = { x: note.x, y: note.y };
+
+let selected = new Set();
+let selectionBox = null;
+let dragRef = null;
+let panRef = null;
+
+const world = document.getElementById("world");
+const vp = document.getElementById("vp");
+const stat = document.getElementById("stat");
+
+const elMap = {};
+nodes.forEach(n => {
+  const d = document.createElement("div");
+  d.className = "box";
+  d.style.left = n.x + "px";
+  d.style.top  = n.y + "px";
+  d.innerHTML = `<div class="t">${n.t}</div><div class="s">${n.s}</div>`;
+  d.addEventListener("mousedown", (e) => onNodeDown(e, n));
+  d.addEventListener("contextmenu", (e) => onNodeContext(e, n));
+  world.appendChild(d);
+  elMap[n.id] = d;
+});
+
+const noteEl = document.createElement("div");
+noteEl.className = "note";
+noteEl.style.left = note.x + "px";
+noteEl.style.top  = note.y + "px";
+noteEl.textContent = note.t;
+noteEl.addEventListener("mousedown", (e) => {
+  if (e.button !== 0) {
+    e.stopPropagation();
+    if (e.button === 2) rightDown = { x: e.clientX, y: e.clientY };
+    return;
+  }
+  e.stopPropagation();
+  if (!selected.has(note.id)) selected = e.shiftKey ? new Set([...selected, note.id]) : new Set([note.id]);
+  render();
+  dragRef = { startX: e.clientX, startY: e.clientY, initial: { [note.id]: { x: layout[note.id].x, y: layout[note.id].y } }, moved: false };
+});
+world.appendChild(noteEl);
+elMap[note.id] = noteEl;
+const allIds = () => [...nodes.map(n => n.id), note.id];
+
+const overlay = document.createElement("div");
+overlay.style.cssText = "position:fixed;border:1.5px dashed oklch(70% .18 140);" +
+  "background:oklch(70% .18 140 / .15);pointer-events:none;z-index:9999;display:none;";
+document.body.appendChild(overlay);
+
+const ctx = document.createElement("div");
+ctx.className = "n8n-ctx";
+ctx.style.display = "none";
+document.body.appendChild(ctx);
+
+function render() {
+  allIds().forEach(id => elMap[id].classList.toggle("selected", selected.has(id)));
+  stat.innerHTML = `Seleccionados: <b>${selected.size}</b>` +
+    (selected.size ? ` — ${Array.from(selected).join(", ")}` : "");
+}
+
+/* ── Mousedown en el fondo ─────────────────────────────────────────────
+   Derecho sostenido → recuadro de selección.
+   Izquierdo / central → paneo (no arranca ningún recuadro).             */
+vp.addEventListener("mousedown", (e) => {
+  if (e.button === 2) {
+    selectionBox = { sx: e.clientX, sy: e.clientY, ex: e.clientX, ey: e.clientY,
+                     active: true, additive: e.shiftKey };
+    if (!e.shiftKey) selected = new Set();
+    ctx.style.display = "none";
+    render();
+  } else if (e.button === 0 || e.button === 1) {
+    selectionBox = null;
+    panRef = { sx: e.clientX, sy: e.clientY, px: panX, py: panY };
+    vp.classList.add("n8n-panning");
+    ctx.style.display = "none";
+  }
+});
+vp.addEventListener("contextmenu", (e) => e.preventDefault());
+
+/* ── Nodos ─────────────────────────────────────────────────────────── */
+let rightDown = null;
+
+function onNodeDown(e, n) {
+  // El derecho/central sobre un nodo no debe llegar al lienzo (allí panea).
+  if (e.button !== 0) {
+    e.stopPropagation();
+    if (e.button === 2) rightDown = { x: e.clientX, y: e.clientY };
+    return;
+  }
+  e.stopPropagation();                     // el fondo NO ve este gesto
+  ctx.style.display = "none";
+  if (!selected.has(n.id)) { selected = new Set([n.id]); render(); }
+  const rect = vp.getBoundingClientRect();
+  dragRef = {
+    startX: e.clientX, startY: e.clientY,
+    initial: {}, moved: false,
+  };
+  selected.forEach(id => {
+    dragRef.initial[id] = { x: layout[id].x, y: layout[id].y };
+  });
+  // guardamos la posición del puntero en coords de pantalla para el delta
+  dragRef.origin = { x: e.clientX, y: e.clientY };
+}
+
+function onNodeContext(e, n) {
+  e.preventDefault();
+  e.stopPropagation();
+  // Tras un arrastre con el derecho no se abre el menú: solo clic seco.
+  const d = rightDown; rightDown = null;
+  if (d && (Math.abs(e.clientX - d.x) > 3 || Math.abs(e.clientY - d.y) > 3)) return;
+  if (!selected.has(n.id)) { selected = new Set([n.id]); render(); }
+  const multi = selected.size > 1;
+  ctx.innerHTML =
+    (multi ? `<div class="n8n-ctx-head">${selected.size} elementos seleccionados</div>
+              <button class="danger" id="delSel">Eliminar selección (${selected.size})</button>
+              <div class="n8n-ctx-sep"></div>` : "") +
+    `<button id="cfg">Configurar Parámetros</button>
+     <button class="danger" id="delOne">Eliminar</button>`;
+  ctx.style.left = e.clientX + "px";
+  ctx.style.top = e.clientY + "px";
+  ctx.style.display = "block";
+  const dsel = document.getElementById("delSel");
+  if (dsel) dsel.onclick = () => { removeSelected(); ctx.style.display = "none"; };
+  document.getElementById("cfg").onclick = () => { ctx.style.display = "none"; };
+  document.getElementById("delOne").onclick = () => { removeSelected(); ctx.style.display = "none"; };
+}
+ctx.addEventListener("mousedown", (e) => e.stopPropagation());
+
+/* ── Movimiento global ─────────────────────────────────────────────── */
+let panX = 0, panY = 0;
+
+window.addEventListener("mousemove", (e) => {
+  if (panRef) {
+    panX = panRef.px + (e.clientX - panRef.sx);
+    panY = panRef.py + (e.clientY - panRef.sy);
+    world.style.transform = `translate(${panX}px, ${panY}px)`;
+  } else if (dragRef) {
+    const dx = e.clientX - dragRef.startX;
+    const dy = e.clientY - dragRef.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragRef.moved = true;
+    Object.keys(dragRef.initial).forEach(id => {
+      layout[id] = { x: dragRef.initial[id].x + dx, y: dragRef.initial[id].y + dy };
+      elMap[id].style.left = layout[id].x + "px";
+      elMap[id].style.top  = layout[id].y + "px";
+    });
+  } else if (selectionBox?.active) {
+    selectionBox.ex = e.clientX; selectionBox.ey = e.clientY;
+    const dragged = Math.abs(e.clientX - selectionBox.sx) > 3 || Math.abs(e.clientY - selectionBox.sy) > 3;
+    if (!dragged) return;
+    const rect = vp.getBoundingClientRect();
+    const minX = Math.min(selectionBox.sx, selectionBox.ex) - rect.left - panX;
+    const maxX = Math.max(selectionBox.sx, selectionBox.ex) - rect.left - panX;
+    const minY = Math.min(selectionBox.sy, selectionBox.ey) - rect.top - panY;
+    const maxY = Math.max(selectionBox.sy, selectionBox.ey) - rect.top - panY;
+    const next = selectionBox.additive ? new Set(selected) : new Set();
+    nodes.forEach(n => {
+      const p = layout[n.id];
+      const bMaxX = p.x + NODE_W, bMaxY = p.y + 74;
+      const hit = !(bMaxX < minX || p.x > maxX || bMaxY < minY || p.y > maxY);
+      if (hit) next.add(n.id);
+    });
+    // La nota también entra en la selección (y se ve marcada).
+    {
+      const p = layout[note.id];
+      const hit = !(p.x + note.w < minX || p.x > maxX || p.y + note.h < minY || p.y > maxY);
+      if (hit) next.add(note.id);
+    }
+    const changed = next.size !== selected.size || Array.from(next).some(i => !selected.has(i));
+    if (changed) { selected = next; render(); }
+    // recuadro
+    overlay.style.display = "block";
+    overlay.style.left   = Math.min(selectionBox.sx, selectionBox.ex) + "px";
+    overlay.style.top    = Math.min(selectionBox.sy, selectionBox.ey) + "px";
+    overlay.style.width  = Math.abs(selectionBox.sx - selectionBox.ex) + "px";
+    overlay.style.height = Math.abs(selectionBox.sy - selectionBox.ey) + "px";
+  }
+});
+
+window.addEventListener("mouseup", (e) => {
+  if (panRef) {
+    panRef = null;
+    vp.classList.remove("n8n-panning");
+  } else if (dragRef) { dragRef = null; }
+  else if (selectionBox?.active) {
+    const dragged = Math.abs(e.clientX - selectionBox.sx) > 3 || Math.abs(e.clientY - selectionBox.sy) > 3;
+    if (!dragged && !selectionBox.additive) { selected = new Set(); render(); }
+    selectionBox = null;
+    overlay.style.display = "none";
+  }
+});
+
+/* ── Supr / Delete ─────────────────────────────────────────────────── */
+window.addEventListener("keydown", (e) => {
+  if (e.key === "Delete" || e.key === "Backspace") {
+    if (selected.size === 0) return;
+    e.preventDefault();
+    removeSelected();
+  }
+  if (e.key === "Escape") { selected = new Set(); ctx.style.display = "none"; render(); }
+});
+
+function removeSelected() {
+  Array.from(selected).forEach(id => {
+    if (id === "app") return;          // igual que la app: "app" nunca se borra así
+    const el = elMap[id];
+    if (el) el.remove();
+    const i = nodes.findIndex(n => n.id === id);
+    if (i >= 0) nodes.splice(i, 1);
+    delete layout[id];
+  });
+  selected = new Set();
+  render();
+}
+
+render();
+</script>
+</body>
+</html>

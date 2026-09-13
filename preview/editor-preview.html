@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>grapScreen — Preview del editor de flujos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<!-- Real stylesheet from the app build, so this preview is pixel-accurate. -->
+<link rel="stylesheet" href="./live.css"/>
+<style>
+  /* Preview-only scaffolding: the app normally provides these containers. */
+  html, body, #root { height: 100%; }
+  body { margin: 0; display: flex; background: var(--bg); }
+  .pv-sidebar {
+    width: 62px; flex-shrink: 0; background: var(--s1);
+    border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 14px 0; gap: 16px;
+  }
+  .pv-logo { width: 30px; height: 30px; border-radius: 9px; background: var(--red); }
+  .pv-nav { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .pv-nav-item {
+    width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+    color: var(--muted); font-size: 15px;
+  }
+  .pv-nav-item.on { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
+  .pv-stage {
+    flex: 1; min-width: 0; display: flex; flex-direction: column;
+    gap: 10px; padding: 10px 12px 12px;
+  }
+  .flow-editor-shell { flex: 1; min-height: 0; }
+  .flow-editor-main { min-height: 0; }
+  /* Canvas + panel + logs stacked inside the shell, matching Flowchart.tsx */
+  .pv-canvas-col { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; min-height: 0; }
+  .n8n-world { position: absolute; top: 0; left: 0; }
+</style>
+</head>
+<body>
+<div id="root">
+  <aside class="pv-sidebar">
+    <div class="pv-logo"></div>
+    <div class="pv-nav">
+      <div class="pv-nav-item">✦</div>
+      <div class="pv-nav-item">▦</div>
+      <div class="pv-nav-item on">⇄</div>
+      <div class="pv-nav-item">▤</div>
+      <div class="pv-nav-item">◷</div>
+      <div class="pv-nav-item">◎</div>
+    </div>
+  </aside>
+
+  <div class="pv-stage">
+    <!-- ═══ Editor top bar ═══ -->
+    <div class="flow-topbar">
+      <div class="ftb-left">
+        <button class="ftb-back">‹</button>
+        <div class="ftb-crumb">
+          <span class="ftb-crumb-scope">Personal</span>
+          <span class="ftb-crumb-sep">/</span>
+          <button class="ftb-crumb-name">Invoice Processing</button>
+        </div>
+      </div>
+      <div class="ftb-tabs" role="tablist">
+        <button class="ftb-tab active">✎ Editor</button>
+        <button class="ftb-tab">◷ Ejecuciones</button>
+        <button class="ftb-tab">◎ Evaluaciones</button>
+      </div>
+      <div class="ftb-right">
+        <span class="ftb-saved">✓ Guardado</span>
+        <button class="ftb-btn ghost">Guardar</button>
+        <button class="ftb-btn primary">▶ Publicar</button>
+      </div>
+    </div>
+
+    <div class="flow-editor-shell">
+      <div class="flow-editor-main">
+        <div class="pv-canvas-col">
+          <div class="n8n-viewport" style="flex:1;min-height:0;height:auto;">
+            <!-- Wires -->
+            <svg class="n8n-wires" width="1400" height="600" style="overflow:visible">
+              <defs>
+                <linearGradient id="wg1" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#ff6d5a" stop-opacity="0.8"/>
+                  <stop offset="100%" stop-color="#ff6d5a" stop-opacity="0.3"/>
+                </linearGradient>
+                <linearGradient id="wg2" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.8"/>
+                  <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.3"/>
+                </linearGradient>
+                <linearGradient id="wg3" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#a855f7" stop-opacity="0.8"/>
+                  <stop offset="100%" stop-color="#a855f7" stop-opacity="0.3"/>
+                </linearGradient>
+                <linearGradient id="wg4" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#ec4899" stop-opacity="0.8"/>
+                  <stop offset="100%" stop-color="#ec4899" stop-opacity="0.3"/>
+                </linearGradient>
+              </defs>
+              <path class="n8n-wire" stroke="url(#wg1)" fill="none" d="M 250 150 C 320 150, 330 150, 390 150"/>
+              <path class="n8n-wire" stroke="url(#wg2)" fill="none" d="M 480 150 C 550 150, 560 150, 620 150"/>
+              <path class="n8n-wire" stroke="url(#wg3)" fill="none" d="M 710 150 C 780 150, 790 150, 850 150"/>
+              <path class="n8n-wire" stroke="url(#wg4)" fill="none" d="M 940 150 C 1010 150, 1020 150, 1080 110"/>
+              <path class="n8n-wire" stroke="url(#wg4)" fill="none" d="M 940 150 C 1010 150, 1020 150, 1080 230"/>
+            </svg>
+
+            <!-- Nodes -->
+            <div class="n8n-node exec-ok" style="left:10px;top:116px;--accent:#ff6d5a;width:240px;height:68px;position:absolute;">
+              <span class="n8n-status n8n-status-ok">✓</span>
+              <span class="n8n-port n8n-port-out" style="top:34px;border-color:#ff6d5a"></span>
+              <div class="n8n-node-icon" style="color:#ff6d5a;border-color:#ff6d5a">⏱</div>
+              <div class="n8n-node-body">
+                <div class="n8n-node-title">Schedule Trigger</div>
+                <div class="n8n-node-sub">Disparador</div>
+              </div>
+            </div>
+
+            <div class="n8n-node" style="left:390px;top:116px;--accent:#3b82f6;width:240px;height:68px;position:absolute;">
+              <span class="n8n-port n8n-port-in" style="top:34px;border-color:#3b82f6"></span>
+              <span class="n8n-port n8n-port-out" style="top:34px;border-color:#3b82f6"></span>
+              <div class="n8n-node-icon" style="color:#3b82f6;border-color:#3b82f6">✉</div>
+              <div class="n8n-node-body">
+                <div class="n8n-node-title">Read Email</div>
+                <div class="n8n-node-sub">Gmail</div>
+              </div>
+            </div>
+
+            <div class="n8n-node" style="left:620px;top:116px;--accent:#a855f7;width:240px;height:68px;position:absolute;">
+              <span class="n8n-port n8n-port-in" style="top:34px;border-color:#a855f7"></span>
+              <span class="n8n-port n8n-port-out" style="top:34px;border-color:#a855f7"></span>
+              <div class="n8n-node-icon" style="color:#a855f7;border-color:#a855f7">✦</div>
+              <div class="n8n-node-body">
+                <div class="n8n-node-title">Extract Data</div>
+                <div class="n8n-node-sub">IA</div>
+              </div>
+            </div>
+
+            <div class="n8n-node" style="left:850px;top:116px;--accent:#ec4899;width:240px;height:68px;position:absolute;">
+              <span class="n8n-port n8n-port-in" style="top:34px;border-color:#ec4899"></span>
+              <span class="n8n-port n8n-port-out" style="top:34px;border-color:#ec4899"></span>
+              <div class="n8n-node-icon" style="color:#ec4899;border-color:#ec4899">⑂</div>
+              <div class="n8n-node-body">
+                <div class="n8n-node-title">Amount &gt; $1,000?</div>
+                <div class="n8n-node-sub">If</div>
+              </div>
+            </div>
+
+            <div class="n8n-node" style="left:1080px;top:76px;--accent:#0f9d58;width:240px;height:68px;position:absolute;">
+              <span class="n8n-port n8n-port-in" style="top:34px;border-color:#0f9d58"></span>
+              <div class="n8n-node-icon" style="color:#0f9d58;border-color:#0f9d58">▦</div>
+              <div class="n8n-node-body">
+                <div class="n8n-node-title">Save to Sheets</div>
+                <div class="n8n-node-sub">Google Sheets</div>
+              </div>
+            </div>
+
+            <div class="n8n-node" style="left:1080px;top:196px;--accent:#3b82f6;width:240px;height:68px;position:absolute;">
+              <span class="n8n-port n8n-port-in" style="top:34px;border-color:#3b82f6"></span>
+              <div class="n8n-node-icon" style="color:#3b82f6;border-color:#3b82f6">➤</div>
+              <div class="n8n-node-body">
+                <div class="n8n-node-title">Send Confirmation</div>
+                <div class="n8n-node-sub">Gmail</div>
+              </div>
+            </div>
+
+            <!-- Sticky note -->
+            <div style="position:absolute;left:1080px;top:300px;width:220px;min-height:96px;background:#fdf3c7;border:1px solid #e8d98a;border-radius:10px;padding:12px 14px;font:400 11.5px Manrope;color:#4a4116;box-shadow:0 4px 14px rgba(0,0,0,.12);">
+              Este flujo corre cada hora. Revisar facturas mayores a $1.000 antes de notificar.
+            </div>
+
+            <!-- Central Execute button -->
+            <div class="exec-fab-wrap">
+              <button class="exec-fab">▶ Ejecutar Flujo</button>
+              <span class="exec-fab-hint">6 nodos</span>
+            </div>
+
+            <!-- Zoom controls -->
+            <div class="n8n-zoom n8n-toolbar">
+              <button>−</button><span>100%</span><button>+</button>
+              <div class="n8n-toolbar-sep"></div>
+              <button>⤢</button><button>✦</button><button>⌂</button>
+              <div class="n8n-toolbar-sep"></div>
+              <button>▤</button><button>▣</button>
+            </div>
+
+            <!-- Status bar -->
+            <div class="canvas-statusbar">
+              <span class="csb-item">▦ 6</span>
+              <span class="csb-sep"></span>
+              <span class="csb-item">⇄ 5</span>
+              <span class="csb-sep"></span>
+              <span class="csb-item">⊕ 100%</span>
+            </div>
+          </div>
+
+          <!-- Logs console -->
+          <div class="flow-logs">
+            <div class="flogs-head">
+              <button class="flogs-toggle">▸ Registros <span class="flogs-badge">4</span> ⌄</button>
+              <div class="flogs-actions">
+                <button>◷ Historial</button>
+                <button>🗑 Limpiar</button>
+              </div>
+            </div>
+            <div class="flogs-body">
+              <div class="flog-row flog-info">
+                <span class="flog-time">10:42:31</span>
+                <span class="flog-level flog-level-info">INFO</span>
+                <span class="flog-msg">Ejecutando "Schedule Trigger"…</span>
+              </div>
+              <div class="flog-row flog-success">
+                <span class="flog-time">10:42:32</span>
+                <span class="flog-level flog-level-success">SUCCESS</span>
+                <span class="flog-msg">"Extract Data" completado en 1.2s</span>
+              </div>
+              <div class="flog-row flog-success">
+                <span class="flog-time">10:42:33</span>
+                <span class="flog-level flog-level-success">SUCCESS</span>
+                <span class="flog-msg">Flujo de trabajo ejecutado correctamente</span>
+              </div>
+              <div class="flog-row flog-error">
+                <span class="flog-time">10:43:01</span>
+                <span class="flog-level flog-level-error">ERROR</span>
+                <span class="flog-msg">"Save to Sheets" falló en 0.4s</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ Right side panel: empty state ═══ -->
+      <aside class="flow-side-panel">
+        <div class="fsp-head">
+          <div class="fsp-head-text">
+            <div class="fsp-title">¿Qué pasa después?</div>
+            <div class="fsp-sub">Añade un nodo para empezar a construir</div>
+          </div>
+          <button class="fsp-close">✕</button>
+        </div>
+
+        <button class="fsp-search-trigger">⌕ Buscar nodos…</button>
+
+        <div class="fsp-scroll">
+          <div class="fsp-section">
+            <button class="fsp-row">
+              <span class="fsp-row-icon">✦</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">IA</span>
+                <span class="fsp-row-desc">Agentes autónomos, resumir o buscar documentos</span>
+              </span>
+              <span class="fsp-row-chevron">›</span>
+            </button>
+            <button class="fsp-row">
+              <span class="fsp-row-icon">◍</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">Acción en una app</span>
+                <span class="fsp-row-desc">Hacer algo en una app o servicio</span>
+              </span>
+              <span class="fsp-row-chevron">›</span>
+            </button>
+            <button class="fsp-row">
+              <span class="fsp-row-icon">▤</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">Transformación de datos</span>
+                <span class="fsp-row-desc">Manipular, filtrar o convertir datos</span>
+              </span>
+              <span class="fsp-row-chevron">›</span>
+            </button>
+            <button class="fsp-row">
+              <span class="fsp-row-icon">⑂</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">Flujo</span>
+                <span class="fsp-row-desc">Ramificar, combinar o repetir el flujo</span>
+              </span>
+              <span class="fsp-row-chevron">›</span>
+            </button>
+            <button class="fsp-row">
+              <span class="fsp-row-icon">⌘</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">Núcleo</span>
+                <span class="fsp-row-desc">Código, peticiones HTTP, variables</span>
+              </span>
+              <span class="fsp-row-chevron">›</span>
+            </button>
+            <button class="fsp-row">
+              <span class="fsp-row-icon">☑</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">Revisión humana</span>
+                <span class="fsp-row-desc">Pedir aprobación antes de continuar</span>
+              </span>
+              <span class="fsp-row-chevron">›</span>
+            </button>
+          </div>
+
+          <div class="fsp-divider"></div>
+
+          <div class="fsp-section">
+            <div class="fsp-section-title">✦ Añadir un disparador</div>
+            <p class="fsp-section-hint">Los disparadores inician el flujo. Un flujo puede tener varios.</p>
+            <button class="fsp-row fsp-row-trigger">
+              <span class="fsp-row-icon">▶</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">Manual</span>
+                <span class="fsp-row-desc">Ejecutar cuando tú quieras</span>
+              </span>
+              <span class="fsp-plus">+</span>
+            </button>
+            <button class="fsp-row fsp-row-trigger">
+              <span class="fsp-row-icon">⏱</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">Programado</span>
+                <span class="fsp-row-desc">Cada día, hora o intervalo</span>
+              </span>
+              <span class="fsp-plus">+</span>
+            </button>
+            <button class="fsp-row fsp-row-trigger">
+              <span class="fsp-row-icon">🌐</span>
+              <span class="fsp-row-text">
+                <span class="fsp-row-title">Webhook</span>
+                <span class="fsp-row-desc">Al recibir una petición HTTP</span>
+              </span>
+              <span class="fsp-plus">+</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</body>
+</html>

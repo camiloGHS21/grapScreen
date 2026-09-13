@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>grapScreen</title>
+  <link rel="icon" type="image/png" href="/src-tauri/icons/32x32.png"/>
+  <script>
+    // For the recording-overlay window we set a transparent background immediately
+    // so that the window matches the transparent Webview layout.
+    (function () {
+      try {
+        var isOverlay =
+          (typeof window !== "undefined" && window.__IS_RECORDING_OVERLAY__ === true) ||
+          location.search.indexOf("controls=1") !== -1 ||
+          location.search.indexOf("overlay=1") !== -1;
+        if (isOverlay) {
+          var apply = function () {
+            try {
+              document.documentElement.style.background = "transparent";
+              if (document.body) document.body.style.background = "transparent";
+            } catch (e) { /* ignore */ }
+          };
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", apply);
+          } else {
+            apply();
+          }
+        }
+      } catch (e) { /* ignore */ }
+    })();
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
