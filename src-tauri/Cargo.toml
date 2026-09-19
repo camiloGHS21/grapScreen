@@ -4,6 +4,7 @@ version = "1.0.0"
 description = "Windows desktop automation and screen recorder"
 authors = ["Camilo Grajales"]
 edition = "2021"
+license = "MIT"
 
 [lib]
 name = "grapscreen_lib"
