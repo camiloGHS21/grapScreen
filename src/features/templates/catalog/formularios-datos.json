@@ -1,0 +1,607 @@
+[
+  {
+    "id": "form-a-excel",
+    "title": "Formulario → Excel",
+    "description": "Pide nombre, email y teléfono, y añade la fila a un libro de Excel",
+    "category": "formularios-datos",
+    "tags": ["formulario", "excel", "registro", "xlsx"],
+    "popularity": 96,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true },
+            { "id": "telefono", "label": "Teléfono", "type": "phone", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "registros.xlsx",
+          "header": "[\"Nombre\",\"Email\",\"Teléfono\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\",\"{{ telefono }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-excel-y-aviso",
+    "title": "Formulario → Excel + aviso",
+    "description": "Guarda el registro en Excel y avisa por Telegram en el mismo paso",
+    "category": "formularios-datos",
+    "tags": ["formulario", "excel", "telegram", "aviso"],
+    "popularity": 94,
+    "requires": ["telegram"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "registros.xlsx",
+          "header": "[\"Nombre\",\"Email\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      },
+      {
+        "type": "telegram",
+        "data": {
+          "message": "Nuevo registro: {{ nombre }} — {{ email }}",
+          "chat_id": "",
+          "token": ""
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-google-sheets",
+    "title": "Formulario → Google Sheets",
+    "description": "Vuelca cada respuesta del formulario como una fila de la hoja",
+    "category": "formularios-datos",
+    "tags": ["formulario", "google sheets", "hoja de cálculo"],
+    "popularity": 90,
+    "requires": ["google"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true },
+            { "id": "telefono", "label": "Teléfono", "type": "phone", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "google_sheets",
+        "data": {
+          "spreadsheet_id": "",
+          "range": "Respuestas!A:C",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\",\"{{ telefono }}\"]]"
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-csv",
+    "title": "Formulario → CSV",
+    "description": "Guarda cada respuesta como una línea de un CSV delimitado por comas",
+    "category": "formularios-datos",
+    "tags": ["formulario", "csv", "registro"],
+    "popularity": 88,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "registros.csv",
+          "header": "[\"Nombre\",\"Email\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "csv"
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-telegram",
+    "title": "Formulario → Telegram",
+    "description": "Recibe los datos del usuario y los envía como alerta a tu chat",
+    "category": "formularios-datos",
+    "tags": ["formulario", "telegram", "alerta"],
+    "popularity": 84,
+    "requires": ["telegram"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "mensaje", "label": "Mensaje", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "telegram",
+        "data": {
+          "message": "{{ nombre }} dice: {{ mensaje }}",
+          "chat_id": "",
+          "token": ""
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-email",
+    "title": "Formulario → Email",
+    "description": "Envía por SMTP los datos recibidos a la dirección que escriba el usuario",
+    "category": "formularios-datos",
+    "tags": ["formulario", "email", "smtp", "correo"],
+    "popularity": 80,
+    "requires": ["smtp"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true },
+            { "id": "mensaje", "label": "Mensaje", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "{{ email }}",
+          "subject": "Nuevo mensaje de {{ nombre }}",
+          "body": "{{ nombre }} ha escrito:\n\n{{ mensaje }}",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-slack",
+    "title": "Formulario → Slack",
+    "description": "Publica cada respuesta del formulario en un canal de Slack",
+    "category": "formularios-datos",
+    "tags": ["formulario", "slack", "equipo"],
+    "popularity": 78,
+    "requires": ["slack"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "slack_webhook",
+        "data": {
+          "webhook_url": "",
+          "text": "Nuevo registro: *{{ nombre }}* ({{ email }})",
+          "channel": "#general",
+          "bot_name": "grapScreen"
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-discord",
+    "title": "Formulario → Discord",
+    "description": "Anuncia cada registro nuevo en un canal de Discord",
+    "category": "formularios-datos",
+    "tags": ["formulario", "discord", "comunidad"],
+    "popularity": 72,
+    "requires": ["discord"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "discord_webhook",
+        "data": {
+          "webhook_url": "",
+          "content": "Nuevo registro: {{ nombre }} ({{ email }})",
+          "bot_name": "grapScreen"
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-notion",
+    "title": "Formulario → Notion",
+    "description": "Crea una página en una base de datos de Notion con los datos recibidos",
+    "category": "formularios-datos",
+    "tags": ["formulario", "notion", "base de datos"],
+    "popularity": 72,
+    "requires": ["notion"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "notas", "label": "Notas", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "notion",
+        "data": {
+          "operation": "create_page",
+          "token": "",
+          "database_id": "",
+          "page_id": "",
+          "title": "{{ nombre }}",
+          "properties_json": "{\"Notas\":\"{{ notas }}\"}",
+          "filter_json": ""
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-airtable",
+    "title": "Formulario → Airtable",
+    "description": "Inserta un registro en una tabla de Airtable con lo que escriba el usuario",
+    "category": "formularios-datos",
+    "tags": ["formulario", "airtable", "registro"],
+    "popularity": 70,
+    "requires": ["airtable"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "airtable",
+        "data": {
+          "operation": "create",
+          "api_key": "",
+          "base_id": "",
+          "table": "Leads",
+          "record_id": "",
+          "fields_json": "{\"Nombre\":\"{{ nombre }}\",\"Email\":\"{{ email }}\"}"
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-sqlite",
+    "title": "Formulario → SQLite",
+    "description": "Guarda cada respuesta como una fila de una base SQLite local",
+    "category": "formularios-datos",
+    "tags": ["formulario", "sqlite", "base de datos"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "sqlite_execute",
+        "data": {
+          "db_path": "registros.db",
+          "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, email TEXT)",
+          "params": ""
+        }
+      },
+      {
+        "type": "sqlite_execute",
+        "data": {
+          "db_path": "registros.db",
+          "query": "INSERT INTO registros (nombre, email) VALUES (?, ?)",
+          "params": "[\"{{ nombre }}\",\"{{ email }}\"]"
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-excel-y-csv",
+    "title": "Formulario → Excel y CSV",
+    "description": "Escribe el mismo registro en un libro .xlsx y en un .csv para intercambio",
+    "category": "formularios-datos",
+    "tags": ["formulario", "excel", "csv", "doble salida"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "registros.xlsx",
+          "header": "[\"Nombre\",\"Email\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "registros.csv",
+          "header": "[\"Nombre\",\"Email\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "csv"
+        }
+      }
+    ]
+  },
+  {
+    "id": "formulario-con-validacion",
+    "title": "Formulario con puerta de validación",
+    "description": "Solo guarda en Excel si el paso de control marca el registro como válido",
+    "category": "formularios-datos",
+    "tags": ["formulario", "validación", "condición", "excel"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      {
+        "type": "set_var",
+        "data": { "name": "estado", "value": "ok" }
+      },
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "condition",
+        "data": {
+          "description": "¿El registro pasa la revisión?",
+          "condition_type": "expression",
+          "expression": "\"{{ estado }}\" == \"ok\""
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "registros.xlsx",
+          "header": "[\"Nombre\",\"Email\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-whatsapp",
+    "title": "Formulario → WhatsApp",
+    "description": "Manda por WhatsApp Cloud API un resumen de los datos recibidos",
+    "category": "formularios-datos",
+    "tags": ["formulario", "whatsapp", "mensajería"],
+    "popularity": 76,
+    "requires": ["whatsapp"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "mensaje", "label": "Mensaje", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "whatsapp",
+        "data": {
+          "to": "34600000000",
+          "message": "{{ nombre }}: {{ mensaje }}",
+          "api_type": "api",
+          "token": "",
+          "phone_id": ""
+        }
+      }
+    ]
+  },
+  {
+    "id": "formulario-a-archivo-de-texto",
+    "title": "Formulario → archivo de texto",
+    "description": "Añade una línea de texto al final de un .txt con lo que escribió el usuario",
+    "category": "formularios-datos",
+    "tags": ["formulario", "txt", "log"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nota", "label": "Nota", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "write_file",
+        "data": {
+          "file_path": "~/notas.txt",
+          "content": "{{ nota }}\n",
+          "encoding": "utf8",
+          "append": true
+        }
+      }
+    ]
+  },
+  {
+    "id": "form-a-google-docs",
+    "title": "Formulario → Google Docs",
+    "description": "Escribe en un documento de Google el texto que introduzca el usuario",
+    "category": "formularios-datos",
+    "tags": ["formulario", "google docs", "documento"],
+    "popularity": 68,
+    "requires": ["google"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "titulo", "label": "Título", "type": "text", "required": true },
+            { "id": "cuerpo", "label": "Cuerpo", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "google_docs",
+        "data": {
+          "document_id": "",
+          "text": "{{ titulo }}\n\n{{ cuerpo }}"
+        }
+      }
+    ]
+  },
+  {
+    "id": "formulario-a-base-local",
+    "title": "Formulario → SQLite y recuento",
+    "description": "Inserta el contacto y consulta cuántos registros hay ya en la tabla",
+    "category": "formularios-datos",
+    "tags": ["formulario", "sqlite", "contacto", "recuento"],
+    "popularity": 62,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "mensaje", "label": "Mensaje", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "sqlite_execute",
+        "data": {
+          "db_path": "contacto.db",
+          "query": "CREATE TABLE IF NOT EXISTS contacto (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, mensaje TEXT)",
+          "params": ""
+        }
+      },
+      {
+        "type": "sqlite_execute",
+        "data": {
+          "db_path": "contacto.db",
+          "query": "INSERT INTO contacto (nombre, mensaje) VALUES (?, ?)",
+          "params": "[\"{{ nombre }}\",\"{{ mensaje }}\"]"
+        }
+      },
+      {
+        "type": "sqlite_query",
+        "data": {
+          "db_path": "contacto.db",
+          "query": "SELECT COUNT(*) AS total FROM contacto",
+          "params": ""
+        }
+      }
+    ]
+  },
+  {
+    "id": "formulario-a-excel-y-whatsapp",
+    "title": "Formulario → Excel y WhatsApp",
+    "description": "Guarda el registro en Excel y confirma por WhatsApp al cliente",
+    "category": "formularios-datos",
+    "tags": ["formulario", "excel", "whatsapp", "confirmación"],
+    "popularity": 74,
+    "requires": ["whatsapp"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "confirmados.xlsx",
+          "header": "[\"Nombre\",\"Email\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      },
+      {
+        "type": "whatsapp",
+        "data": {
+          "to": "34600000000",
+          "message": "Gracias {{ nombre }}, hemos recibido tus datos.",
+          "api_type": "api",
+          "token": "",
+          "phone_id": ""
+        }
+      }
+    ]
+  }
+]

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>grapScreen — barra superior a varios anchos</title>
+<style>
+  html, body { margin: 0; padding: 14px; background: #eef1f7;
+               font: 600 12px 'DM Mono', monospace; color: #1d2333; }
+  h1 { font: 800 15px 'Manrope', sans-serif; margin: 0 0 14px; }
+  .row { margin-bottom: 16px; }
+  .lbl { margin-bottom: 4px; }
+  .lbl b { color: #b3001b; }
+  .lbl .ok { color: #0a7d45; }
+  iframe { display: block; border: 1px solid #c8cede; background: #f4f6fb; }
+</style>
+</head>
+<body>
+  <h1>Barra superior — la escalera real (medida, no adivinada)</h1>
+
+  <div class="row">
+    <div class="lbl"><b>1600 px</b> &mdash; una sola fila, readout visible, pestañas centradas <span class="ok">&#10003;</span></div>
+    <iframe src="topbar.html" width="1600" height="80" scrolling="no"></iframe>
+  </div>
+
+  <div class="row">
+    <div class="lbl"><b>1280 px</b> &mdash; corte en 1450: las pestañas bajan a su propia fila <span class="ok">&#10003;</span></div>
+    <iframe src="topbar.html" width="1280" height="118" scrolling="no"></iframe>
+  </div>
+
+  <div class="row">
+    <div class="lbl"><b>1100 px</b> &mdash; el ancho del pantallazo reportado: el nombre se lee entero <span class="ok">&#10003;</span></div>
+    <iframe src="topbar.html" width="1100" height="118" scrolling="no"></iframe>
+  </div>
+
+  <div class="row">
+    <div class="lbl"><b>1000 px</b> &mdash; justo por encima del corte de 980: el readout aún se ve <span class="ok">&#10003;</span></div>
+    <iframe src="topbar.html" width="1000" height="118" scrolling="no"></iframe>
+  </div>
+
+  <div class="row">
+    <div class="lbl"><b>920 px</b> &mdash; corte en 980: el readout se oculta, el resto se mantiene <span class="ok">&#10003;</span></div>
+    <iframe src="topbar.html" width="920" height="118" scrolling="no"></iframe>
+  </div>
+
+  <div class="row">
+    <div class="lbl"><b>900 px</b> &mdash; el ancho mínimo de ventana <span class="ok">&#10003;</span></div>
+    <iframe src="topbar.html" width="900" height="118" scrolling="no"></iframe>
+  </div>
+</body>
+</html>

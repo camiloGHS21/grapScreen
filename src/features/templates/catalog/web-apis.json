@@ -1,0 +1,469 @@
+[
+  {
+    "id": "guardar-respuesta-de-una-api",
+    "title": "Guardar la respuesta de una API",
+    "description": "Llama a un endpoint por GET y deja la respuesta en un archivo de texto",
+    "category": "web-apis",
+    "tags": ["api", "http", "descargar", "json"],
+    "popularity": 86,
+    "requires": [],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\",\"Accept\":\"application/json\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/respuesta-api.json", "content": "{{ respuesta }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "webhook-que-responde",
+    "title": "Webhook que recibe y guarda",
+    "description": "Levanta un endpoint local y guarda en disco el cuerpo de cada petición",
+    "category": "web-apis",
+    "tags": ["webhook", "entrada", "http", "escuchar"],
+    "popularity": 84,
+    "requires": [],
+    "steps": [
+      { "type": "webhook", "data": { "path": "/entrada", "method": "POST" } },
+      { "type": "write_file", "data": { "file_path": "~/peticiones.txt", "content": "{{ webhook.method }} {{ webhook.path }}?{{ webhook.query }}\n{{ webhook.body }}\n---\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "enviar-datos-a-una-api",
+    "title": "Enviar datos a una API",
+    "description": "Recoge datos por formulario y los publica en un endpoint por POST",
+    "category": "web-apis",
+    "tags": ["api", "post", "http", "formulario"],
+    "popularity": 82,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "http_request",
+        "data": {
+          "method": "POST",
+          "url": "https://httpbin.org/post",
+          "headers": "{\"Content-Type\":\"application/json\"}",
+          "body": "{\"nombre\":\"{{ nombre }}\",\"email\":\"{{ email }}\"}",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/envio-api.json", "content": "{{ respuesta }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "api-a-telegram",
+    "title": "Aviso con lo que devuelve una API",
+    "description": "Consulta una API y manda su respuesta a Telegram sin abrir el navegador",
+    "category": "web-apis",
+    "tags": ["api", "telegram", "aviso", "http"],
+    "popularity": 80,
+    "requires": ["telegram"],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "telegram", "data": { "message": "Respuesta de la API:\n{{ respuesta }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "api-a-slack",
+    "title": "Publicar la respuesta de una API en Slack",
+    "description": "Trae los datos de un endpoint y déjalos en el canal del equipo",
+    "category": "web-apis",
+    "tags": ["api", "slack", "http", "equipo"],
+    "popularity": 78,
+    "requires": ["slack"],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri/releases/latest",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "Última release:\n{{ respuesta }}", "channel": "#general", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "api-a-excel",
+    "title": "Volcar una API en Excel",
+    "description": "Pide una lista a una API y guarda la respuesta tal cual en un libro",
+    "category": "web-apis",
+    "tags": ["api", "excel", "http", "informe"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "excel_local", "data": { "file_path": "respuesta-api.xlsx", "header": "[\"Respuesta\"]", "values": "[[\"{{ respuesta }}\"]]", "delimiter": ",", "overwrite": true, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "api-cada-hora",
+    "title": "Consultar una API cada hora",
+    "description": "Revisa un endpoint una vez por hora y va guardando cada respuesta",
+    "category": "web-apis",
+    "tags": ["api", "cron", "http", "histórico"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1h" } },
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/historico-api.txt", "content": "{{ respuesta }}\n---\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "api-con-cabecera-de-autorizacion",
+    "title": "API con cabecera de autorización",
+    "description": "Llama a un endpoint protegido enviando la clave desde la bóveda de credenciales",
+    "category": "web-apis",
+    "tags": ["api", "autorización", "credenciales", "http"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/user",
+          "headers": "{\"User-Agent\":\"grapScreen\",\"Accept\":\"application/vnd.github+json\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/perfil-api.json", "content": "{{ respuesta }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "api-a-sqlite",
+    "title": "Guardar la respuesta de una API en SQLite",
+    "description": "Crea la tabla y deja constancia de cada respuesta recibida",
+    "category": "web-apis",
+    "tags": ["api", "sqlite", "http", "registro"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "sqlite_execute", "data": { "db_path": "api.db", "query": "CREATE TABLE IF NOT EXISTS respuestas (id INTEGER PRIMARY KEY AUTOINCREMENT, cuerpo TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "api.db", "query": "INSERT INTO respuestas (cuerpo) VALUES (?)", "params": "[\"{{ respuesta }}\"]" } }
+    ]
+  },
+  {
+    "id": "reintentar-una-api-con-espera",
+    "title": "API con espera antes de reintentar",
+    "description": "Deja pasar unos segundos y vuelve a consultar el endpoint por si estaba caído",
+    "category": "web-apis",
+    "tags": ["api", "espera", "delay", "reintento"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "delay", "data": { "seconds": 5 } },
+      { "type": "write_file", "data": { "file_path": "~/reintento.txt", "content": "Segundo intento:\n{{ respuesta }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "api-a-csv",
+    "title": "Respuesta de API → CSV",
+    "description": "Guarda la respuesta de un endpoint como una fila de CSV para histórico",
+    "category": "web-apis",
+    "tags": ["api", "csv", "histórico", "http"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "excel_local", "data": { "file_path": "api-historico.csv", "header": "", "values": "[[\"{{ respuesta }}\"]]", "delimiter": ",", "overwrite": false, "format": "csv" } }
+    ]
+  },
+  {
+    "id": "dos-apis-y-comparar",
+    "title": "Llamar a dos APIs y comparar",
+    "description": "Guarda la respuesta de dos endpoints para poder compararlos después",
+    "category": "web-apis",
+    "tags": ["api", "http", "comparar", "doble llamada"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "http_request", "data": { "method": "GET", "url": "https://api.github.com/repos/tauri-apps/tauri", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "primera" } },
+      { "type": "http_request", "data": { "method": "GET", "url": "https://api.github.com/repos/tauri-apps/tauri/releases/latest", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "segunda" } },
+      { "type": "write_file", "data": { "file_path": "~/dos-apis.txt", "content": "Repositorio:\n{{ primera }}\n\nÚltima release:\n{{ segunda }}\n", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "webhook-a-excel",
+    "title": "Webhook → Excel",
+    "description": "Cada petición que llegue al endpoint local se apunta como una fila",
+    "category": "web-apis",
+    "tags": ["webhook", "excel", "entrada", "registro"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "webhook", "data": { "path": "/registro", "method": "POST" } },
+      { "type": "excel_local", "data": { "file_path": "webhook.xlsx", "header": "[\"Método\",\"Ruta\",\"Cuerpo\"]", "values": "[[\"{{ webhook.method }}\",\"{{ webhook.path }}\",\"{{ webhook.body }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "webhook-a-telegram",
+    "title": "Webhook → Telegram",
+    "description": "Reenvía a tu chat todo lo que llegue al endpoint local",
+    "category": "web-apis",
+    "tags": ["webhook", "telegram", "entrada", "aviso"],
+    "popularity": 74,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "webhook", "data": { "path": "/aviso", "method": "POST" } },
+      { "type": "telegram", "data": { "message": "Petición recibida ({{ webhook.method }} {{ webhook.path }}):\n{{ webhook.body }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "webhook-a-slack",
+    "title": "Webhook → Slack",
+    "description": "Publica en Slack el contenido de cada petición que reciba el endpoint",
+    "category": "web-apis",
+    "tags": ["webhook", "slack", "entrada"],
+    "popularity": 72,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "webhook", "data": { "path": "/slack", "method": "POST" } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "Nueva petición en {{ webhook.path }}:\n{{ webhook.body }}", "channel": "#alertas", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "webhook-a-sqlite",
+    "title": "Webhook → SQLite",
+    "description": "Deja en una base local el histórico de peticiones recibidas",
+    "category": "web-apis",
+    "tags": ["webhook", "sqlite", "histórico", "entrada"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "webhook", "data": { "path": "/evento", "method": "POST" } },
+      { "type": "sqlite_execute", "data": { "db_path": "eventos.db", "query": "CREATE TABLE IF NOT EXISTS eventos (id INTEGER PRIMARY KEY AUTOINCREMENT, ruta TEXT, cuerpo TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "eventos.db", "query": "INSERT INTO eventos (ruta, cuerpo) VALUES (?, ?)", "params": "[\"{{ webhook.path }}\",\"{{ webhook.body }}\"]" } }
+    ]
+  },
+  {
+    "id": "subir-un-archivo-por-http",
+    "title": "Enviar un formulario a una API",
+    "description": "Publica en un endpoint los campos que rellene el usuario por formulario",
+    "category": "web-apis",
+    "tags": ["api", "post", "formulario", "http"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "asunto", "label": "Asunto", "type": "text", "required": true },
+            { "id": "detalle", "label": "Detalle", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "http_request",
+        "data": {
+          "method": "POST",
+          "url": "https://httpbin.org/post",
+          "headers": "{\"Content-Type\":\"application/json\"}",
+          "body": "{\"asunto\":\"{{ asunto }}\",\"detalle\":\"{{ detalle }}\"}",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/envio.txt", "content": "{{ respuesta }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "api-a-google-sheets",
+    "title": "API → Google Sheets",
+    "description": "Vuelca lo que devuelva un endpoint como una fila de una hoja compartida",
+    "category": "web-apis",
+    "tags": ["api", "google sheets", "http", "equipo"],
+    "popularity": 68,
+    "requires": ["google"],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "google_sheets", "data": { "spreadsheet_id": "", "range": "API!A:B", "values": "[[\"github\",\"{{ respuesta }}\"]]" } }
+    ]
+  },
+  {
+    "id": "api-con-consulta-de-parametros",
+    "title": "API con parámetros en la URL",
+    "description": "Llama a un endpoint que recibe la consulta por querystring y guarda el resultado",
+    "category": "web-apis",
+    "tags": ["api", "querystring", "http", "búsqueda"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "termino", "value": "tauri-apps" } },
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/search/repositories?q={{ termino }}",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "resultado"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/busqueda.json", "content": "{{ resultado }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "api-a-notion",
+    "title": "API → Notion",
+    "description": "Crea una página en Notion con el resultado de una llamada HTTP",
+    "category": "web-apis",
+    "tags": ["api", "notion", "http"],
+    "popularity": 66,
+    "requires": ["notion"],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "notion", "data": { "operation": "create_page", "token": "", "database_id": "", "page_id": "", "title": "Respuesta de la API de GitHub", "properties_json": "{\"Detalle\":\"{{ respuesta }}\"}", "filter_json": "" } }
+    ]
+  },
+  {
+    "id": "api-a-airtable",
+    "title": "API → Airtable",
+    "description": "Inserta en una tabla de Airtable el cuerpo que devuelva un servicio",
+    "category": "web-apis",
+    "tags": ["api", "airtable", "http"],
+    "popularity": 66,
+    "requires": ["airtable"],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "airtable", "data": { "operation": "create", "api_key": "", "base_id": "", "table": "Respuestas", "record_id": "", "fields_json": "{\"Respuesta\":\"{{ respuesta }}\"}" } }
+    ]
+  },
+  {
+    "id": "api-a-correo",
+    "title": "Respuesta de una API por correo",
+    "description": "Consulta un servicio y manda el resultado al correo del equipo",
+    "category": "web-apis",
+    "tags": ["api", "email", "http", "smtp"],
+    "popularity": 66,
+    "requires": ["smtp"],
+    "steps": [
+      {
+        "type": "http_request",
+        "data": {
+          "method": "GET",
+          "url": "https://api.github.com/repos/tauri-apps/tauri/releases/latest",
+          "headers": "{\"User-Agent\":\"grapScreen\"}",
+          "body": "",
+          "output_var": "respuesta"
+        }
+      },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "equipo@ejemplo.com",
+          "subject": "Resultado de la consulta a la API",
+          "body": "{{ respuesta }}",
+          "is_html": false
+        }
+      }
+    ]
+  }
+]

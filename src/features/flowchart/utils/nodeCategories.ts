@@ -10,6 +10,12 @@ export function getNodeCategory(type: FlowNodeType): NodeCategory {
     case "file_change":
     case "hotkey_trigger":
     case "polling":
+    case "whatsapp_trigger":
+    case "telegram_trigger":
+    case "email_trigger":
+    case "rss_trigger":
+    // Declarative n8n triggers are entries like any other trigger.
+    case "n8n_trigger":
       return "trigger";
     case "click":
     case "type":
@@ -77,6 +83,10 @@ export function getNodeCategory(type: FlowNodeType): NodeCategory {
     // n8n Core — disk access reads as a service-style side effect.
     case "read_file":
     case "write_file":
+    // Declarative n8n actions default to the service family. The palette shows
+    // each n8n node with its own descriptor accent, so this only decides the
+    // badge colour for a node that is already on the canvas.
+    case "n8n_node":
       return "services";
     case "slack_webhook":
     case "discord_webhook":

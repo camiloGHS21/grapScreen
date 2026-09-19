@@ -1,0 +1,284 @@
+[
+  {
+    "id": "informe-cada-manana",
+    "title": "Informe cada mañana",
+    "description": "Genera una fila de informe en Excel automáticamente una vez al día",
+    "category": "programadas",
+    "tags": ["cron", "diario", "informe", "excel"],
+    "popularity": 82,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "fila", "code": "const hoy = new Date().toISOString().slice(0, 10);\nconsole.log(JSON.stringify({ fila: 'Informe generado el ' + hoy }));" } },
+      { "type": "excel_local", "data": { "file_path": "informes.xlsx", "header": "[\"Contenido\"]", "values": "[[\"{{ $json.fila }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "respaldo-cada-hora",
+    "title": "Respaldo cada hora",
+    "description": "Deja una copia con la marca de tiempo en un archivo cada sesenta minutos",
+    "category": "programadas",
+    "tags": ["cron", "respaldo", "cada hora"],
+    "popularity": 80,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1h" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "marca", "code": "const ahora = new Date().toISOString();\nconsole.log(JSON.stringify({ marca: 'Respaldo ejecutado a las ' + ahora }));" } },
+      { "type": "write_file", "data": { "file_path": "~/respaldos.log", "content": "{{ $json.marca }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "tarea-al-arrancar",
+    "title": "Tarea al arrancar el equipo",
+    "description": "Ejecuta un paso automáticamente cada vez que se inicia el sistema",
+    "category": "programadas",
+    "tags": ["startup", "arranque", "inicio"],
+    "popularity": 78,
+    "requires": [],
+    "steps": [
+      { "type": "startup", "data": { "mode": "system", "delay_seconds": 5 } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "arranque", "code": "const ahora = new Date().toISOString();\nconsole.log(JSON.stringify({ arranque: 'Sistema iniciado: ' + ahora }));" } },
+      { "type": "write_file", "data": { "file_path": "~/arranque.txt", "content": "{{ $json.arranque }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "recordatorio-cada-30-minutos",
+    "title": "Recordatorio cada 30 minutos",
+    "description": "Manda un aviso a Telegram cada media hora para no perder el hilo",
+    "category": "programadas",
+    "tags": ["cron", "telegram", "recordatorio"],
+    "popularity": 76,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "30m" } },
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Han pasado 30 minutos. Revisa el progreso." } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "dia-de-hoy-en-un-archivo",
+    "title": "Registrar el día de hoy",
+    "description": "Escribe la fecha del día al arrancar para llevar un control sencillo",
+    "category": "programadas",
+    "tags": ["startup", "fecha", "registro"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "startup", "data": { "mode": "system", "delay_seconds": 0 } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "fecha", "code": "const hoy = new Date().toISOString().slice(0, 10);\nconsole.log(JSON.stringify({ fecha: 'Día de trabajo: ' + hoy }));" } },
+      { "type": "write_file", "data": { "file_path": "~/dias.log", "content": "{{ $json.fecha }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "limpieza-cada-semana",
+    "title": "Limpieza semanal de la base",
+    "description": "Borra una vez por semana los registros antiguos de la tabla",
+    "category": "programadas",
+    "tags": ["cron", "sqlite", "limpieza", "semanal"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "7d" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, creado_en TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "DELETE FROM registros WHERE creado_en != '' AND creado_en < ?", "params": "[\"2020-01-01\"]" } }
+    ]
+  },
+  {
+    "id": "sincronizar-al-arrancar",
+    "title": "Sincronizar datos al arrancar",
+    "description": "Deja lista la tabla e inserta la fila de inicio de sesión cada día",
+    "category": "programadas",
+    "tags": ["startup", "sqlite", "sincronizar"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "startup", "data": { "mode": "system", "delay_seconds": 0 } },
+      { "type": "sqlite_execute", "data": { "db_path": "sesiones.db", "query": "CREATE TABLE IF NOT EXISTS sesiones (id INTEGER PRIMARY KEY AUTOINCREMENT, evento TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "sesiones.db", "query": "INSERT INTO sesiones (evento) VALUES (?)", "params": "[\"Inicio de sesión\"]" } }
+    ]
+  },
+  {
+    "id": "latido-del-sistema",
+    "title": "Latido del sistema",
+    "description": "Manda la hora cada hora para saber que la automatización sigue viva",
+    "category": "programadas",
+    "tags": ["cron", "telegram", "latido", "monitorización"],
+    "popularity": 74,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1h" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "latido", "code": "const ahora = new Date().toISOString();\nconsole.log(JSON.stringify({ latido: 'Sigo vivo. Hora: ' + ahora }));" } },
+      { "type": "telegram", "data": { "message": "{{ $json.latido }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "revisar-un-feed-cada-cuarto-de-hora",
+    "title": "Revisar un feed cada 15 minutos",
+    "description": "Vigila un feed RSS y avisa por Telegram en cuanto publique algo nuevo",
+    "category": "programadas",
+    "tags": ["rss", "telegram", "vigilancia"],
+    "popularity": 74,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "rss_trigger", "data": { "url": "https://news.ycombinator.com/rss", "interval": 900 } },
+      { "type": "telegram", "data": { "message": "El feed ha publicado algo nuevo.", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "comprobar-un-archivo-cada-hora",
+    "title": "Comprobar un archivo cada hora",
+    "description": "Relee un archivo del disco cada hora y manda su tamaño por Telegram",
+    "category": "programadas",
+    "tags": ["cron", "read_file", "telegram", "tamaño"],
+    "popularity": 72,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1h" } },
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      { "type": "telegram", "data": { "message": "El archivo ocupa {{ $json.size_bytes }} bytes.", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "vigilar-una-web-cada-media-hora",
+    "title": "Vigilar una web cada 30 minutos",
+    "description": "Consulta un endpoint periódicamente y avisa en Slack cuando cambie",
+    "category": "programadas",
+    "tags": ["polling", "slack", "vigilancia", "api"],
+    "popularity": 72,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "polling", "data": { "url": "https://api.github.com/repos/tauri-apps/tauri", "method": "GET", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "interval": 1800 } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "La web vigilada ha cambiado ({{ polling.status }}).", "channel": "#alertas", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "informe-semanal-a-slack",
+    "title": "Informe semanal en Slack",
+    "description": "Publica un resumen en el canal del equipo una vez por semana",
+    "category": "programadas",
+    "tags": ["cron", "slack", "semanal", "informe"],
+    "popularity": 72,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "7d" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "informe", "code": "console.log(JSON.stringify({ informe: 'Informe semanal: repasa las tareas cerradas y las pendientes.' }));" } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ $json.informe }}", "channel": "#general", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "cierre-de-jornada",
+    "title": "Cierre de jornada",
+    "description": "Al terminar el día guarda el cierre en Excel y lo anuncia por Telegram",
+    "category": "programadas",
+    "tags": ["cron", "excel", "telegram", "cierre"],
+    "popularity": 72,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "cierre", "code": "const hoy = new Date().toISOString().slice(0, 10);\nconsole.log(JSON.stringify({ cierre: 'Jornada cerrada el ' + hoy }));" } },
+      { "type": "excel_local", "data": { "file_path": "cierres.xlsx", "header": "[\"Cierre\"]", "values": "[[\"{{ $json.cierre }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } },
+      { "type": "telegram", "data": { "message": "{{ $json.cierre }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "arranque-con-aviso-y-registro",
+    "title": "Arranque con aviso y registro",
+    "description": "Registra el arranque en Excel y avisa por Telegram en el mismo flujo",
+    "category": "programadas",
+    "tags": ["startup", "excel", "telegram"],
+    "popularity": 70,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "startup", "data": { "mode": "system", "delay_seconds": 0 } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "evento", "code": "const ahora = new Date().toISOString();\nconsole.log(JSON.stringify({ evento: 'Arranque a las ' + ahora }));" } },
+      { "type": "excel_local", "data": { "file_path": "arranques.xlsx", "header": "[\"Evento\"]", "values": "[[\"{{ $json.evento }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } },
+      { "type": "telegram", "data": { "message": "{{ $json.evento }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "comprobacion-cada-cinco-minutos",
+    "title": "Comprobación cada cinco minutos",
+    "description": "Revisa el estado de la base cada cinco minutos y anota cuántos registros hay",
+    "category": "programadas",
+    "tags": ["cron", "sqlite", "monitorización"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "5m" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT COUNT(*) AS total FROM registros", "params": "" } },
+      { "type": "write_file", "data": { "file_path": "~/comprobaciones.log", "content": "Registros en la base: {{ $json.total }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "resumen-nocturno-a-excel",
+    "title": "Resumen nocturno en Excel",
+    "description": "Deja preparado cada noche el resumen del día en un libro de Excel",
+    "category": "programadas",
+    "tags": ["cron", "excel", "nocturno", "resumen"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "resumen", "code": "const hoy = new Date().toISOString().slice(0, 10);\nconsole.log(JSON.stringify({ resumen: 'Resumen nocturno del ' + hoy }));" } },
+      { "type": "excel_local", "data": { "file_path": "resumen-nocturno.xlsx", "header": "[\"Resumen\"]", "values": "[[\"{{ $json.resumen }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "tarea-de-fin-de-semana",
+    "title": "Tarea de fin de semana",
+    "description": "Ejecuta el mantenimiento pesado una sola vez por semana",
+    "category": "programadas",
+    "tags": ["cron", "semanal", "mantenimiento"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "7d" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "tarea", "code": "console.log(JSON.stringify({ tarea: 'Mantenimiento semanal ejecutado.' }));" } },
+      { "type": "excel_local", "data": { "file_path": "mantenimiento.xlsx", "header": "[\"Tarea\"]", "values": "[[\"{{ $json.tarea }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "limpiar-logs-cada-dia",
+    "title": "Reiniciar el log cada día",
+    "description": "Deja el archivo de registro a cero una vez al día para que no crezca",
+    "category": "programadas",
+    "tags": ["cron", "log", "limpieza", "diario"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "inicio", "code": "const hoy = new Date().toISOString().slice(0, 10);\nconsole.log(JSON.stringify({ inicio: '--- Log reiniciado el ' + hoy + ' ---' }));" } },
+      { "type": "write_file", "data": { "file_path": "~/actividad.log", "content": "{{ $json.inicio }}\n", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "sincronizacion-cada-seis-horas",
+    "title": "Sincronizar cada seis horas",
+    "description": "Exporta el estado actual a un archivo JSON cuatro veces al día",
+    "category": "programadas",
+    "tags": ["cron", "json", "sincronizar"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "6h" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT nombre FROM registros ORDER BY id", "params": "" } },
+      { "type": "write_file", "data": { "file_path": "~/sincronizacion.json", "content": "{{ $json }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "saludo-de-buenos-dias",
+    "title": "Saludo de buenos días",
+    "description": "Manda un mensaje fijo a Telegram una vez al día al empezar la jornada",
+    "category": "programadas",
+    "tags": ["cron", "telegram", "diario", "saludo"],
+    "popularity": 72,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "set_var", "data": { "name": "saludo", "value": "Buenos días. Empieza la jornada: revisa la lista de tareas." } },
+      { "type": "telegram", "data": { "message": "{{ saludo }}", "chat_id": "", "token": "" } }
+    ]
+  }
+]

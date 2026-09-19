@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { ADVANCED_NODE_TYPES } from "../utils/nodeCatalog";
-import type { FlowNode, FlowConnection, RecordedEvent, AddMenuState } from "../../../types";
+import type { FlowNode, FlowConnection, RecordedEvent } from "../../../types";
 import { FlowchartNode } from "../FlowchartNode";
 import { NodeDetailPanel } from "../NodeDetailPanel";
 import { getNodePorts } from "../buildNodes";
@@ -37,7 +37,6 @@ interface FlowchartNodeGroupProps {
   notes: any;
   saveLayoutMetadata: (positions: any, connections: any, notes: any, disabledNodes: any) => void;
   containerRef: React.RefObject<HTMLDivElement>;
-  setAddMenu: React.Dispatch<React.SetStateAction<AddMenuState | null>>;
   setCtxMenu: React.Dispatch<React.SetStateAction<{ id: string; x: number; y: number; isNote?: boolean } | null>>;
   isEditingGroup: boolean;
   setIsEditingGroup: React.Dispatch<React.SetStateAction<boolean>>;
@@ -81,7 +80,6 @@ export function FlowchartNodeGroup({
   notes,
   saveLayoutMetadata,
   containerRef,
-  setAddMenu,
   setCtxMenu,
   isEditingGroup,
   setIsEditingGroup,

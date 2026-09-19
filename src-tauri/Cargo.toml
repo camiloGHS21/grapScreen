@@ -44,6 +44,8 @@ reqwest = { version = "0.12", default-features = false, features = ["blocking", 
 # SQLite nodes. `bundled` compiles SQLite from source so the app never depends
 # on a sqlite3.dll being present on the machine.
 rusqlite = { version = "0.32", features = ["bundled"] }
+# PostgreSQL node support in Rust backend.
+postgres = { version = "0.19", default-features = false }
 # Phase 11 — integrations. Email (SMTP) uses lettre with rustls to stay
 # consistent with the native HTTP client (no OpenSSL on the system).
 lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "rustls-tls"] }

@@ -24,4 +24,37 @@ pub trait ReplayUseCase: Send + Sync {
     }
     fn stop_replay(&self, file_id: &str) -> Result<()>;
     fn stop_all_replays(&self) -> Result<()>;
+
+    /// n8n "Execute step": run ONE node and return what it produced.
+    ///
+    /// Blocking on purpose — the caller is waiting to display the step's real
+    /// input and output. Not every implementation can do this (a legacy linear
+    /// recording has no nodes), hence a default that says so plainly rather than
+    /// silently running the whole thing.
+    fn run_single_node(
+        &self,
+        project_name: &str,
+        file_id: &str,
+        node_id: &str,
+    ) -> Result<Vec<crate::application::execution_history::NodeRunStatus>> {
+        let _ = (project_name, file_id, node_id);
+        Err(crate::domain::entities::DomainError::Other(
+            "Esta automatización no es un flujo de nodos, así que no se puede ejecutar un paso \
+             suelto."
+                .to_string(),
+        ))
+    }
+
+    /// Executes the workflow with a chat message input and returns the agent reply.
+    fn test_chat_workflow(
+        &self,
+        project_name: &str,
+        file_id: &str,
+        message: &str,
+    ) -> Result<String> {
+        let _ = (project_name, file_id, message);
+        Err(crate::domain::entities::DomainError::Other(
+            "Esta automatización no admite pruebas de chat o no está implementada.".to_string(),
+        ))
+    }
 }

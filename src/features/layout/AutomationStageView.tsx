@@ -1,7 +1,5 @@
 import React from "react";
 import Flowchart from "../../Flowchart";
-import { FloatingBot } from "../ai/FloatingBot";
-import { AiAssistantDrawer } from "../ai/AiAssistantDrawer";
 import { ExecutionHistoryPanel } from "./ExecutionHistoryPanel";
 import { NodeEditModal } from "../modals/NodeEditModal";
 import { EditorTopBar, type EditorTab } from "../flowchart/components/EditorTopBar";
@@ -11,6 +9,7 @@ import { TriggersView } from "./TriggersView";
 import { ExportAutomationModal } from "../modals/ExportAutomationModal";
 import { formatDuration } from "../../utils/format";
 import { invoke } from "@tauri-apps/api/core";
+import { buildNodes } from "../flowchart/buildNodes";
 interface AutomationStageViewProps {
   projs: any;
   auts: any;
@@ -136,6 +135,14 @@ export function AutomationStageView({
 
   const handleRunFlow = () => {
     if (!auts.selectedAutomation) return;
+    const events = auts.selectedProjectDetail?.events || [];
+    const currentNodes = buildNodes(events);
+    const errorNodes = currentNodes.filter((n: any) => n.hasWarning);
+    if (errorNodes.length > 0) {
+      const names = errorNodes.map((n: any) => n.label).slice(0, 3).join(", ");
+      notify(`⚠ No se puede ejecutar: hay nodos sin configurar o con errores (${names})`);
+      return;
+    }
     exec.execute(auts.selectedAutomation);
   };
 
@@ -212,6 +219,9 @@ export function AutomationStageView({
                 console.error(e);
               }
             }}
+            aiProps={ai}
+            projectName={projs.selectedProject?.name}
+            automationId={auts.selectedAutomation?.id}
           />
         )}
 
@@ -239,23 +249,6 @@ export function AutomationStageView({
           automationId={auts.selectedAutomation?.id || ""}
           open={historyOpen}
           onClose={() => setHistoryOpen(false)}
-        />
-
-        <FloatingBot
-          botPos={botPos}
-          setBotPos={setBotPos}
-          setAiChatOpen={ai.setAiChatOpen}
-        />
-
-        <AiAssistantDrawer
-          aiChatOpen={ai.aiChatOpen}
-          setAiChatOpen={ai.setAiChatOpen}
-          botPos={botPos}
-          aiMessages={ai.aiMessages}
-          aiLoading={ai.aiLoading}
-          aiPrompt={ai.aiPrompt}
-          setAiPrompt={ai.setAiPrompt}
-          sendAiMessage={ai.sendAiMessage}
         />
 
         <NodeEditModal

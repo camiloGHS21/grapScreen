@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { FlowNode, RecordedEvent, Project, AutomationSummary, AutomationDetail } from "../types";
+import { FlowNode, RecordedEvent, Project, AutomationSummary, AutomationDetail, AddStepExtra } from "../types";
 import { buildNodes } from "../features/flowchart/buildNodes";
 import { ADVANCED_NODE_TYPES } from "../features/flowchart/utils/nodeCatalog";
 import { useFlowchartEditState } from "./useFlowchartEditState";
 import { updateEventFromState, deleteEventFromList } from "../features/flowchart/utils/eventModifiers";
 import { useDialog } from "../components/DialogProvider";
-import { computeAddStepEvents, computeAddStepChainEvents } from "../features/flowchart/utils/stepInsertion";
+import { computeAddStepEvents, computeAddStepChainEvents, ChainStep } from "../features/flowchart/utils/stepInsertion";
 
 export function useFlowchartEdit(
   selectedProject: Project | null,
@@ -45,6 +45,7 @@ export function useFlowchartEdit(
     afterNodeId: string,
     sourcePortId?: string,
     position?: { x: number; y: number },
+    extra?: AddStepExtra,
   ) => {
     if (!selectedProjectDetail || !selectedProject || !selectedAutomation) return;
     const { events, newNodeId } = await computeAddStepEvents(
@@ -53,13 +54,14 @@ export function useFlowchartEdit(
       afterNodeId,
       sourcePortId,
       position,
+      extra,
     );
     await saveEvents(events);
     return newNodeId;
   };
-  const addStepChain = async (types: FlowNode["type"][], initialAfterNodeId: string, sourcePortId?: string) => {
-    if (!selectedProjectDetail || !selectedProject || !selectedAutomation || types.length === 0) return;
-    const events = await computeAddStepChainEvents(selectedProjectDetail, types, initialAfterNodeId, sourcePortId);
+  const addStepChain = async (steps: ChainStep[], initialAfterNodeId: string, sourcePortId?: string) => {
+    if (!selectedProjectDetail || !selectedProject || !selectedAutomation || steps.length === 0) return;
+    const events = await computeAddStepChainEvents(selectedProjectDetail, steps, initialAfterNodeId, sourcePortId);
     await saveEvents(events);
   };
 

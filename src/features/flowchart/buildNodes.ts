@@ -1,12 +1,35 @@
 import { FlowNode, RecordedEvent } from "../../types";
 import { getNodePorts } from "./utils/nodePorts";
+import { checkNodeWarning } from "./utils/nodeValidation";
 
 export { getNodePorts, getNodeIcon } from "./utils/nodePorts";
 export { getNodeCategory, CATEGORY_COLORS, CATEGORY_LABELS } from "./utils/nodeCategories";
 
+/**
+ * Monotonic tiebreaker for minted node ids.
+ *
+ * `Date.now()` alone is not enough. The chain inserter calls `buildNodes` once
+ * per step, several steps fall inside the same millisecond, and a `seq` that
+ * restarts at 0 on every call then hands the *same* id to two different nodes.
+ * Node ids key both the connections and the saved layout positions, so a
+ * duplicate makes the canvas treat two steps as one: a chain that repeated a
+ * node type came out with the second occurrence inserted in the wrong place and
+ * its connection missing. The counter only ever grows, and an id is written
+ * onto the event the first time it is minted, so re-deriving the same event list
+ * still yields the same ids.
+ */
+let nodeIdCounter = 0;
+
+function mintNodeId(): string {
+  return `n${Date.now().toString(36)}${(nodeIdCounter++).toString(36)}`;
+}
+
 function formatKeyPreview(events: RecordedEvent[], start: number, end: number) {
   let text = "";
   for (let k = start; k <= end; k++) {
+    // A keystroke is a press and its release; counting both would render every
+    // character twice.
+    if (events[k].kind !== "key_press") continue;
     const key = events[k].data.key;
     if (key && key.startsWith("Key")) text += key.replace("Key", "").toLowerCase();
     else if (key === "Space") text += " ";
@@ -43,15 +66,15 @@ export function buildNodes(
   target_app?: { exe: string; title: string; class: string; name?: string; rect: [number, number, number, number] } | null
 ): FlowNode[] {
   // Ensure every event has a persistent unique ID
-  let seq = 0;
   events.forEach(e => {
     if (e.kind === "layout_metadata") return;
     if (!e.data) e.data = {};
     if (!e.data.id) {
-      // Deterministic: the same event list must always produce the same node
-      // ids, otherwise a freshly added node (whose layout entry is written
-      // before the save round-trips) would be orphaned by a new random id.
-      e.data.id = `n${Date.now().toString(36)}${(seq++).toString(36)}`;
+      // The same event list must always produce the same node ids, otherwise a
+      // freshly added node (whose layout entry is written before the save
+      // round-trips) would be orphaned by a new random id. Writing the id onto
+      // the event the first time it is minted is what makes that hold.
+      e.data.id = mintNodeId();
     }
   });
 
@@ -59,17 +82,7 @@ export function buildNodes(
 
   if (target_app) {
     const name = target_app.name || appDisplayName(target_app);
-    list.push({
-      id: "app",
-      type: "app",
-      label: name,
-      details: target_app.title || name,
-      eventIndex: 0,
-      start: 0,
-      end: events.length - 1,
-      app: target_app,
-      ports: getNodePorts("app"),
-    });
+    list.push({ id: "app", type: "app", label: name, details: target_app.title || name, eventIndex: 0, start: 0, end: events.length - 1, app: target_app, ports: getNodePorts("app") });
   } else {
     let lastTime = 0;
     let lastEvent: RecordedEvent | null = null;
@@ -123,7 +136,11 @@ export function buildNodes(
       } else if (e.kind === "key_press") {
         const rangeStart = i;
         let j = i;
-        while (j < events.length && events[j].kind === "key_press") j++;
+        // A typed run is a sequence of press/release pairs, so the range has to
+        // absorb the releases too. Stopping at the first `key_release` made one
+        // "Escribir" step render as one node per character, because every press
+        // started its own node.
+        while (j < events.length && (events[j].kind === "key_press" || events[j].kind === "key_release")) j++;
         const rangeEnd = j - 1;
         i = j - 1;
         const text = formatKeyPreview(events, rangeStart, rangeEnd);
@@ -159,7 +176,20 @@ export function buildNodes(
       } else if (e.kind === "telegram") {
         list.push({ id: `telegram-${e.data.id}`, type: "telegram", label: "Telegram", details: e.data.message ? e.data.message.slice(0, 20) + "…" : "Enviar alerta", start: i, end: i, eventIndex: i, ports: getNodePorts("telegram") });
       } else if (e.kind === "ai_agent") {
-        list.push({ id: `ai_agent-${e.data.id}`, type: "ai_agent", label: "Agente IA", details: e.data.model || "gpt-4o-mini", start: i, end: i, eventIndex: i, ports: getNodePorts("ai_agent") });
+        // One agent node, two origins: a flow saved before the palette moved to
+        // n8n's Agent (no `n8n_key`, own label) and the catalogue node itself,
+        // which carries the n8n name, logo and key. Both are the same kind, so
+        // both keep working; only what is displayed changes.
+        const agentKey = (e.data.n8n_key || "").toString();
+        list.push({
+          id: `ai_agent-${e.data.id}`,
+          type: "ai_agent",
+          label: (e.data.n8n_name || "Agente IA").toString(),
+          details: e.data.model || "gpt-4o-mini",
+          start: i, end: i, eventIndex: i,
+          ports: getNodePorts("ai_agent"),
+          n8nKey: agentKey || undefined,
+        });
       } else if (e.kind === "form") {
         list.push({ id: `form-${e.data.id}`, type: "form", label: "Formulario UI", details: `${e.data.fields?.length || 0} campos`, start: i, end: i, eventIndex: i, ports: getNodePorts("form") });
       } else if (e.kind === "excel_local") {
@@ -184,6 +214,17 @@ export function buildNodes(
         list.push({ id: `sub_workflow-${e.data.id}`, type: "sub_workflow", label: "Sub-Flujo", details: e.data.workflow_name || e.data.workflow_id || "Ejecutar flujo", start: i, end: i, eventIndex: i, ports: getNodePorts("sub_workflow") });
       } else if (e.kind === "cron") {
         list.push({ id: `cron-${e.data.id}`, type: "cron", label: "Intervalo / Cron", details: e.data.schedule || "1h", start: i, end: i, eventIndex: i, ports: getNodePorts("cron") });
+      } else if (e.kind === "rss_trigger") {
+        // The four n8n-parity triggers were missing here, so a flow built from
+        // one of them drew no node at all for its own entry point: the trigger
+        // was saved, armed by the daemon, and invisible on the canvas.
+        list.push({ id: `rss_trigger-${e.data.id}`, type: "rss_trigger", label: "Feed RSS", details: (e.data.url || "sin URL").toString().slice(0, 34), start: i, end: i, eventIndex: i, ports: getNodePorts("rss_trigger") });
+      } else if (e.kind === "telegram_trigger") {
+        list.push({ id: `telegram_trigger-${e.data.id}`, type: "telegram_trigger", label: "Mensaje de Telegram", details: e.data.bot_token ? "bot configurado" : "falta el token", start: i, end: i, eventIndex: i, ports: getNodePorts("telegram_trigger") });
+      } else if (e.kind === "whatsapp_trigger") {
+        list.push({ id: `whatsapp_trigger-${e.data.id}`, type: "whatsapp_trigger", label: "Mensaje de WhatsApp", details: e.data.phone_number_id || "webhook /webhook/whatsapp", start: i, end: i, eventIndex: i, ports: getNodePorts("whatsapp_trigger") });
+      } else if (e.kind === "email_trigger") {
+        list.push({ id: `email_trigger-${e.data.id}`, type: "email_trigger", label: "Correo entrante", details: e.data.host || "IMAP sin configurar", start: i, end: i, eventIndex: i, ports: getNodePorts("email_trigger") });
       } else if (e.kind === "file_change") {
         list.push({ id: `file_change-${e.data.id}`, type: "file_change", label: "Cambio Archivo", details: e.data.path || "Monitorear", start: i, end: i, eventIndex: i, ports: getNodePorts("file_change") });
       } else if (e.kind === "hotkey_trigger") {
@@ -238,6 +279,8 @@ export function buildNodes(
         list.push({ id: `stop_error-${e.data.id}`, type: "stop_error", label: "Detener y fallar", details: (e.data.message || "abortar").toString().slice(0, 30), start: i, end: i, eventIndex: i, ports: getNodePorts("stop_error") });
       } else if (e.kind === "noop") {
         list.push({ id: `noop-${e.data.id}`, type: "noop", label: "No hacer nada", details: "deja pasar los items", start: i, end: i, eventIndex: i, ports: getNodePorts("noop") });
+      } else if (e.kind === "end") {
+        list.push({ id: `end-${e.data.id}`, type: "end", label: "Fin", details: "termina el flujo", start: i, end: i, eventIndex: i, ports: getNodePorts("end") });
       } else if (e.kind === "split_out") {
         list.push({ id: `split_out-${e.data.id}`, type: "split_out", label: "Dividir lista", details: (e.data.field || "sin campo").toString().slice(0, 30), start: i, end: i, eventIndex: i, ports: getNodePorts("split_out") });
       } else if (e.kind === "summarize") {
@@ -257,20 +300,52 @@ export function buildNodes(
         list.push({ id: `read_file-${e.data.id}`, type: "read_file", label: "Leer archivo", details: (e.data.file_path || "sin ruta").toString().slice(0, 34), start: i, end: i, eventIndex: i, ports: getNodePorts("read_file") });
       } else if (e.kind === "write_file") {
         list.push({ id: `write_file-${e.data.id}`, type: "write_file", label: "Escribir archivo", details: (e.data.file_path || "sin ruta").toString().slice(0, 34), start: i, end: i, eventIndex: i, ports: getNodePorts("write_file") });
+      } else if (e.kind === "n8n_node") {
+        // The visible name is the n8n node's own display name ("Slack",
+        // "Google Sheets"), not the shared engine kind — otherwise every one of
+        // the 554 catalogue nodes would read as "Nodo n8n".
+        const method = (e.data.n8n_method || "GET").toString().toUpperCase();
+        const path = (e.data.n8n_path || "").toString();
+        const nKey = (e.data.n8n_key || "").toString();
+        const nName = (e.data.n8n_name || "").toString();
+        // Only n8n's Agent is an agent. Matching on the word "agent" used to
+        // pull in any catalogue node that happened to carry it in its name or
+        // key, and every one of those came back with the agent's provider form
+        // instead of its own n8n parameters.
+        const isAgent = nKey === "Agent";
+        list.push({
+          id: `n8n_node-${e.data.id}`,
+          type: isAgent ? "ai_agent" : "n8n_node",
+          label: (e.data.n8n_name || e.data.n8n_key || "Nodo n8n").toString(),
+          details: isAgent ? (e.data.model || "Agente IA").toString() : (path ? `${method} ${path}`.slice(0, 34) : (e.data.n8n_base_url || method).toString().slice(0, 34)),
+          start: i, end: i, eventIndex: i,
+          ports: isAgent ? getNodePorts("ai_agent") : getNodePorts("n8n_node"),
+          n8nKey: nKey,
+        });
+      } else if (e.kind === "n8n_trigger") {
+        list.push({
+          id: `n8n_trigger-${e.data.id}`,
+          type: "n8n_trigger",
+          label: (e.data.n8n_name || e.data.n8n_key || "Disparador n8n").toString(),
+          details: "disparador",
+          start: i, end: i, eventIndex: i,
+          ports: getNodePorts("n8n_trigger"),
+          n8nKey: (e.data.n8n_key || "").toString(),
+        });
       }
     }
   }
 
-  // n8n-style custom node names: honor `custom_name` saved in the event data.
+  const layoutMeta = events.find(e => e.kind === "layout_metadata");
+  const conns: any[] = layoutMeta?.data?.connections || [];
   list.forEach(n => {
     if (n.eventIndex != null) {
-      const custom = events[n.eventIndex]?.data?.custom_name;
-      if (typeof custom === "string" && custom.trim()) {
-        n.label = custom.trim();
-      }
+      const evt = events[n.eventIndex];
+      if (evt?.data?.custom_name) n.label = String(evt.data.custom_name).trim() || n.label;
+      const hasModel = n.type === "ai_agent" && conns.some(c => c.targetNodeId === n.id && c.targetPortId === "model");
+      if (evt) n.hasWarning = hasModel ? false : checkNodeWarning(evt);
     }
   });
-
   return list;
 }
 export default buildNodes;

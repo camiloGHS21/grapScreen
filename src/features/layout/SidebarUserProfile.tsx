@@ -10,6 +10,7 @@ interface SidebarUserProfileProps {
 export function SidebarUserProfile({ user, onLogout }: SidebarUserProfileProps) {
   return (
     <div
+      className="sidebar-user"
       style={{
         marginTop: 'auto',
         padding: '10px 12px',

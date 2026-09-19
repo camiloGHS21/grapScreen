@@ -1,0 +1,300 @@
+[
+  {
+    "id": "abrir-el-bloc-de-notas",
+    "title": "Abrir el Bloc de notas",
+    "description": "Lanza el Bloc de notas y espera un momento a que termine de cargar",
+    "category": "escritorio-rpa",
+    "tags": ["escritorio", "open_app", "notepad"],
+    "popularity": 84,
+    "requires": [],
+    "steps": [
+      { "type": "open_app", "data": { "exe": "notepad.exe" } },
+      { "type": "delay", "data": { "seconds": 2 } }
+    ]
+  },
+  {
+    "id": "captura-de-pantalla",
+    "title": "Captura de pantalla",
+    "description": "Guarda una imagen del escritorio con el nombre que le indiques",
+    "category": "escritorio-rpa",
+    "tags": ["captura", "screenshot", "pantalla"],
+    "popularity": 82,
+    "requires": [],
+    "steps": [
+      { "type": "screenshot", "data": { "filename": "captura.png" } }
+    ]
+  },
+  {
+    "id": "abrir-notepad-y-escribir",
+    "title": "Abrir el Bloc de notas y escribir",
+    "description": "Lanza una aplicación y teclea texto en ella tras esperar a que abra",
+    "category": "escritorio-rpa",
+    "tags": ["escritorio", "escribir", "notepad", "type"],
+    "popularity": 80,
+    "requires": [],
+    "steps": [
+      { "type": "open_app", "data": { "exe": "notepad.exe" } },
+      { "type": "delay", "data": { "seconds": 2 } },
+      { "type": "type", "data": {} },
+      { "type": "hotkey", "data": { "keys": "Ctrl+S" } }
+    ]
+  },
+  {
+    "id": "abrir-el-navegador",
+    "title": "Abrir el navegador",
+    "description": "Lanza el navegador predeterminado para empezar a trabajar sobre él",
+    "category": "escritorio-rpa",
+    "tags": ["escritorio", "open_app", "navegador"],
+    "popularity": 80,
+    "requires": [],
+    "steps": [
+      { "type": "open_app", "data": { "exe": "chrome.exe" } },
+      { "type": "delay", "data": { "seconds": 3 } }
+    ]
+  },
+  {
+    "id": "captura-y-aviso",
+    "title": "Captura y aviso por Telegram",
+    "description": "Hace una captura de pantalla y avisa de que ya está lista",
+    "category": "escritorio-rpa",
+    "tags": ["captura", "telegram", "aviso"],
+    "popularity": 78,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "screenshot", "data": { "filename": "captura-aviso.png" } },
+      { "type": "telegram", "data": { "message": "Captura guardada como captura-aviso.png", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "ejecutar-un-comando",
+    "title": "Ejecutar un comando de terminal",
+    "description": "Lanza un comando del sistema y deja que termine antes de seguir",
+    "category": "escritorio-rpa",
+    "tags": ["terminal", "run_cmd", "comando"],
+    "popularity": 78,
+    "requires": [],
+    "steps": [
+      { "type": "run_cmd", "data": { "command": "ping", "args": "-n 1 google.com" } }
+    ]
+  },
+  {
+    "id": "abrir-y-cerrar-una-app",
+    "title": "Abrir y cerrar una aplicación",
+    "description": "Abre el Bloc de notas, espera y lo cierra para dejar la sesión limpia",
+    "category": "escritorio-rpa",
+    "tags": ["escritorio", "cerrar", "close_app"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "open_app", "data": { "exe": "notepad.exe" } },
+      { "type": "delay", "data": { "seconds": 3 } },
+      { "type": "close_app", "data": { "name": "notepad" } }
+    ]
+  },
+  {
+    "id": "abrir-una-carpeta",
+    "title": "Abrir una carpeta en el explorador",
+    "description": "Muestra el contenido de tu carpeta personal en una ventana del explorador",
+    "category": "escritorio-rpa",
+    "tags": ["explorador", "carpeta", "run_cmd"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "run_cmd", "data": { "command": "explorer", "args": "" } }
+    ]
+  },
+  {
+    "id": "escribir-un-texto-fijo",
+    "title": "Escribir un texto con el teclado",
+    "description": "Teclea un texto en la ventana activa; edita el nodo para cambiarlo",
+    "category": "escritorio-rpa",
+    "tags": ["teclado", "type", "escribir"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "delay", "data": { "seconds": 1 } },
+      { "type": "type", "data": {} }
+    ]
+  },
+  {
+    "id": "atajo-de-teclado",
+    "title": "Pulsar un atajo de teclado",
+    "description": "Envía una combinación de teclas a la ventana que esté activa",
+    "category": "escritorio-rpa",
+    "tags": ["hotkey", "atajo", "teclado"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "delay", "data": { "seconds": 1 } },
+      { "type": "hotkey", "data": { "keys": "Ctrl+C" } }
+    ]
+  },
+  {
+    "id": "copiar-y-pegar-entre-ventanas",
+    "title": "Copiar y pegar entre ventanas",
+    "description": "Copia lo seleccionado, cambia de ventana y lo pega en la nueva",
+    "category": "escritorio-rpa",
+    "tags": ["copiar", "pegar", "hotkey", "portapapeles"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "hotkey", "data": { "keys": "Ctrl+C" } },
+      { "type": "delay", "data": { "seconds": 1 } },
+      { "type": "hotkey", "data": { "keys": "Alt+Tab" } },
+      { "type": "delay", "data": { "seconds": 1 } },
+      { "type": "hotkey", "data": { "keys": "Ctrl+V" } }
+    ]
+  },
+  {
+    "id": "guardar-con-ctrl-s",
+    "title": "Guardar el documento activo",
+    "description": "Manda Ctrl+S a la ventana activa para guardar sin tocar el ratón",
+    "category": "escritorio-rpa",
+    "tags": ["hotkey", "guardar", "ctrl+s"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "delay", "data": { "seconds": 1 } },
+      { "type": "hotkey", "data": { "keys": "Ctrl+S" } }
+    ]
+  },
+  {
+    "id": "scroll-por-una-pagina",
+    "title": "Desplazar la pantalla",
+    "description": "Baja la vista de la ventana activa una cantidad fija de líneas",
+    "category": "escritorio-rpa",
+    "tags": ["scroll", "desplazar", "ratón"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "scroll", "data": { "x": 0, "y": -120 } },
+      { "type": "delay", "data": { "seconds": 1 } },
+      { "type": "scroll", "data": { "x": 0, "y": -120 } }
+    ]
+  },
+  {
+    "id": "secuencia-de-clics",
+    "title": "Secuencia de clics",
+    "description": "Hace varios clics seguidos con una pausa entre ellos",
+    "category": "escritorio-rpa",
+    "tags": ["click", "ratón", "secuencia"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "click", "data": {} },
+      { "type": "delay", "data": { "seconds": 1 } },
+      { "type": "click", "data": {} },
+      { "type": "delay", "data": { "seconds": 1 } },
+      { "type": "click", "data": {} }
+    ]
+  },
+  {
+    "id": "esperar-y-capturar",
+    "title": "Esperar y capturar",
+    "description": "Deja pasar unos segundos a que la pantalla se estabilice y captura",
+    "category": "escritorio-rpa",
+    "tags": ["captura", "espera", "delay"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "delay", "data": { "seconds": 5 } },
+      { "type": "screenshot", "data": { "filename": "captura-tardia.png" } }
+    ]
+  },
+  {
+    "id": "rutina-de-la-manana",
+    "title": "Rutina de la mañana",
+    "description": "Al arrancar el equipo abre de golpe las aplicaciones del día a día",
+    "category": "escritorio-rpa",
+    "tags": ["startup", "rutina", "productividad"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "startup", "data": { "mode": "system", "delay_seconds": 10 } },
+      { "type": "open_app", "data": { "exe": "chrome.exe" } },
+      { "type": "delay", "data": { "seconds": 3 } },
+      { "type": "open_app", "data": { "exe": "notepad.exe" } }
+    ]
+  },
+  {
+    "id": "captura-cada-hora",
+    "title": "Captura cada hora",
+    "description": "Deja una imagen de la pantalla cada hora para tener un histórico visual",
+    "category": "escritorio-rpa",
+    "tags": ["captura", "cron", "histórico"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1h" } },
+      { "type": "screenshot", "data": { "filename": "captura-horaria.png" } }
+    ]
+  },
+  {
+    "id": "cerrar-una-aplicacion",
+    "title": "Cerrar una aplicación",
+    "description": "Termina el proceso indicado sin que tengas que buscarlo en el administrador",
+    "category": "escritorio-rpa",
+    "tags": ["close_app", "cerrar", "proceso"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "close_app", "data": { "name": "notepad" } }
+    ]
+  },
+  {
+    "id": "comando-de-red",
+    "title": "Comprobar la red con un comando",
+    "description": "Ejecuta una utilidad de red y guarda su salida en un archivo de texto",
+    "category": "escritorio-rpa",
+    "tags": ["red", "run_cmd", "diagnóstico"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "run_cmd", "data": { "command": "ipconfig", "args": "/all" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "nota", "code": "console.log(JSON.stringify({ nota: 'Comando de red ejecutado. Revisa la consola del nodo para ver la salida.' }));" } },
+      { "type": "write_file", "data": { "file_path": "~/red.log", "content": "{{ $json.nota }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "abrir-un-archivo-con-su-programa",
+    "title": "Abrir un archivo con su programa",
+    "description": "Lanza el visor predeterminado para un archivo concreto del disco",
+    "category": "escritorio-rpa",
+    "tags": ["open_app", "abrir", "archivo"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "run_cmd", "data": { "command": "cmd", "args": "/c start \"\" \"%USERPROFILE%\\datos.txt\"" } },
+      { "type": "delay", "data": { "seconds": 2 } }
+    ]
+  },
+  {
+    "id": "atajo-de-emergencia",
+    "title": "Atajo de emergencia",
+    "description": "Con un atajo de teclado cierras de golpe una aplicación que se ha colgado",
+    "category": "escritorio-rpa",
+    "tags": ["hotkey", "emergencia", "taskkill"],
+    "popularity": 64,
+    "requires": [],
+    "steps": [
+      { "type": "hotkey_trigger", "data": { "shortcut": "Ctrl+Alt+X" } },
+      { "type": "run_cmd", "data": { "command": "taskkill", "args": "/F /IM notepad.exe" } }
+    ]
+  },
+  {
+    "id": "abrir-dos-apps-y-capturar",
+    "title": "Abrir dos aplicaciones y capturar",
+    "description": "Prepara el escritorio con dos programas abiertos y deja una captura del estado",
+    "category": "escritorio-rpa",
+    "tags": ["escritorio", "captura", "open_app", "preparar"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "open_app", "data": { "exe": "notepad.exe" } },
+      { "type": "delay", "data": { "seconds": 2 } },
+      { "type": "open_app", "data": { "exe": "calc.exe" } },
+      { "type": "delay", "data": { "seconds": 2 } },
+      { "type": "screenshot", "data": { "filename": "escritorio-preparado.png" } }
+    ]
+  }
+]

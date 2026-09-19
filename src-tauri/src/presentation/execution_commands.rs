@@ -68,6 +68,41 @@ pub fn execute_automation_until(
         .map_err(|e| e.to_string())
 }
 
+/// n8n "Execute step": run ONE node and hand back what it produced.
+///
+/// Unlike `execute_automation_until`, this does not walk the upstream chain —
+/// the node runs with whatever items the environment already holds, so pressing
+/// it twice re-tests the node rather than re-firing every side effect before it.
+///
+/// It is synchronous (the caller awaits the result) because the whole point is
+/// to show the output of that specific step.
+#[tauri::command]
+pub fn run_single_node(
+    state: State<AppState>,
+    project_name: String,
+    automation_id: String,
+    node_id: String,
+) -> std::result::Result<Vec<crate::application::execution_history::NodeRunStatus>, String> {
+    state
+        .replay_use_case
+        .run_single_node(&project_name, &automation_id, &node_id)
+        .map_err(|e| e.to_string())
+}
+
+/// Tests a workflow with a chat input and returns the agent's response text.
+#[tauri::command]
+pub fn test_chat_workflow(
+    state: State<AppState>,
+    project_name: String,
+    automation_id: String,
+    message: String,
+) -> std::result::Result<String, String> {
+    state
+        .replay_use_case
+        .test_chat_workflow(&project_name, &automation_id, &message)
+        .map_err(|e| e.to_string())
+}
+
 /// Execution history: list recorded runs (most recent first).
 #[tauri::command]
 pub fn get_execution_history(

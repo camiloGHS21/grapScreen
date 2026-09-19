@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>grapScreen — medición de la barra superior a varios anchos</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #fff; }
+  iframe { position: absolute; left: -4000px; top: 0; border: 0; }
+  pre { font: 12px monospace; padding: 10px; }
+</style>
+</head>
+<body>
+<pre id="out">pending</pre>
+<div id="frames"></div>
+<script>
+  const WIDTHS = [1600, 1482, 1442, 1382, 1280, 1180, 1082, 1006, 962, 920, 900];
+  // ?src=topbar-before.html measures the reproduction of the old state instead.
+  const SRC = new URLSearchParams(location.search).get('src') || 'topbar.html';
+  const host = document.getElementById('frames');
+
+  // Each iframe gets its own viewport, so the media queries inside react to the
+  // iframe's width — that is what lets one page measure the whole ladder.
+  const frames = WIDTHS.map((w) => {
+    const f = document.createElement('iframe');
+    f.width = w;
+    f.height = 200;
+    f.src = SRC;
+    f.dataset.w = String(w);
+    host.appendChild(f);
+    return f;
+  });
+
+  function collect() {
+    const lines = [];
+    let ok = true;
+    for (const f of frames) {
+      let m = null;
+      try {
+        const pre = f.contentDocument && f.contentDocument.getElementById('measure');
+        if (pre && pre.textContent.startsWith('MEASURE ')) {
+          m = JSON.parse(pre.textContent.slice(8));
+        }
+      } catch (e) { /* not ready */ }
+      const w = f.dataset.w;
+      if (!m) { lines.push(`vw=${w}  (sin medición)`); ok = false; continue; }
+      const rows = m.rows != null ? m.rows : (m.tabsWrapped ? 2 : 1);
+      const bad = m.crumbOverlapsStats || m.rightOverflowsBar || m.leftOverflow ||
+                  m.groupsOverlap || (m.scopeW != null && m.scopeW < 60);
+      if (bad) ok = false;
+      lines.push(
+        `vw=${String(w).padEnd(5)} barH=${String(m.barH).padEnd(3)} rows=${rows}` +
+        ` stats=${m.statsVisible ? 'yes' : 'no '}` +
+        ` statsW=${String(m.statsW).padEnd(4)}` +
+        ` left=${String(m.leftW).padEnd(4)} leftR=${String(m.leftR).padEnd(4)} tabsL=${String(m.tabsL).padEnd(4)}` +
+        ` scope=${String(m.scopeW).padEnd(4)}` +
+        ` spill=${m.leftOverflow ? 'YES' : 'no '}` +
+        ` onTop=${m.groupsOverlap ? 'YES' : 'no '}` +
+        ` overflow=${m.rightOverflowsBar ? 'YES' : 'no '}` +
+        ` >> ${bad ? 'FAIL' : 'ok'}`
+      );
+    }
+    document.getElementById('out').textContent =
+      'RESULT ' + (ok ? 'ALL-OK' : 'HAS-FAILURES') + '\n' + lines.join('\n');
+  }
+
+  let n = 0;
+  const timer = setInterval(() => {
+    n += 1;
+    collect();
+    if (n > 40) clearInterval(timer);
+  }, 100);
+</script>
+</body>
+</html>

@@ -2,6 +2,7 @@ use super::engine::{GraphEngine, PASSTHROUGH_KINDS, TRANSFORM_KINDS};
 use super::extract::GraphNode;
 use crate::application::replay_helpers;
 use crate::domain::entities::RecordedEvent;
+use serde_json::Value;
 use std::collections::HashSet;
 
 impl<'a> GraphEngine<'a> {
@@ -52,8 +53,16 @@ impl<'a> GraphEngine<'a> {
                 self.exec_action(node)?;
                 Ok(self.targets_of(&node.id, None))
             }
-            // n8n Core — file actions: each item reads or writes once.
-            "read_file" | "write_file" => {
+            // n8n Core — file actions & database: each item executes once.
+            "read_file" | "write_file" | "postgres" | "ai_agent" => {
+                self.exec_action(node)?;
+                Ok(self.targets_of(&node.id, None))
+            }
+            // Declarative n8n nodes: one HTTP action per incoming item, driven
+            // by the descriptor named in `n8n_key`. Deliberately NOT in
+            // ITEM_AWARE_KINDS, so the walker's per-item fan-out applies and
+            // `{{ $json.x }}` resolves against the item being processed.
+            "n8n_node" => {
                 self.exec_action(node)?;
                 Ok(self.targets_of(&node.id, None))
             }
@@ -66,6 +75,15 @@ impl<'a> GraphEngine<'a> {
                     .map(|s| replay_helpers::interpolate_variables(s))
                     .unwrap_or_else(|| "Detenido por nodo Stop & Error".into());
                 Err(msg)
+            }
+            // Core nodes — http_request & code
+            "http_request" | "code" => {
+                if let Some(ev) = self.node_event(node) {
+                    self.service.run_single_event(ev, self.target, self.is_background, self.stop_flag)?;
+                } else {
+                    self.exec_range(node)?;
+                }
+                Ok(self.targets_of(&node.id, None))
             }
             _ => {
                 self.exec_range(node)?;
@@ -143,96 +161,7 @@ impl<'a> GraphEngine<'a> {
         "default".into()
     }
 
-    pub(crate) fn exec_loop(&mut self, node: &GraphNode, depth: usize) -> Result<Vec<String>, String> {
-        let iterations = self
-            .node_event(node)
-            .map(|e| {
-                let raw = e.data["iterations"]
-                    .as_str()
-                    .map(|s| s.to_string())
-                    .unwrap_or_else(|| e.data["iterations"].to_string());
-                replay_helpers::interpolate_variables(raw.trim_matches('"'))
-                    .trim()
-                    .parse::<usize>()
-                    .unwrap_or(1)
-            })
-            .unwrap_or(1)
-            .min(1000);
-        let body = self.targets_of(&node.id, Some("body"));
-        let done = self.targets_of(&node.id, Some("done"));
-        for i in 0..iterations {
-            self.check_stop()?;
-            replay_helpers::set_var("loop.index", &i.to_string());
-            let mut body_visited = HashSet::new();
-            body_visited.insert(node.id.clone());
-            for t in &body {
-                self.walk(t, &mut body_visited, depth + 1)?;
-            }
-        }
-        Ok(done)
-    }
 
-    pub(crate) fn exec_split_batches(&mut self, node: &GraphNode, depth: usize) -> Result<Vec<String>, String> {
-        let body = self.targets_of(&node.id, Some("body"));
-        let done = self.targets_of(&node.id, Some("done"));
-
-        let current_items = replay_helpers::get_items();
-        let items: Vec<serde_json::Value> = if !current_items.is_empty() {
-            current_items
-        } else {
-            match self.node_event(node) {
-                Some(ev) => {
-                    let var_name = ev.data["array_var"].as_str().unwrap_or("items");
-                    let raw = if var_name.contains("{{") {
-                        replay_helpers::interpolate_variables(var_name)
-                    } else {
-                        replay_helpers::get_var(var_name).unwrap_or_default()
-                    };
-                    match serde_json::from_str::<serde_json::Value>(&raw) {
-                        Ok(serde_json::Value::Array(arr)) => arr,
-                        _ => raw
-                            .lines()
-                            .map(|l| serde_json::Value::String(l.trim().to_string()))
-                            .filter(|v| !v.as_str().unwrap_or("").is_empty())
-                            .collect(),
-                    }
-                }
-                None => Vec::new(),
-            }
-        };
-
-        let total = items.len();
-        let mut processed_results: Vec<serde_json::Value> = Vec::new();
-
-        for (i, item) in items.into_iter().enumerate() {
-            self.check_stop()?;
-            let single_item_list = vec![item.clone()];
-            replay_helpers::set_items(single_item_list);
-
-            replay_helpers::set_var("item.index", &i.to_string());
-            replay_helpers::set_var("item.count", &total.to_string());
-            replay_helpers::set_var("loop.index", &i.to_string());
-
-            let mut body_visited = HashSet::new();
-            body_visited.insert(node.id.clone());
-            for t in &body {
-                self.walk(t, &mut body_visited, depth + 1)?;
-            }
-
-            let iter_items = replay_helpers::get_items();
-            if let Some(last_out) = iter_items.last() {
-                processed_results.push(last_out.clone());
-            } else {
-                processed_results.push(item);
-            }
-        }
-
-        if !processed_results.is_empty() {
-            replay_helpers::set_items(processed_results);
-        }
-
-        Ok(done)
-    }
 
     pub(crate) fn exec_sub_workflow(&mut self, node: &GraphNode, depth: usize) -> Result<Vec<String>, String> {
         if depth > 50 {
@@ -295,6 +224,34 @@ impl<'a> GraphEngine<'a> {
             // n8n Core — Read/Write Files from Disk.
             "read_file" => super::core_nodes::run_read_file(&data, incoming),
             "write_file" => super::core_nodes::run_write_file(&data, incoming),
+            "postgres" => super::postgres_node::run(&data, incoming),
+            "ai_agent" => super::ai_agent_runner::run(&data, incoming),
+            // Declarative catalogue: the request each node really builds is
+            // captured from its own `execute()` into `n8n-runmap.json`, and this
+            // engine replays it. The generic fallback is kept only for nodes the
+            // user has pointed at a URL of their own with explicit overrides —
+            // without a mapping there is nothing honest to execute, so the node
+            // reports that instead of calling an API root.
+            "n8n_node" => {
+                let n8n_key = data.get("n8n_key").and_then(|v| v.as_str()).unwrap_or("");
+                let n8n_name = data.get("n8n_name").and_then(|v| v.as_str()).unwrap_or("");
+                let is_agent = n8n_key.to_lowercase().contains("agent") || n8n_name.to_lowercase().contains("agent");
+                if n8n_key.eq_ignore_ascii_case("postgres") {
+                    super::postgres_node::run(&data, incoming)
+                } else if is_agent {
+                    super::ai_agent_runner::run(&data, incoming)
+                } else if super::runmap::RunMap::global().is_executable(n8n_key) {
+                    super::runmap::run(&data, incoming)
+                } else if has_explicit_overrides(&data) {
+                    super::declarative::runner::run(&data, incoming)
+                } else {
+                    Err(format!(
+                        "El nodo '{}' todavía no puede ejecutarse: su petición no está capturada. \
+                         Elige otro nodo o define la URL base y la ruta en las opciones avanzadas.",
+                        if n8n_name.is_empty() { n8n_key } else { n8n_name }
+                    ))
+                }
+            }
             other => Err(format!("Acción desconocida: {}", other)),
         }?;
         replay_helpers::set_items(produced.clone());
@@ -306,7 +263,15 @@ impl<'a> GraphEngine<'a> {
     pub(crate) fn exec_range(&self, node: &GraphNode) -> Result<(), String> {
         let (s, e) = match (node.start, node.end) {
             (Some(s), Some(e)) if s <= e && e < self.events.len() => (s, e),
-            _ => return Ok(()),
+            _ => {
+                if let Some(ev) = self.node_event(node) {
+                    if ev.kind != "layout_metadata" && !ev.data.get("disabled").and_then(|d| d.as_bool()).unwrap_or(false) {
+                        self.service
+                            .run_single_event(ev, self.target, self.is_background, self.stop_flag)?;
+                    }
+                }
+                return Ok(());
+            }
         };
         let mut prev: Option<u64> = None;
         for ev in self.events[s..=e].iter() {
@@ -330,4 +295,19 @@ impl<'a> GraphEngine<'a> {
         }
         Ok(())
     }
+}
+
+/// Whether the node carries request details the user typed themselves.
+///
+/// Those are the escape hatch for an API this engine has no mapping for: with a
+/// base URL and a path filled in, the generic runner is doing what the user
+/// asked, so it is allowed to run. Without them there is nothing to send.
+fn has_explicit_overrides(data: &Value) -> bool {
+    ["n8n_base_url", "n8n_path", "n8n_qs", "n8n_body"]
+        .iter()
+        .any(|field| {
+            data.get(*field)
+                .and_then(|v| v.as_str())
+                .is_some_and(|text| !text.trim().is_empty())
+        })
 }

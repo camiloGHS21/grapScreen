@@ -1,0 +1,300 @@
+[
+  {
+    "id": "condicion-antes-de-guardar",
+    "title": "Condición antes de guardar",
+    "description": "Solo escribe en Excel si el paso de control da el visto bueno al registro",
+    "category": "control-flujo",
+    "tags": ["condición", "excel", "validación"],
+    "popularity": 80,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "estado", "value": "ok" } },
+      { "type": "form", "data": { "fields": [{ "id": "nombre", "label": "Nombre", "type": "text", "required": true }] } },
+      { "type": "condition", "data": { "description": "¿El registro es válido?", "condition_type": "expression", "expression": "\"{{ estado }}\" == \"ok\"" } },
+      { "type": "excel_local", "data": { "file_path": "validados.xlsx", "header": "[\"Nombre\"]", "values": "[[\"{{ nombre }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "condicion-antes-de-avisar",
+    "title": "Condición antes de avisar",
+    "description": "Comprueba una marca y solo entonces manda el aviso por Telegram",
+    "category": "control-flujo",
+    "tags": ["condición", "telegram", "aviso"],
+    "popularity": 78,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "estado", "value": "ok" } },
+      { "type": "condition", "data": { "description": "¿Hay que avisar?", "condition_type": "expression", "expression": "\"{{ estado }}\" == \"ok\"" } },
+      { "type": "telegram", "data": { "message": "Aviso enviado porque la condición se cumplió.", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "bucle-de-tres-repasos",
+    "title": "Repetir un paso tres veces",
+    "description": "Ejecuta el cuerpo del bucle tres veces seguidas antes de continuar",
+    "category": "control-flujo",
+    "tags": ["bucle", "loop", "repetir"],
+    "popularity": 78,
+    "requires": [],
+    "steps": [
+      { "type": "loop", "data": { "iterations": 3 } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "paso", "code": "console.log(JSON.stringify({ paso: 'Repaso ejecutado.' }));" } },
+      { "type": "write_file", "data": { "file_path": "~/repasos.log", "content": "{{ $json.paso }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "bucle-con-indice",
+    "title": "Bucle que numera cada vuelta",
+    "description": "Usa el índice del bucle para dejar constancia de por qué vuelta va",
+    "category": "control-flujo",
+    "tags": ["bucle", "índice", "loop"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "loop", "data": { "iterations": 5 } },
+      { "type": "write_file", "data": { "file_path": "~/vueltas.log", "content": "Vuelta número {{ loop.index }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "switch-por-nivel",
+    "title": "Enrutar según el nivel",
+    "description": "Decide el camino del flujo comparando una variable con la primera opción",
+    "category": "control-flujo",
+    "tags": ["switch", "enrutar", "decisión"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "nivel", "value": "alto" } },
+      { "type": "switch", "data": { "field": "nivel", "cases": [{ "value": "alto", "output": 0 }, { "value": "medio", "output": 1 }, { "value": "bajo", "output": 2 }] } },
+      { "type": "write_file", "data": { "file_path": "~/nivel-alto.log", "content": "Nivel alto detectado.\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "lote-por-item",
+    "title": "Procesar una lista elemento a elemento",
+    "description": "Genera una lista y trata cada elemento por separado en su propia vuelta",
+    "category": "control-flujo",
+    "tags": ["lotes", "split_batches", "por cada"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "code", "data": { "language": "javascript", "output_var": "tareas", "code": "const tareas = [{ tarea: 'Revisar correo' }, { tarea: 'Actualizar informe' }, { tarea: 'Cerrar incidencias' }];\nconsole.log(JSON.stringify(tareas));" } },
+      { "type": "split_batches", "data": { "array_var": "items", "batch_size": 1 } },
+      { "type": "write_file", "data": { "file_path": "~/tareas-procesadas.txt", "content": "{{ $json.tarea }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "marcar-el-final-del-flujo",
+    "title": "Marcar el final del flujo",
+    "description": "Deja el nodo Fin al terminar, para que el diagrama muestre dónde acaba",
+    "category": "control-flujo",
+    "tags": ["fin", "end", "diagrama"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "resultado", "value": "Flujo completado sin incidencias." } },
+      { "type": "write_file", "data": { "file_path": "~/resultado.txt", "content": "{{ resultado }}\n", "encoding": "utf8", "append": false } },
+      { "type": "end", "data": {} }
+    ]
+  },
+  {
+    "id": "esperar-entre-pasos",
+    "title": "Esperar entre dos pasos",
+    "description": "Hace una pausa para dar tiempo a que el sistema termine antes de seguir",
+    "category": "control-flujo",
+    "tags": ["espera", "delay", "pausa"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "inicio", "value": "Pausa de cinco segundos antes de continuar." } },
+      { "type": "delay", "data": { "seconds": 5 } },
+      { "type": "write_file", "data": { "file_path": "~/pausa.txt", "content": "{{ inicio }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "condicion-sobre-un-formulario",
+    "title": "Validar el formulario antes de guardar",
+    "description": "Marca el registro como válido tras el formulario y lo guarda solo entonces",
+    "category": "control-flujo",
+    "tags": ["condición", "formulario", "excel"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "nombre", "label": "Nombre", "type": "text", "required": true }, { "id": "email", "label": "Email", "type": "email", "required": true }] } },
+      { "type": "set_var", "data": { "name": "estado", "value": "ok" } },
+      { "type": "condition", "data": { "description": "¿Pasa la validación?", "condition_type": "expression", "expression": "\"{{ estado }}\" == \"ok\"" } },
+      { "type": "excel_local", "data": { "file_path": "validados.xlsx", "header": "[\"Nombre\",\"Email\"]", "values": "[[\"{{ nombre }}\",\"{{ email }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "doble-comprobacion",
+    "title": "Doble comprobación encadenada",
+    "description": "Pasa por dos condiciones seguidas antes de dar el paso por bueno",
+    "category": "control-flujo",
+    "tags": ["condición", "encadenar", "doble"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "primera", "value": "1" } },
+      { "type": "set_var", "data": { "name": "segunda", "value": "1" } },
+      { "type": "condition", "data": { "description": "Primera comprobación", "condition_type": "expression", "expression": "\"{{ primera }}\" == \"1\"" } },
+      { "type": "condition", "data": { "description": "Segunda comprobación", "condition_type": "expression", "expression": "\"{{ segunda }}\" == \"1\"" } },
+      { "type": "write_file", "data": { "file_path": "~/doble-ok.txt", "content": "Las dos comprobaciones pasaron.\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "separar-una-lista-en-elementos",
+    "title": "Separar una lista en elementos",
+    "description": "Convierte una lista dentro de un objeto en varios elementos independientes",
+    "category": "control-flujo",
+    "tags": ["split out", "lista", "dividir"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "code", "data": { "language": "javascript", "output_var": "catalogo", "code": "const catalogo = { tienda: 'Centro', productos: [\n  { nombre: 'Teclado', precio: 25 },\n  { nombre: 'Ratón', precio: 15 },\n  { nombre: 'Monitor', precio: 180 }\n] };\nconsole.log(JSON.stringify(catalogo));" } },
+      { "type": "split_out", "data": { "field": "productos", "include": "all", "include_fields": "", "destination_field": "" } },
+      { "type": "write_file", "data": { "file_path": "~/catalogo.txt", "content": "{{ $json.nombre }} cuesta {{ $json.precio }} €\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "acumular-registros-en-un-bucle",
+    "title": "Acumular registros en un bucle",
+    "description": "Añade una línea nueva al archivo en cada vuelta del bucle",
+    "category": "control-flujo",
+    "tags": ["bucle", "acumular", "log"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "loop", "data": { "iterations": 5 } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "registro", "code": "const vuelta = {{ loop.index }};\nconst ahora = new Date().toISOString();\nconsole.log(JSON.stringify({ registro: 'Entrada generada en la vuelta ' + vuelta + ' a las ' + ahora }));" } },
+      { "type": "write_file", "data": { "file_path": "~/acumulado.log", "content": "{{ $json.registro }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "esperar-un-evento-antes-de-seguir",
+    "title": "Esperar antes de continuar",
+    "description": "Usa el nodo de espera para dar un margen largo antes del siguiente paso",
+    "category": "control-flujo",
+    "tags": ["wait", "espera", "margen"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "nota", "value": "El flujo esperó antes de continuar." } },
+      { "type": "wait", "data": { "seconds": 5, "resume_on": "timeout" } },
+      { "type": "write_file", "data": { "file_path": "~/espera.txt", "content": "{{ nota }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "marcador-sin-accion",
+    "title": "Marcador que no hace nada",
+    "description": "Deja un punto de paso en el diagrama sin ejecutar ninguna acción",
+    "category": "control-flujo",
+    "tags": ["noop", "marcador", "organizar"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "noop", "data": {} },
+      { "type": "write_file", "data": { "file_path": "~/marcador.txt", "content": "El flujo pasó por el marcador.\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "bucle-que-espera-entre-vueltas",
+    "title": "Bucle con pausa entre vueltas",
+    "description": "Repite una captura de pantalla dejando un margen entre cada vuelta",
+    "category": "control-flujo",
+    "tags": ["bucle", "captura", "pausa"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "loop", "data": { "iterations": 3 } },
+      { "type": "screenshot", "data": { "filename": "captura-bucle.png" } },
+      { "type": "delay", "data": { "seconds": 2 } }
+    ]
+  },
+  {
+    "id": "terminar-sin-mas-pasos",
+    "title": "Terminar el flujo aquí",
+    "description": "Cierra el diagrama con un nodo Fin tras dejar constancia del resultado",
+    "category": "control-flujo",
+    "tags": ["end", "fin", "terminar"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "code", "data": { "language": "javascript", "output_var": "cierre", "code": "console.log(JSON.stringify({ cierre: 'Flujo cerrado correctamente.' }));" } },
+      { "type": "write_file", "data": { "file_path": "~/cierre.txt", "content": "{{ $json.cierre }}\n", "encoding": "utf8", "append": true } },
+      { "type": "end", "data": {} }
+    ]
+  },
+  {
+    "id": "condicion-antes-de-enviar-correo",
+    "title": "Condición antes de enviar el correo",
+    "description": "Solo manda el correo si la marca de autorización está puesta",
+    "category": "control-flujo",
+    "tags": ["condición", "email", "autorización"],
+    "popularity": 68,
+    "requires": ["smtp"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "autorizado", "value": "si" } },
+      { "type": "form", "data": { "fields": [{ "id": "destinatario", "label": "Destinatario", "type": "email", "required": true }, { "id": "mensaje", "label": "Mensaje", "type": "textarea", "required": true }] } },
+      { "type": "condition", "data": { "description": "¿Está autorizado el envío?", "condition_type": "expression", "expression": "\"{{ autorizado }}\" == \"si\"" } },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "{{ destinatario }}",
+          "subject": "Mensaje autorizado",
+          "body": "{{ mensaje }}",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "punto-de-captura-de-errores",
+    "title": "Punto de captura de errores",
+    "description": "Deja un nodo de errores al final del flujo; conecta su salida para que avise",
+    "category": "control-flujo",
+    "tags": ["errores", "error handler", "aviso"],
+    "popularity": 62,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "resultado", "value": "Trabajo terminado." } },
+      { "type": "write_file", "data": { "file_path": "~/trabajo.txt", "content": "{{ resultado }}\n", "encoding": "utf8", "append": true } },
+      { "type": "error_handler", "data": { "action": "retry", "max_retries": 3 } }
+    ]
+  },
+  {
+    "id": "enrutar-formulario-por-categoria",
+    "title": "Enrutar un formulario por categoría",
+    "description": "Manda cada registro al archivo que corresponda según la categoría elegida",
+    "category": "control-flujo",
+    "tags": ["switch", "formulario", "enrutar"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "nombre", "label": "Nombre", "type": "text", "required": true }] } },
+      { "type": "set_var", "data": { "name": "categoria", "value": "general" } },
+      { "type": "switch", "data": { "field": "categoria", "cases": [{ "value": "general", "output": 0 }, { "value": "prioritario", "output": 1 }] } },
+      { "type": "excel_local", "data": { "file_path": "general.xlsx", "header": "[\"Nombre\"]", "values": "[[\"{{ nombre }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "bucle-con-comprobacion",
+    "title": "Bucle con comprobación en cada vuelta",
+    "description": "Repite tres veces un paso que comprueba una condición antes de escribir",
+    "category": "control-flujo",
+    "tags": ["bucle", "condición", "comprobar"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "seguir", "value": "si" } },
+      { "type": "loop", "data": { "iterations": 3 } },
+      { "type": "condition", "data": { "description": "¿Toca seguir con la vuelta?", "condition_type": "expression", "expression": "\"{{ seguir }}\" == \"si\"" } },
+      { "type": "write_file", "data": { "file_path": "~/vueltas-comprobadas.log", "content": "Vuelta {{ loop.index }} comprobada.\n", "encoding": "utf8", "append": true } }
+    ]
+  }
+]

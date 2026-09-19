@@ -1,8 +1,8 @@
 import { useRef, useMemo, useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles } from "lucide-react";
 import { listen } from "@tauri-apps/api/event";
-import type { FlowNodeType, FlowNode, RecordedEvent, NodeRunStatus, NodeDetailPayload } from "./types";
-import { StepAddMenu } from "./features/flowchart/StepAddMenu";
+import { AiAssistantDrawer, type AiAssistantDrawerProps } from "./features/ai/AiAssistantDrawer";
+import type { FlowNodeType, FlowNode, RecordedEvent, NodeRunStatus, NodeDetailPayload, AddStepExtra } from "./types";
 import { Minimap } from "./features/flowchart/components/Minimap";
 import { ContextMenu } from "./features/flowchart/components/ContextMenu";
 import { CanvasStatusBar } from "./features/flowchart/components/CanvasStatusBar";
@@ -12,16 +12,24 @@ import { FlowchartCanvasWorld } from "./features/flowchart/components/FlowchartC
 import { FlowchartSelectionOverlay } from "./features/flowchart/components/FlowchartSelectionOverlay";
 import { FlowSidePanel, type SidePanelMode } from "./features/flowchart/components/FlowSidePanel";
 import type { NodeGroupId } from "./features/flowchart/utils/nodeCatalog";
+import { CATALOG_ITEMS } from "./features/flowchart/utils/nodeCatalog";
+import { AI_PORT_IDS, AI_PORT_OFFSETS } from "./features/flowchart/utils/aiPortCatalog";
 import { ExecuteWorkflowButton } from "./features/flowchart/components/ExecuteWorkflowButton";
-import { FlowLogsPanel } from "./features/flowchart/components/FlowLogsPanel";
+import { FlowBottomDock } from "./features/flowchart/components/FlowBottomDock";
+import { invoke } from "@tauri-apps/api/core";
 import { useFlowchartViewport } from "./hooks/useFlowchartViewport";
 import { useFlowchartWorkspace } from "./features/flowchart/hooks/useFlowchartWorkspace";
 import { useFlowchartLayoutHelpers } from "./features/flowchart/hooks/useFlowchartLayoutHelpers";
 import { useFlowLogs } from "./hooks/useFlowLogs";
 import { portY as portsPortY } from "./features/flowchart/utils/nodePorts";
 
-// Canvas geometry only: ports and wires use these same dimensions.
-export const NODE_W = 104;
+// Canvas geometry: the node box, its ports and every wire endpoint derive from
+// these. `NODE_W` is ALSO applied as the card's inline `width`, so it must stay
+// in sync with the `.n8n-node` rule in styles.css. It was 104 while that rule
+// said 240px — the inline value won, leaving ~50px of padding and ~10px for the
+// title, so every node rendered as a collapsed square with one visible
+// character. 240 is the width the card was designed for.
+export const NODE_W = 240;
 export const NODE_H = 96;
 
 export const NODE_COLORS: Record<FlowNodeType, string> = {
@@ -33,6 +41,7 @@ export const NODE_COLORS: Record<FlowNodeType, string> = {
   trigger: "#ff6d5a", webhook: "#ff6d5a", http_request: "#0f9d58", switch: "#ec4899",
   merge: "#f97316", wait: "#eab308", code: "#64748b", error_handler: "#ef4444", note: "#fbbf24",
   cron: "#ff6d5a", startup: "#ff6d5a", file_change: "#ff6d5a", hotkey_trigger: "#ff6d5a", polling: "#ff6d5a",
+  whatsapp_trigger: "#25d366", telegram_trigger: "#0088cc", email_trigger: "#ff6d5a", rss_trigger: "#ff6d5a",
   split_batches: "#f97316", sub_workflow: "#8b5cf6",
   // Data transformation (Phase 3) — teal, matching the catalog's "Transformar".
   filter: "#06b6d4", sort: "#06b6d4", limit: "#06b6d4",
@@ -55,6 +64,9 @@ export const NODE_COLORS: Record<FlowNodeType, string> = {
   split_out: "#06b6d4", summarize: "#06b6d4", rename_keys: "#06b6d4",
   markdown: "#06b6d4", crypto: "#06b6d4",
   read_file: "#0f9d58", write_file: "#0f9d58",
+  // Declarative n8n catalogue — one accent per engine kind; the individual
+  // node's colour comes from its own descriptor, not from this map.
+  n8n_node: "#0f9d58", n8n_trigger: "#ff6d5a",
 };
 
 function portY(index: number, count: number, nodeH?: number): number {
@@ -105,6 +117,11 @@ export interface FlowchartProps {
     afterNodeId: string,
     sourcePortId?: string,
     position?: { x: number; y: number },
+    /**
+     * Extra data the shared engine kinds cannot express through `type`. The
+     * declarative n8n nodes use it to record which catalogue entry was picked.
+     */
+    extra?: AddStepExtra,
   ) => Promise<string | undefined> | void;
   onAddStepChain?: (types: FlowNodeType[], afterNodeId: string, sourcePortId?: string) => Promise<void> | void;
   onReorder?: (movedId: string, targetId: string) => void;
@@ -122,9 +139,15 @@ export interface FlowchartProps {
   onOpenHistory?: () => void;
   /** Hide the chrome while another tab (Executions / Evaluations) is shown. */
   showCanvasChrome?: boolean;
+  /** AI Assistant props when docked in side panel */
+  aiProps?: AiAssistantDrawerProps;
+  /** Current active project name for workflow execution */
+  projectName?: string;
+  /** Current active automation ID */
+  automationId?: string;
 }
 
-export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeStatuses, onAddStep, onAddStepChain, onReorder, target_app, onSaveEvents, onDeleteTargetApp, onExecuteUntil, executing: executingProp, onExecute, onStopExecute, bgMode, onToggleBgMode, onOpenHistory, showCanvasChrome = true }: FlowchartProps) {
+export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeStatuses, onAddStep, onAddStepChain, onReorder, target_app, onSaveEvents, onDeleteTargetApp, onExecuteUntil, executing: executingProp, onExecute, onStopExecute, bgMode, onToggleBgMode, onOpenHistory, showCanvasChrome = true, aiProps, projectName, automationId }: FlowchartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const { viewport, setViewport, toWorld, handlePanMouseDown } = useFlowchartViewport(containerRef);
 
@@ -134,7 +157,6 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
     notes, setNotes,
     disabledNodes, setDisabledNodes,
     expanded, setExpanded,
-    addMenu, setAddMenu,
     tempLine, setTempLine,
     editEventsList, setEditEventsList,
     isEditingGroup, setIsEditingGroup,
@@ -186,6 +208,38 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
     return map;
   }, [nodes]);
   const { entries: logEntries, append: appendLog, clear: clearLogs } = useFlowLogs(nodeLabels);
+
+  const hasChatTrigger = useMemo(() => {
+    return nodes.some(n => {
+      const isTrig = n.type === "trigger" || n.type === "n8n_trigger";
+      const key = (n.n8nKey || "").toLowerCase();
+      const label = (n.label || "").toLowerCase();
+      return isTrig && (key.includes("chat") || label.includes("chat"));
+    });
+  }, [nodes]);
+
+  const handleSendChatMessage = async (message: string): Promise<string> => {
+    if (onSaveEvents) {
+      onSaveEvents(events);
+    }
+    if (!projectName || !automationId) {
+      return "Guarda la automatización para iniciar la conversación en vivo.";
+    }
+    const errorNodes = nodes.filter(n => n.hasWarning);
+    if (errorNodes.length > 0) {
+      const names = errorNodes.map(n => n.label).slice(0, 3).join(", ");
+      return `⚠ No se puede ejecutar el chat: hay nodos sin configurar o con errores (${names}).`;
+    }
+    try {
+      return await invoke<string>("test_chat_workflow", {
+        projectName,
+        automationId,
+        message,
+      });
+    } catch (err: any) {
+      return `Error ejecutando el chat: ${err?.message || err || "error desconocido"}`;
+    }
+  };
 
   useEffect(() => {
     const un = listen<NodeDetailPayload>("automation-node-detail", (ev) => {
@@ -256,8 +310,26 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
    * Going through the inline "add node" menu here would pop a second picker
    * (a modal) over a decision the user just made — that is what we removed.
    */
-  const handlePanelPickNode = (type: FlowNodeType, label?: string) => {
+  // A declarative n8n trigger is as valid a flow head as a hand-written one.
+  const TRIGGER_TYPES = useMemo(
+    () => new Set<string>([...CATALOG_ITEMS["trigger"].map((i) => i.type), "n8n_trigger"]),
+    [],
+  );
+
+  const handlePanelPickNode = (
+    type: FlowNodeType,
+    label?: string,
+    n8n?: { key: string; mode?: string | null },
+  ) => {
     const rect = containerRef.current?.getBoundingClientRect();
+
+    // Declarative n8n nodes all share one engine kind, so the specific node is
+    // carried through to the created event as `n8n_key`. The trigger mode rides
+    // along too: the daemon arms the node differently depending on whether it
+    // receives a webhook, polls an API or runs on an interval.
+    const extra = n8n
+      ? { n8nKey: n8n.key, n8nLabel: label, n8nMode: n8n.mode ?? null }
+      : undefined;
 
     // Choosing a node is the whole point of the panel: it closes right away so
     // the canvas is unobstructed and the new node is visible.
@@ -269,29 +341,53 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
     // node id it mints, so there is nothing to patch up here.
     if (panelSource) {
       const srcPos = layout[panelSource.nodeId];
-      const pos = srcPos ? { x: srcPos.x + 300, y: srcPos.y } : undefined;
-      onAddStep?.(type, panelSource.nodeId, panelSource.portId, pos);
+      let pos: { x: number; y: number } | undefined;
+      if (srcPos) {
+        if (AI_PORT_IDS.includes(panelSource.portId)) {
+          pos = {
+            x: srcPos.x + (AI_PORT_OFFSETS[panelSource.portId] ?? 0),
+            y: srcPos.y + 160,
+          };
+        } else {
+          pos = { x: srcPos.x + 300, y: srcPos.y };
+        }
+      }
+      onAddStep?.(type, panelSource.nodeId, panelSource.portId, pos, extra);
       setPanelSource(null);
       setSelectedNodes(new Set());
       setSelectedWireId(null);
       setInspectedNodeId(null);
-      appendLog("info", `Añadido nodo “${label || type}”`);
+      appendLog("info", `Añadido nodo "${label || type}"`);
+      return;
+    }
+
+    // Empty canvas guard: only triggers can be the first node (n8n behaviour).
+    if (nodes.length === 0 && !TRIGGER_TYPES.has(type)) {
+      appendLog("warning", `El primer nodo debe ser un disparador. Selecciona uno de la categoría "Disparadores".`);
       return;
     }
 
     // Plain catalogue add: drop the node in a free spot near the viewport centre.
     const center = toWorld(rect ? rect.width / 2 : 400, rect ? rect.height / 2 : 240);
     const pos = findFreeSpot(center, Object.values(layout));
-    onAddStep?.(type, "", undefined, pos);
+    onAddStep?.(type, "", undefined, pos, extra);
     setSelectedNodes(new Set());
     setSelectedWireId(null);
     setInspectedNodeId(null);
-    appendLog("info", `Añadido nodo “${label || type}”`);
+    appendLog("info", `Añadido nodo "${label || type}"`);
   };
 
   /** Node "+" → open the catalogue panel already wired to that output port. */
   const handleRequestAddFrom = (sourceNodeId: string, sourcePortId: string) => {
     setPanelSource({ nodeId: sourceNodeId, portId: sourcePortId });
+    setPanelMode("catalog");
+    setPanelOpen(true);
+    setExpanded(null);
+  };
+
+  /** Empty canvas CTA → open the catalogue panel so the user picks a trigger. */
+  const handleOpenPanelFromEmpty = () => {
+    setPanelSource(null);
     setPanelMode("catalog");
     setPanelOpen(true);
     setExpanded(null);
@@ -372,7 +468,7 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
             draggedRef={draggedRef}
             connectRef={connectRef}
             setTempLine={setTempLine}
-            setAddMenu={setAddMenu}
+            onOpenPanel={handleOpenPanelFromEmpty}
             isEditingGroup={isEditingGroup}
             setIsEditingGroup={setIsEditingGroup}
             editEventsList={editEventsList}
@@ -387,24 +483,42 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
 
           {showCanvasChrome && (
             <>
-              <button
-                className="n8n-canvas-add"
-                title="Añadir nodo"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={() => {
-                  setExpanded(null);
-                  // Toggle like n8n: the same button both opens and closes it.
-                  setPanelOpen((open) => {
-                    if (!open) setPanelMode("catalog");
-                    return !open;
-                  });
-                }}
-              >
-                <Plus size={15} />
-              </button>
+              {!panelOpen && !aiProps?.aiChatOpen && (
+                <div className="n8n-canvas-actions">
+                  <button
+                    className="n8n-canvas-add"
+                    title="Añadir nodo"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => {
+                      setExpanded(null);
+                      aiProps?.setAiChatOpen?.(false);
+                      setPanelOpen((open) => {
+                        if (!open) setPanelMode("catalog");
+                        return !open;
+                      });
+                    }}
+                  >
+                    <Plus size={15} />
+                  </button>
+
+                  <button
+                    className="n8n-canvas-ai"
+                    title="Asistente de IA"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => {
+                      setExpanded(null);
+                      setPanelOpen(false);
+                      aiProps?.setAiChatOpen?.(true);
+                    }}
+                  >
+                    <Sparkles size={15} />
+                  </button>
+                </div>
+              )}
 
               <ExecuteWorkflowButton
                 executing={!!activeNodeId || Object.values(nodeStatuses || {}).some(s => s === "running") || !!executingProp}
+                hasErrors={nodes.some(n => n.hasWarning)}
                 onExecute={() => onExecute?.()}
                 onStop={() => onStopExecute?.()}
                 nodeCount={nodes.length}
@@ -467,11 +581,13 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
           <FlowchartSelectionOverlay selectionBox={selectionBox} />
         </div>
 
-        <FlowLogsPanel
+        <FlowBottomDock
           entries={logEntries}
-          onClear={clearLogs}
+          onClearLogs={clearLogs}
           onOpenHistory={onOpenHistory}
           executing={!!activeNodeId || Object.values(nodeStatuses || {}).some(s => s === "running")}
+          hasChatTrigger={hasChatTrigger}
+          onSendChatMessage={handleSendChatMessage}
         />
       </div>
 
@@ -482,12 +598,26 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
         <FlowSidePanel
           mode={panelMode}
           group={panelGroup}
-          onPickNode={(type, label) => {
-            handlePanelPickNode(type, label);
+          panelSource={panelSource}
+          onClearPort={() => setPanelSource(prev => prev ? { ...prev, portId: "" } : null)}
+          onPickNode={(type, label, n8n) => {
+            handlePanelPickNode(type, label, n8n);
           }}
           onModeChange={handlePanelModeChange}
           onClose={() => { setPanelOpen(false); setPanelSource(null); }}
           nodeCount={nodes.length}
+        />
+      )}
+
+      {aiProps?.aiChatOpen && !expanded && (
+        <AiAssistantDrawer
+          aiChatOpen={aiProps.aiChatOpen}
+          setAiChatOpen={aiProps.setAiChatOpen}
+          aiMessages={aiProps.aiMessages}
+          aiLoading={aiProps.aiLoading}
+          aiPrompt={aiProps.aiPrompt}
+          setAiPrompt={aiProps.setAiPrompt}
+          sendAiMessage={aiProps.sendAiMessage}
         />
       )}
 
@@ -500,12 +630,6 @@ export function Flowchart({ events, onNodeClick, activeStep, activeNodeId, nodeS
         onUpdateNodePin={handleUpdateNodePin}
       />
 
-      <StepAddMenu
-        addMenu={addMenu}
-        setAddMenu={setAddMenu}
-        onAddStep={onAddStep}
-        containerRef={containerRef}
-      />
     </div>
   );
 }

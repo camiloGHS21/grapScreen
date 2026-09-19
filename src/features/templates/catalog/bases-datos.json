@@ -1,0 +1,273 @@
+[
+  {
+    "id": "crear-base-y-tabla",
+    "title": "Crear una base SQLite con su tabla",
+    "description": "Deja lista una base local con la tabla que usarán las demás automatizaciones",
+    "category": "bases-datos",
+    "tags": ["sqlite", "crear", "tabla", "base de datos"],
+    "popularity": 80,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL, creado_en TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE INDEX IF NOT EXISTS idx_registros_nombre ON registros (nombre)", "params": "" } }
+    ]
+  },
+  {
+    "id": "insertar-y-confirmar",
+    "title": "Insertar y confirmar el total",
+    "description": "Crea la tabla, inserta una fila de ejemplo y consulta cuántas hay",
+    "category": "bases-datos",
+    "tags": ["sqlite", "insertar", "consulta", "recuento"],
+    "popularity": 78,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "INSERT INTO registros (nombre) VALUES (?)", "params": "[\"Fila de ejemplo\"]" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT COUNT(*) AS total FROM registros", "params": "" } }
+    ]
+  },
+  {
+    "id": "formulario-a-sqlite-con-tabla",
+    "title": "Formulario → SQLite (creando la tabla)",
+    "description": "Crea la tabla si hace falta y guarda cada respuesta como una fila",
+    "category": "bases-datos",
+    "tags": ["sqlite", "formulario", "insertar"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "nombre", "label": "Nombre", "type": "text", "required": true }, { "id": "email", "label": "Email", "type": "email", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, email TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "INSERT INTO registros (nombre, email) VALUES (?, ?)", "params": "[\"{{ nombre }}\",\"{{ email }}\"]" } }
+    ]
+  },
+  {
+    "id": "base-de-clientes",
+    "title": "Base de clientes",
+    "description": "Da de alta clientes con nombre, email y teléfono en una base local",
+    "category": "bases-datos",
+    "tags": ["sqlite", "clientes", "crm", "alta"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "nombre", "label": "Nombre", "type": "text", "required": true }, { "id": "email", "label": "Email", "type": "email", "required": true }, { "id": "telefono", "label": "Teléfono", "type": "phone", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "clientes.db", "query": "CREATE TABLE IF NOT EXISTS clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, email TEXT, telefono TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "clientes.db", "query": "INSERT INTO clientes (nombre, email, telefono) VALUES (?, ?, ?)", "params": "[\"{{ nombre }}\",\"{{ email }}\",\"{{ telefono }}\"]" } }
+    ]
+  },
+  {
+    "id": "base-de-tareas",
+    "title": "Base de tareas",
+    "description": "Anota tareas con su prioridad en una lista local que puedes consultar luego",
+    "category": "bases-datos",
+    "tags": ["sqlite", "tareas", "productividad", "pendientes"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "tarea", "label": "Tarea", "type": "text", "required": true }, { "id": "prioridad", "label": "Prioridad", "type": "text", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "tareas.db", "query": "CREATE TABLE IF NOT EXISTS tareas (id INTEGER PRIMARY KEY AUTOINCREMENT, tarea TEXT, prioridad TEXT, hecha INTEGER DEFAULT 0)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "tareas.db", "query": "INSERT INTO tareas (tarea, prioridad) VALUES (?, ?)", "params": "[\"{{ tarea }}\",\"{{ prioridad }}\"]" } }
+    ]
+  },
+  {
+    "id": "base-de-incidencias-con-aviso",
+    "title": "Base de incidencias con aviso",
+    "description": "Registra la incidencia en SQLite y avisa al equipo por Telegram",
+    "category": "bases-datos",
+    "tags": ["sqlite", "incidencias", "telegram", "soporte"],
+    "popularity": 72,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "titulo", "label": "Título", "type": "text", "required": true }, { "id": "detalle", "label": "Detalle", "type": "textarea", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "incidencias.db", "query": "CREATE TABLE IF NOT EXISTS incidencias (id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT, detalle TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "incidencias.db", "query": "INSERT INTO incidencias (titulo, detalle) VALUES (?, ?)", "params": "[\"{{ titulo }}\",\"{{ detalle }}\"]" } },
+      { "type": "telegram", "data": { "message": "Incidencia registrada: {{ titulo }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "exportar-la-base-a-csv",
+    "title": "Exportar la base a CSV",
+    "description": "Consulta la tabla y vuelca todas sus filas a un CSV de intercambio",
+    "category": "bases-datos",
+    "tags": ["sqlite", "csv", "exportar"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT nombre FROM registros ORDER BY id", "params": "" } },
+      { "type": "excel_local", "data": { "file_path": "export.csv", "header": "", "values": "[[\"{{ $json.nombre }}\"]]", "delimiter": ",", "overwrite": false, "format": "csv" } }
+    ]
+  },
+  {
+    "id": "exportar-la-base-a-json",
+    "title": "Exportar la base a JSON",
+    "description": "Saca las filas de una consulta y las guarda como archivo JSON",
+    "category": "bases-datos",
+    "tags": ["sqlite", "json", "exportar", "respaldo"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT nombre FROM registros ORDER BY id", "params": "" } },
+      { "type": "write_file", "data": { "file_path": "~/export.json", "content": "{{ $json }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "consulta-a-telegram",
+    "title": "Enviar una consulta por Telegram",
+    "description": "Cuenta las filas de la base y manda el número a tu chat",
+    "category": "bases-datos",
+    "tags": ["sqlite", "telegram", "consulta", "recuento"],
+    "popularity": 72,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT COUNT(*) AS total FROM registros", "params": "" } },
+      { "type": "telegram", "data": { "message": "La base tiene {{ $json.total }} registros.", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "marcar-tareas-como-hechas",
+    "title": "Marcar tareas como hechas",
+    "description": "Actualiza las tareas de una prioridad concreta y las da por completadas",
+    "category": "bases-datos",
+    "tags": ["sqlite", "update", "tareas", "mantenimiento"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "tareas.db", "query": "CREATE TABLE IF NOT EXISTS tareas (id INTEGER PRIMARY KEY AUTOINCREMENT, tarea TEXT, prioridad TEXT, hecha INTEGER DEFAULT 0)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "tareas.db", "query": "UPDATE tareas SET hecha = 1 WHERE prioridad = ? AND hecha = 0", "params": "[\"baja\"]" } },
+      { "type": "sqlite_query", "data": { "db_path": "tareas.db", "query": "SELECT COUNT(*) AS pendientes FROM tareas WHERE hecha = 0", "params": "" } }
+    ]
+  },
+  {
+    "id": "borrar-registros-antiguos",
+    "title": "Borrar registros anteriores",
+    "description": "Limpia las filas creadas antes de una fecha concreta para no crecer sin control",
+    "category": "bases-datos",
+    "tags": ["sqlite", "delete", "limpieza", "mantenimiento"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, creado_en TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "DELETE FROM registros WHERE creado_en < ?", "params": "[\"2020-01-01\"]" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT COUNT(*) AS quedan FROM registros", "params": "" } }
+    ]
+  },
+  {
+    "id": "buscar-en-la-base",
+    "title": "Buscar en la base por un campo",
+    "description": "Consulta con filtro y vuelca los resultados a un libro de Excel",
+    "category": "bases-datos",
+    "tags": ["sqlite", "buscar", "filtro", "excel"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Texto a buscar", "type": "text", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "clientes.db", "query": "CREATE TABLE IF NOT EXISTS clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, email TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "clientes.db", "query": "SELECT nombre, email FROM clientes WHERE nombre LIKE ?", "params": "[\"%{{ texto }}%\"]" } },
+      { "type": "excel_local", "data": { "file_path": "busqueda.xlsx", "header": "[\"Nombre\",\"Email\"]", "values": "[[\"{{ $json.nombre }}\",\"{{ $json.email }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "recuento-por-correo",
+    "title": "Recuento de la base por correo",
+    "description": "Cuenta los registros y manda el total al correo del equipo",
+    "category": "bases-datos",
+    "tags": ["sqlite", "email", "recuento", "informe"],
+    "popularity": 68,
+    "requires": ["smtp"],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT COUNT(*) AS total FROM registros", "params": "" } },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "equipo@ejemplo.com",
+          "subject": "Recuento diario de la base",
+          "body": "Registros guardados: {{ $json.total }}",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "base-de-gastos-con-total",
+    "title": "Base de gastos con total",
+    "description": "Guarda cada gasto y calcula la suma acumulada de los importes",
+    "category": "bases-datos",
+    "tags": ["sqlite", "gastos", "suma", "informe"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "concepto", "label": "Concepto", "type": "text", "required": true }, { "id": "importe", "label": "Importe", "type": "text", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "gastos.db", "query": "CREATE TABLE IF NOT EXISTS gastos (id INTEGER PRIMARY KEY AUTOINCREMENT, concepto TEXT, importe REAL)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "gastos.db", "query": "INSERT INTO gastos (concepto, importe) VALUES (?, ?)", "params": "[\"{{ concepto }}\",\"{{ importe }}\"]" } },
+      { "type": "sqlite_query", "data": { "db_path": "gastos.db", "query": "SELECT SUM(importe) AS total FROM gastos", "params": "" } },
+      { "type": "excel_local", "data": { "file_path": "total-gastos.xlsx", "header": "[\"Total\"]", "values": "[[\"{{ $json.total }}\"]]", "delimiter": ",", "overwrite": true, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "archivar-un-csv-en-la-base",
+    "title": "Archivar un CSV en la base",
+    "description": "Guarda el contenido íntegro de un CSV en una columna de texto de la base",
+    "category": "bases-datos",
+    "tags": ["sqlite", "csv", "archivar", "respaldo"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      { "type": "sqlite_execute", "data": { "db_path": "archivo.db", "query": "CREATE TABLE IF NOT EXISTS archivos (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, cuerpo TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "archivo.db", "query": "INSERT INTO archivos (nombre, cuerpo) VALUES (?, ?)", "params": "[\"datos.csv\",\"{{ $json.data }}\"]" } }
+    ]
+  },
+  {
+    "id": "base-con-respaldo-diario",
+    "title": "Respaldo diario de la base",
+    "description": "Cada día vuelca la tabla a un archivo para no perder los datos",
+    "category": "bases-datos",
+    "tags": ["sqlite", "respaldo", "cron", "diario"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "sqlite_execute", "data": { "db_path": "app.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "app.db", "query": "SELECT nombre FROM registros ORDER BY id", "params": "" } },
+      { "type": "write_file", "data": { "file_path": "~/respaldo-base.json", "content": "{{ $json }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "borrar-duplicados-en-la-base",
+    "title": "Quitar duplicados de la base",
+    "description": "Deja una sola fila por nombre y borra las repetidas de la tabla",
+    "category": "bases-datos",
+    "tags": ["sqlite", "duplicados", "limpieza"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "clientes.db", "query": "CREATE TABLE IF NOT EXISTS clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, email TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "clientes.db", "query": "DELETE FROM clientes WHERE id NOT IN (SELECT MIN(id) FROM clientes GROUP BY nombre)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "clientes.db", "query": "SELECT COUNT(*) AS quedan FROM clientes", "params": "" } }
+    ]
+  },
+  {
+    "id": "precio-medio-de-la-tabla",
+    "title": "Precio medio de una tabla",
+    "description": "Da de alta un precio y calcula al momento la media de todos los guardados",
+    "category": "bases-datos",
+    "tags": ["sqlite", "precios", "media", "informe"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "producto", "label": "Producto", "type": "text", "required": true }, { "id": "precio", "label": "Precio", "type": "text", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "precios.db", "query": "CREATE TABLE IF NOT EXISTS precios (id INTEGER PRIMARY KEY AUTOINCREMENT, producto TEXT, precio REAL)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "precios.db", "query": "INSERT INTO precios (producto, precio) VALUES (?, ?)", "params": "[\"{{ producto }}\",\"{{ precio }}\"]" } },
+      { "type": "sqlite_query", "data": { "db_path": "precios.db", "query": "SELECT COUNT(*) AS cuantos, AVG(precio) AS media, MIN(precio) AS minimo, MAX(precio) AS maximo FROM precios", "params": "" } },
+      { "type": "write_file", "data": { "file_path": "~/precios.txt", "content": "Productos: {{ $json.cuantos }} · media {{ $json.media }} · mín {{ $json.minimo }} · máx {{ $json.maximo }}\n", "encoding": "utf8", "append": true } }
+    ]
+  }
+]

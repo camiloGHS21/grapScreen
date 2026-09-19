@@ -2,6 +2,7 @@
 node_modules/
 dist/
 dist-isolation/
+dist-verify/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -26,3 +27,8 @@ Thumbs.db
 # Other directories
 graphify-out/
 .gemini/
+.n8n-cache/
+
+# Large binaries and sidecars
+src-tauri/resources/*.exe
+!src-tauri/resources/PUT_FFMPEG_HERE.txt

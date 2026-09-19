@@ -34,7 +34,8 @@ interface FlowchartCanvasWorldProps {
   draggedRef: any;
   connectRef: any;
   setTempLine: any;
-  setAddMenu: any;
+  /** Called when the empty-canvas CTA is clicked — opens the right-hand panel. */
+  onOpenPanel?: () => void;
   isEditingGroup: boolean;
   setIsEditingGroup: any;
   editEventsList: RecordedEvent[];
@@ -77,7 +78,7 @@ export function FlowchartCanvasWorld({
   draggedRef,
   connectRef,
   setTempLine,
-  setAddMenu,
+  onOpenPanel,
   isEditingGroup,
   setIsEditingGroup,
   editEventsList,
@@ -149,7 +150,6 @@ export function FlowchartCanvasWorld({
           notes={notes}
           saveLayoutMetadata={saveLayoutMetadata}
           containerRef={containerRef}
-          setAddMenu={setAddMenu}
           setCtxMenu={setCtxMenu}
           isEditingGroup={isEditingGroup}
           setIsEditingGroup={setIsEditingGroup}
@@ -169,9 +169,8 @@ export function FlowchartCanvasWorld({
           type="button"
           className="n8n-empty-add"
           style={{ left: (layout["start"]?.x ?? 40) + NODE_W + 90, top: (layout["start"]?.y ?? 60) - 14 }}
-          onClick={(e) => {
-            const rect = containerRef.current!.getBoundingClientRect();
-            setAddMenu({ id: "", x: e.clientX - rect.left - 190, y: e.clientY - rect.top - 24, mode: "canvas" });
+          onClick={() => {
+            onOpenPanel?.();
           }}
         >
           <Plus size={17} />

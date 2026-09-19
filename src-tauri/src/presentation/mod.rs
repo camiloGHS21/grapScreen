@@ -8,4 +8,5 @@ pub mod credential_commands;
 pub mod file_commands;
 pub mod trigger_commands;
 pub mod vault_commands;
+pub mod expression_commands;
 

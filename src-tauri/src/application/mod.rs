@@ -17,4 +17,5 @@ pub mod integration_ai;
 pub mod vault_service;
 pub mod expressions;
 pub mod http_client;
+pub mod template_e2e;
 

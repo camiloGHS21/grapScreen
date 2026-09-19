@@ -24,6 +24,16 @@ pub const PASSTHROUGH_KINDS: &[&str] = &[
     // whose payload arrives via pending vars, like webhook.
     "noop",
     "polling",
+    // Additional n8n-style triggers (frontend parity)
+    "whatsapp_trigger",
+    "telegram_trigger",
+    "email_trigger",
+    "rss_trigger",
+    "chat_trigger",
+    // Declarative n8n triggers: an entry point (ENTRY_KINDS) that passes the
+    // incoming payload straight through (PASSTHROUGH_KINDS), exactly like the
+    // `webhook`/`polling` pair above.
+    "n8n_trigger",
 ];
 
 pub const ENTRY_KINDS: &[&str] = &[
@@ -36,6 +46,16 @@ pub const ENTRY_KINDS: &[&str] = &[
     "hotkey_trigger",
     "app",
     "polling",
+    // Additional n8n-style triggers (frontend parity)
+    "whatsapp_trigger",
+    "telegram_trigger",
+    "email_trigger",
+    "rss_trigger",
+    "chat_trigger",
+    // Declarative n8n triggers: an entry point (ENTRY_KINDS) that passes the
+    // incoming payload straight through (PASSTHROUGH_KINDS), exactly like the
+    // `webhook`/`polling` pair above.
+    "n8n_trigger",
 ];
 
 /// Node kinds that own their own iteration / fan-out semantics.
@@ -74,6 +94,7 @@ pub const ITEM_AWARE_KINDS: &[&str] = &[
     "classifier",
     "information_extractor",
     "sentiment_analysis",
+    "ai_agent",
     // Database nodes: they run a query/execute and replace the item list with
     // the result, exactly like other transform nodes.
     "sqlite_query",
@@ -134,6 +155,14 @@ pub struct GraphEngine<'a> {
     pub(crate) disabled: HashSet<String>,
     pub(crate) error_handlers: Vec<String>,
     pub(crate) stop_after: Option<String>,
+    /// When set, only this node is executed and nothing else is walked.
+    ///
+    /// n8n's "Execute step" runs one node with the data it already has, without
+    /// re-running the flow around it. That is different from `stop_after`, which
+    /// walks every node up to that one — a subtle but real distinction, because
+    /// the user pressing "Execute step" is testing the node in front of them,
+    /// not the whole chain behind it.
+    pub(crate) only_node: Option<String>,
     pub(crate) finished_early: bool,
     pub status_log: Vec<NodeRunStatus>,
 }
@@ -174,6 +203,7 @@ impl<'a> GraphEngine<'a> {
             disabled,
             error_handlers,
             stop_after: None,
+            only_node: None,
             finished_early: false,
             status_log: Vec::new(),
         }
@@ -183,7 +213,21 @@ impl<'a> GraphEngine<'a> {
         self.stop_after = node_id;
     }
 
+    pub fn set_only_node(&mut self, node_id: Option<String>) {
+        self.only_node = node_id;
+    }
+
     pub fn run(&mut self) -> Result<(), String> {
+        // "Execute step": run exactly one node, with no upstream walk. The node
+        // still receives whatever items the environment already holds, which is
+        // how n8n lets you poke at a node's parameters without replaying the
+        // whole flow.
+        if let Some(target) = self.only_node.clone() {
+            let mut visited = HashSet::new();
+            self.walk(&target, &mut visited, 0)?;
+            return Ok(());
+        }
+
         let mut entries: Vec<String> = self
             .nodes
             .values()
@@ -361,5 +405,33 @@ mod kind_registry_tests {
             assert!(TRANSFORM_KINDS.contains(&kind), "'{}' is not a transform kind", kind);
             assert!(ITEM_AWARE_KINDS.contains(&kind), "'{}' is not item-aware", kind);
         }
+    }
+
+    /// Pins the execution mode of the declarative `n8n_node` kind.
+    ///
+    /// It is deliberately in none of the three lists. Being item-aware would
+    /// suppress the walker's per-item fan-out, so an API node would fire once
+    /// for the whole batch instead of once per item; being a transform would
+    /// route it to `exec_transform`, whose match has no arm for it and would
+    /// fail with "Nodo de transformación desconocido"; being an entry or a
+    /// passthrough would let it silently do nothing at all.
+    #[test]
+    fn the_declarative_n8n_node_stays_item_based() {
+        let kind = super::super::declarative::N8N_NODE_KIND;
+        assert!(
+            !ITEM_AWARE_KINDS.contains(&kind),
+            "'{}' must stay item-based: the walker fans out one request per item",
+            kind
+        );
+        assert!(
+            !TRANSFORM_KINDS.contains(&kind),
+            "'{}' must not be a transform: exec_transform has no arm for it",
+            kind
+        );
+        assert!(
+            !PASSTHROUGH_KINDS.contains(&kind) && !ENTRY_KINDS.contains(&kind),
+            "'{}' is an action, not an entry or a passthrough",
+            kind
+        );
     }
 }

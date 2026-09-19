@@ -1,0 +1,673 @@
+[
+  {
+    "id": "resumen-con-ia",
+    "title": "Resumir un texto con IA",
+    "description": "El usuario pega un texto largo y el modelo devuelve un resumen breve",
+    "category": "ia-texto",
+    "tags": ["ia", "resumen", "llm", "texto"],
+    "popularity": 90,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Texto a resumir", "type": "textarea", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Resume en tres frases como máximo, en español.",
+          "prompt": "{{ texto }}",
+          "temperature": 0.3,
+          "max_tokens": 512,
+          "result_field": "text",
+          "output_var": "resumen"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/resumen.txt", "content": "{{ $json.text }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "clasificar-mensajes",
+    "title": "Clasificar mensajes con IA",
+    "description": "Etiqueta cada mensaje entrante como factura, soporte u otro automáticamente",
+    "category": "ia-texto",
+    "tags": ["ia", "clasificador", "categorizar", "soporte"],
+    "popularity": 88,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Mensaje recibido", "type": "textarea", "required": true }] } },
+      {
+        "type": "classifier",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Clasifica el mensaje en una sola categoría.",
+          "prompt": "{{ texto }}",
+          "categories": ["Factura", "Soporte", "Otro"],
+          "category_field": "categoria",
+          "output_var": "clasificacion"
+        }
+      },
+      { "type": "excel_local", "data": { "file_path": "clasificacion.xlsx", "header": "[\"Mensaje\",\"Categoría\"]", "values": "[[\"{{ texto }}\",\"{{ $json.categoria }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "analisis-de-sentimiento",
+    "title": "Análisis de sentimiento",
+    "description": "Detecta si un comentario es positivo, neutro o negativo y guarda la etiqueta",
+    "category": "ia-texto",
+    "tags": ["ia", "sentimiento", "opinión", "reseñas"],
+    "popularity": 86,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "comentario", "label": "Comentario del cliente", "type": "textarea", "required": true }] } },
+      {
+        "type": "sentiment_analysis",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "credential_id": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ comentario }}",
+          "labels": "positive,neutral,negative",
+          "label_field": "sentimiento",
+          "score_field": "puntuacion",
+          "output_var": "sentimiento"
+        }
+      },
+      { "type": "excel_local", "data": { "file_path": "sentimiento.xlsx", "header": "[\"Comentario\",\"Sentimiento\"]", "values": "[[\"{{ comentario }}\",\"{{ $json.sentimiento }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "agente-ia-basico",
+    "title": "Agente de IA",
+    "description": "Un agente con herramientas que responde a partir de una variable de entrada",
+    "category": "ia-texto",
+    "tags": ["ia", "agente", "llm"],
+    "popularity": 86,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "entrada", "value": "Explícame en dos líneas qué hace esta automatización." } },
+      {
+        "type": "ai_agent",
+        "data": {
+          "prompt": "{{ entrada }}",
+          "system_prompt": "Eres un asistente claro y breve.",
+          "provider": "openai",
+          "model": "gpt-4o-mini",
+          "output_var": "ai_response",
+          "enable_tools": [],
+          "max_iterations": 5
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/respuesta-ia.txt", "content": "{{ ai_response }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "extraer-datos-de-un-texto",
+    "title": "Extraer datos de un texto",
+    "description": "Convierte un email o un contrato en campos estructurados con un esquema fijo",
+    "category": "ia-texto",
+    "tags": ["ia", "extracción", "estructurar", "json"],
+    "popularity": 84,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Texto de origen", "type": "textarea", "required": true }] } },
+      {
+        "type": "information_extractor",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "credential_id": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ texto }}",
+          "schema": "{\n  \"nombre\": \"nombre completo de la persona\",\n  \"email\": \"dirección de correo\",\n  \"importe\": \"importe total como número\"\n}",
+          "mode": "merge",
+          "output_var": "extraido"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/extraido.txt", "content": "Nombre: {{ $json.nombre }}\nEmail: {{ $json.email }}\nImporte: {{ $json.importe }}\n", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "respuesta-automatica-con-ia",
+    "title": "Respuesta automática con IA",
+    "description": "Genera una respuesta a la pregunta del usuario y la guarda en un archivo",
+    "category": "ia-texto",
+    "tags": ["ia", "respuesta", "soporte", "llm"],
+    "popularity": 80,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "pregunta", "label": "Pregunta del cliente", "type": "textarea", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Responde como un agente de soporte cordial y conciso.",
+          "prompt": "{{ pregunta }}",
+          "temperature": 0.7,
+          "max_tokens": 800,
+          "result_field": "text",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/respuesta.txt", "content": "{{ $json.text }}", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "clasificar-y-avisar",
+    "title": "Clasificar y avisar al equipo",
+    "description": "Clasifica el mensaje y manda la categoría a Slack para que la revise alguien",
+    "category": "ia-texto",
+    "tags": ["ia", "clasificador", "slack", "triaje"],
+    "popularity": 78,
+    "requires": ["ai", "slack"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Mensaje", "type": "textarea", "required": true }] } },
+      {
+        "type": "classifier",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ texto }}",
+          "categories": ["Urgente", "Normal", "Baja"],
+          "category_field": "prioridad",
+          "output_var": "prioridad"
+        }
+      },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "Prioridad *{{ $json.prioridad }}*: {{ texto }}", "channel": "#soporte", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "resumen-diario-con-ia",
+    "title": "Resumen diario con IA",
+    "description": "Cada día resume un texto de referencia y lo envía a Telegram",
+    "category": "ia-texto",
+    "tags": ["ia", "resumen", "telegram", "diario"],
+    "popularity": 78,
+    "requires": ["ai", "telegram"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "set_var", "data": { "name": "texto", "value": "Repasa las incidencias abiertas y decide cuáles son prioritarias hoy." } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Responde en una sola frase, en español.",
+          "prompt": "{{ texto }}",
+          "temperature": 0.4,
+          "max_tokens": 300,
+          "result_field": "text",
+          "output_var": "resumen"
+        }
+      },
+      { "type": "telegram", "data": { "message": "Resumen del día: {{ $json.text }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "traducir-texto-con-ia",
+    "title": "Traducir un texto con IA",
+    "description": "Traduce al inglés lo que el usuario escriba y lo guarda en un archivo",
+    "category": "ia-texto",
+    "tags": ["ia", "traducción", "texto", "llm"],
+    "popularity": 80,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Texto en español", "type": "textarea", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Translate the user text to English. Reply with the translation only.",
+          "prompt": "{{ texto }}",
+          "temperature": 0.2,
+          "max_tokens": 800,
+          "result_field": "text",
+          "output_var": "traduccion"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/traduccion.txt", "content": "{{ $json.text }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "descripcion-de-productos-con-ia",
+    "title": "Descripciones de producto con IA",
+    "description": "Genera la descripción de venta de un producto a partir de su nombre",
+    "category": "ia-texto",
+    "tags": ["ia", "marketing", "producto", "llm"],
+    "popularity": 74,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "producto", "label": "Nombre del producto", "type": "text", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Escribe una descripción de venta de dos frases, en español.",
+          "prompt": "Producto: {{ producto }}",
+          "temperature": 0.8,
+          "max_tokens": 300,
+          "result_field": "text",
+          "output_var": "descripcion"
+        }
+      },
+      { "type": "excel_local", "data": { "file_path": "productos.xlsx", "header": "[\"Producto\",\"Descripción\"]", "values": "[[\"{{ producto }}\",\"{{ $json.text }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "ia-que-responde-por-telegram",
+    "title": "IA que responde por Telegram",
+    "description": "Recibe una pregunta por Telegram y contesta con el modelo en el acto",
+    "category": "ia-texto",
+    "tags": ["ia", "telegram", "bot", "conversación"],
+    "popularity": 76,
+    "requires": ["ai", "telegram"],
+    "steps": [
+      { "type": "telegram_trigger", "data": { "bot_token": "" } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Responde de forma breve y útil.",
+          "prompt": "Responde a este mensaje de Telegram: {{ telegram.updates }}",
+          "temperature": 0.6,
+          "max_tokens": 600,
+          "result_field": "text",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "telegram", "data": { "message": "{{ $json.text }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "ia-resume-un-csv",
+    "title": "La IA resume un CSV",
+    "description": "Lee un CSV del disco, lo resume con el modelo y guarda el resumen",
+    "category": "ia-texto",
+    "tags": ["ia", "csv", "resumen", "informe"],
+    "popularity": 74,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Resume el contenido del CSV indicando qué columnas tiene y qué patrones ves.",
+          "prompt": "{{ $json.data }}",
+          "temperature": 0.3,
+          "max_tokens": 800,
+          "result_field": "text",
+          "output_var": "resumen"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/resumen-csv.txt", "content": "{{ $json.text }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "ia-enriquece-la-base-de-datos",
+    "title": "La IA enriquece la base de datos",
+    "description": "Crea la tabla, guarda un comentario y le añade la categoría que decide el clasificador",
+    "category": "ia-texto",
+    "tags": ["ia", "sqlite", "clasificador", "enriquecer"],
+    "popularity": 72,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "comentario", "label": "Comentario", "type": "textarea", "required": true }] } },
+      {
+        "type": "classifier",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ comentario }}",
+          "categories": ["Queja", "Sugerencia", "Elogio"],
+          "category_field": "categoria",
+          "output_var": "categoria"
+        }
+      },
+      { "type": "sqlite_execute", "data": { "db_path": "comentarios.db", "query": "CREATE TABLE IF NOT EXISTS comentarios (id INTEGER PRIMARY KEY AUTOINCREMENT, texto TEXT, categoria TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "comentarios.db", "query": "INSERT INTO comentarios (texto, categoria) VALUES (?, ?)", "params": "[\"{{ comentario }}\",\"{{ $json.categoria }}\"]" } }
+    ]
+  },
+  {
+    "id": "ia-detecta-sentimiento-y-avisa",
+    "title": "Sentimiento y aviso si es negativo",
+    "description": "Analiza el comentario y avisa a Slack cuando la etiqueta dominante es negativa",
+    "category": "ia-texto",
+    "tags": ["ia", "sentimiento", "slack", "alerta"],
+    "popularity": 72,
+    "requires": ["ai", "slack"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "comentario", "label": "Comentario", "type": "textarea", "required": true }] } },
+      {
+        "type": "sentiment_analysis",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "credential_id": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ comentario }}",
+          "labels": "positive,neutral,negative",
+          "label_field": "sentimiento",
+          "score_field": "puntuacion",
+          "output_var": "sentimiento"
+        }
+      },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "Comentario clasificado como *{{ $json.sentimiento }}*: {{ comentario }}", "channel": "#voz-del-cliente", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "ia-genera-asunto-de-correo",
+    "title": "La IA escribe el asunto del correo",
+    "description": "Propone un asunto a partir del mensaje del usuario y lo envía por SMTP",
+    "category": "ia-texto",
+    "tags": ["ia", "email", "asunto", "smtp"],
+    "popularity": 70,
+    "requires": ["ai", "smtp"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "mensaje", "label": "Mensaje", "type": "textarea", "required": true }, { "id": "destinatario", "label": "Destinatario", "type": "email", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Devuelve solo un asunto de correo de menos de 60 caracteres.",
+          "prompt": "{{ mensaje }}",
+          "temperature": 0.5,
+          "max_tokens": 60,
+          "result_field": "text",
+          "output_var": "asunto"
+        }
+      },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "{{ destinatario }}",
+          "subject": "{{ $json.text }}",
+          "body": "{{ mensaje }}",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "ia-extrae-y-guarda-en-notion",
+    "title": "Extraer datos y guardarlos en Notion",
+    "description": "Saca los campos clave de un texto y crea una página de Notion con ellos",
+    "category": "ia-texto",
+    "tags": ["ia", "notion", "extracción"],
+    "popularity": 70,
+    "requires": ["ai", "notion"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Texto", "type": "textarea", "required": true }] } },
+      {
+        "type": "information_extractor",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "credential_id": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ texto }}",
+          "schema": "{\n  \"titulo\": \"asunto principal en pocas palabras\",\n  \"responsable\": \"persona mencionada\"\n}",
+          "mode": "merge",
+          "output_var": "extraido"
+        }
+      },
+      { "type": "notion", "data": { "operation": "create_page", "token": "", "database_id": "", "page_id": "", "title": "{{ $json.titulo }}", "properties_json": "{\"Responsable\":\"{{ $json.responsable }}\"}", "filter_json": "" } }
+    ]
+  },
+  {
+    "id": "ia-clasifica-y-envia-email",
+    "title": "Clasificar y enviar por correo",
+    "description": "Decide la prioridad del mensaje y lo reenvía al correo del equipo",
+    "category": "ia-texto",
+    "tags": ["ia", "clasificador", "email"],
+    "popularity": 68,
+    "requires": ["ai", "smtp"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Mensaje", "type": "textarea", "required": true }] } },
+      {
+        "type": "classifier",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ texto }}",
+          "categories": ["Alta", "Media", "Baja"],
+          "category_field": "prioridad",
+          "output_var": "prioridad"
+        }
+      },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "equipo@ejemplo.com",
+          "subject": "Prioridad {{ $json.prioridad }}",
+          "body": "{{ texto }}",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "ia-resume-y-publica-en-slack",
+    "title": "Resumen de un hilo y publicación en Slack",
+    "description": "Resume una conversación pegada y la publica en el canal del equipo",
+    "category": "ia-texto",
+    "tags": ["ia", "resumen", "slack"],
+    "popularity": 68,
+    "requires": ["ai", "slack"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "hilo", "label": "Conversación", "type": "textarea", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Resume la conversación y lista las decisiones tomadas.",
+          "prompt": "{{ hilo }}",
+          "temperature": 0.3,
+          "max_tokens": 700,
+          "result_field": "text",
+          "output_var": "resumen"
+        }
+      },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "Resumen del hilo:\n{{ $json.text }}", "channel": "#general", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "ia-corrige-un-texto",
+    "title": "Corregir la ortografía con IA",
+    "description": "Corrige el texto que escriba el usuario y guarda la versión limpia",
+    "category": "ia-texto",
+    "tags": ["ia", "corrección", "ortografía", "texto"],
+    "popularity": 68,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Texto a corregir", "type": "textarea", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Corrige la ortografía y la gramática. Devuelve solo el texto corregido.",
+          "prompt": "{{ texto }}",
+          "temperature": 0.1,
+          "max_tokens": 1200,
+          "result_field": "text",
+          "output_var": "corregido"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/corregido.txt", "content": "{{ $json.text }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "ia-responde-con-contexto",
+    "title": "Respuesta con contexto",
+    "description": "Responde a una pregunta usando un contexto fijo que tú defines",
+    "category": "ia-texto",
+    "tags": ["ia", "rag", "contexto", "llm"],
+    "popularity": 66,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "contexto", "value": "Somos una tienda online con envíos en 24 horas y devoluciones gratis durante 30 días." } },
+      { "type": "form", "data": { "fields": [{ "id": "pregunta", "label": "Pregunta del cliente", "type": "text", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Responde solo con la información del contexto. Si no está, dilo.",
+          "prompt": "Contexto: {{ contexto }}\n\nPregunta: {{ pregunta }}",
+          "temperature": 0.2,
+          "max_tokens": 500,
+          "result_field": "text",
+          "output_var": "respuesta"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/respuesta-contexto.txt", "content": "{{ $json.text }}", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "ia-extrae-tareas-de-una-nota",
+    "title": "Extraer tareas de una nota",
+    "description": "Saca de una nota las tareas pendientes y las guarda en un archivo",
+    "category": "ia-texto",
+    "tags": ["ia", "tareas", "extracción", "productividad"],
+    "popularity": 66,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "nota", "label": "Nota de la reunión", "type": "textarea", "required": true }] } },
+      {
+        "type": "information_extractor",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "credential_id": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ nota }}",
+          "schema": "{\n  \"tareas\": \"lista de tareas pendientes separadas por punto y coma\"\n}",
+          "mode": "merge",
+          "output_var": "tareas"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/tareas.txt", "content": "{{ $json.tareas }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "ia-resume-y-envia-por-telegram",
+    "title": "Resumen con IA por Telegram",
+    "description": "Resume el texto pegado y manda el resumen a tu chat en el momento",
+    "category": "ia-texto",
+    "tags": ["ia", "resumen", "telegram"],
+    "popularity": 66,
+    "requires": ["ai", "telegram"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "texto", "label": "Texto a resumir", "type": "textarea", "required": true }] } },
+      {
+        "type": "llm_chain",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "Resume en cinco puntos como máximo.",
+          "prompt": "{{ texto }}",
+          "temperature": 0.3,
+          "max_tokens": 500,
+          "result_field": "text",
+          "output_var": "resumen"
+        }
+      },
+      { "type": "telegram", "data": { "message": "Resumen:\n{{ $json.text }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "ia-clasifica-un-rss",
+    "title": "Clasificar las noticias de un RSS",
+    "description": "Lee el feed, clasifica cada titular por tema y guarda el resultado",
+    "category": "ia-texto",
+    "tags": ["ia", "rss", "clasificar", "noticias"],
+    "popularity": 64,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 10 } },
+      {
+        "type": "classifier",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "Titular: {{ $json.title }}",
+          "categories": ["Tecnología", "Negocios", "Ciencia", "Otro"],
+          "category_field": "tema",
+          "output_var": "tema"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/noticias-clasificadas.txt", "content": "{{ $json.title }} → {{ $json.tema }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "ia-clasifica-en-lote",
+    "title": "Clasificar una lista entera con IA",
+    "description": "Etiqueta de una vez todos los elementos de una lista generada por un script",
+    "category": "ia-texto",
+    "tags": ["ia", "clasificador", "lote", "lista"],
+    "popularity": 66,
+    "requires": ["ai"],
+    "steps": [
+      { "type": "code", "data": { "language": "javascript", "output_var": "comentarios", "code": "const comentarios = [\n  { texto: 'Todo llegó perfecto', cliente: 'Ana' },\n  { texto: 'El envío tardó demasiado', cliente: 'Luis' }\n];\nconsole.log(JSON.stringify(comentarios));" } },
+      {
+        "type": "classifier",
+        "data": {
+          "base_url": "https://api.openai.com/v1",
+          "api_key": "",
+          "model": "gpt-4o-mini",
+          "system_prompt": "",
+          "prompt": "{{ $json.texto }}",
+          "categories": ["Positivo", "Negativo", "Neutro"],
+          "category_field": "tono",
+          "output_var": "tono"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/comentarios-clasificados.txt", "content": "{{ $json.cliente }}: {{ $json.tono }}\n", "encoding": "utf8", "append": true } }
+    ]
+  }
+]

@@ -1,0 +1,386 @@
+[
+  {
+    "id": "copiar-un-archivo",
+    "title": "Copiar un archivo",
+    "description": "Lee un archivo de tu carpeta personal y lo copia con otro nombre",
+    "category": "archivos-disco",
+    "tags": ["archivos", "copiar", "disco"],
+    "popularity": 80,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      { "type": "write_file", "data": { "file_path": "~/datos-copia.txt", "content": "{{ $json.data }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "mover-un-archivo",
+    "title": "Mover un archivo de sitio",
+    "description": "Lee el contenido del archivo y lo deja escrito en su nueva ubicación",
+    "category": "archivos-disco",
+    "tags": ["archivos", "mover", "organizar"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      { "type": "write_file", "data": { "file_path": "~/archivados/datos.txt", "content": "{{ $json.data }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "hash-de-un-archivo",
+    "title": "Huella SHA-256 de un archivo",
+    "description": "Calcula el hash del contenido para comprobar que nadie lo ha alterado",
+    "category": "archivos-disco",
+    "tags": ["archivos", "hash", "criptografía", "integridad"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      { "type": "crypto", "data": { "action": "hash", "algorithm": "SHA256", "encoding": "hex", "value": "{{ $json.data }}", "secret": "", "length": 32, "target_field": "data" } },
+      { "type": "write_file", "data": { "file_path": "~/datos.sha256", "content": "{{ $json.data }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "contar-palabras-de-un-archivo",
+    "title": "Contar palabras de un archivo",
+    "description": "Cuenta palabras, líneas y caracteres de un texto y guarda el recuento",
+    "category": "archivos-disco",
+    "tags": ["archivos", "contar", "texto", "métricas"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "recuento",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst texto = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8');\nconst lineas = texto.split(/\\r?\\n/).length;\nconst palabras = texto.split(/\\s+/).filter(Boolean).length;\nconst caracteres = texto.length;\nconsole.log(JSON.stringify({ resumen: 'Líneas: ' + lineas + ', palabras: ' + palabras + ', caracteres: ' + caracteres }));\n})();"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/recuento.txt", "content": "{{ $json.resumen }}\n", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "archivo-a-mayusculas",
+    "title": "Pasar un archivo a mayúsculas",
+    "description": "Convierte todo el texto de un archivo a mayúsculas y lo guarda aparte",
+    "category": "archivos-disco",
+    "tags": ["archivos", "texto", "transformar"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "mayusculas",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst texto = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8');\nconsole.log(JSON.stringify({ texto: texto.toUpperCase() }));\n})();"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/datos-mayusculas.txt", "content": "{{ $json.texto }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "buscar-y-reemplazar",
+    "title": "Buscar y reemplazar en un archivo",
+    "description": "Cambia todas las apariciones de una palabra y guarda el archivo corregido",
+    "category": "archivos-disco",
+    "tags": ["archivos", "reemplazar", "texto"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "corregido",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst texto = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8');\nconst cambiado = texto.split('ANTIGUO').join('NUEVO');\nconst cambios = texto.split('ANTIGUO').length - 1;\nconsole.log(JSON.stringify({ texto: cambiado, cambios: cambios }));\n})();"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/datos-corregido.txt", "content": "{{ $json.texto }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "quitar-lineas-vacias",
+    "title": "Quitar las líneas vacías de un archivo",
+    "description": "Compacta un archivo de texto eliminando líneas en blanco y espacios sueltos",
+    "category": "archivos-disco",
+    "tags": ["archivos", "limpieza", "texto"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "compacto",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').split(/\\r?\\n/).map((l) => l.trim()).filter((l) => l.length > 0);\nconsole.log(JSON.stringify({ texto: lineas.join(String.fromCharCode(10)), lineas: lineas.length }));\n})();"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/datos-compacto.txt", "content": "{{ $json.texto }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "registrar-la-fecha-en-un-log",
+    "title": "Registrar la fecha en un log",
+    "description": "Añade una línea con la fecha y hora actuales cada vez que arrancas la app",
+    "category": "archivos-disco",
+    "tags": ["log", "fecha", "startup", "registro"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "startup", "data": { "mode": "system", "delay_seconds": 0 } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "linea",
+          "code": "const ahora = new Date().toISOString();\nconsole.log(JSON.stringify({ linea: 'Arranque: ' + ahora }));"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/arranques.log", "content": "{{ $json.linea }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "log-con-un-atajo",
+    "title": "Apuntar algo en el log con un atajo",
+    "description": "Pulsa Ctrl+Alt+L y queda registrada la marca de tiempo en el archivo",
+    "category": "archivos-disco",
+    "tags": ["log", "atajo", "hotkey", "registro"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "hotkey_trigger", "data": { "shortcut": "Ctrl+Alt+L" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "marca",
+          "code": "const ahora = new Date().toISOString();\nconsole.log(JSON.stringify({ marca: 'Marca manual: ' + ahora }));"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/marcas.log", "content": "{{ $json.marca }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "registrar-cambios-de-archivo",
+    "title": "Registrar cambios en un archivo",
+    "description": "Cada vez que el archivo vigilado cambie, queda anotado en un log",
+    "category": "archivos-disco",
+    "tags": ["file_change", "log", "vigilancia"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "file_change", "data": { "path": "~/datos.txt", "event": "Modify" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "aviso",
+          "code": "const ahora = new Date().toISOString();\nconsole.log(JSON.stringify({ aviso: 'Cambio detectado: ' + ahora }));"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/cambios.log", "content": "{{ $json.aviso }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "generar-un-informe-de-texto",
+    "title": "Generar un informe de texto",
+    "description": "Pide un título y un cuerpo y guarda un informe con formato en disco",
+    "category": "archivos-disco",
+    "tags": ["informe", "texto", "formulario", "archivo"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "titulo", "label": "Título", "type": "text", "required": true }, { "id": "cuerpo", "label": "Cuerpo", "type": "textarea", "required": true }] } },
+      { "type": "write_file", "data": { "file_path": "~/informe.txt", "content": "INFORME: {{ titulo }}\n\n{{ cuerpo }}\n", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "dividir-un-archivo-en-lineas",
+    "title": "Procesar un archivo línea a línea",
+    "description": "Divide el texto en líneas y trata cada una por separado",
+    "category": "archivos-disco",
+    "tags": ["archivos", "líneas", "dividir", "split out"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "lineas",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').split(/\\r?\\n/).map((l) => l.trim()).filter(Boolean);\nconsole.log(JSON.stringify({ lineas: lineas }));\n})();"
+        }
+      },
+      { "type": "split_out", "data": { "field": "lineas", "include": "none", "include_fields": "", "destination_field": "" } },
+      { "type": "write_file", "data": { "file_path": "~/lineas-sueltas.txt", "content": "{{ $json.lineas }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "resumir-un-archivo-de-datos",
+    "title": "Resumir un archivo de datos",
+    "description": "Genera un conjunto de datos y publica un resumen agregado por categoría",
+    "category": "archivos-disco",
+    "tags": ["agregar", "resumen", "datos"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "datos",
+          "code": "const filas = [\n  { equipo: 'A', horas: 6 },\n  { equipo: 'B', horas: 4 },\n  { equipo: 'A', horas: 3 },\n  { equipo: 'B', horas: 7 }\n];\nconsole.log(JSON.stringify(filas));"
+        }
+      },
+      { "type": "summarize", "data": { "group_by": "equipo", "aggregations": [{ "operation": "sum", "field": "horas", "output_field": "total_horas" }], "separator": ", " } },
+      { "type": "write_file", "data": { "file_path": "~/resumen-datos.json", "content": "{{ $json }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "renombrar-campos-de-un-json",
+    "title": "Renombrar los campos de un JSON",
+    "description": "Cambia los nombres de los campos del archivo JSON sin tocar los datos",
+    "category": "archivos-disco",
+    "tags": ["json", "renombrar", "campos"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "objetos",
+          "code": "const objetos = [{ nombre: 'Ana', correo: 'ana@mail.com' }, { nombre: 'Luis', correo: 'luis@mail.com' }];\nconsole.log(JSON.stringify(objetos));"
+        }
+      },
+      { "type": "rename_keys", "data": { "renames": [{ "from": "nombre", "to": "cliente" }, { "from": "correo", "to": "email" }], "mode": "plain", "keep_only": false, "deep": false } },
+      { "type": "write_file", "data": { "file_path": "~/renombrado.json", "content": "{{ $json }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "ordenar-y-recortar-un-json",
+    "title": "Ordenar y quedarse con los primeros",
+    "description": "Ordena una lista de objetos por un campo y conserva solo los tres mayores",
+    "category": "archivos-disco",
+    "tags": ["json", "ordenar", "limitar", "top"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "ventas",
+          "code": "const ventas = [\n  { producto: 'Teclado', importe: 120 },\n  { producto: 'Ratón', importe: 45 },\n  { producto: 'Monitor', importe: 310 },\n  { producto: 'Webcam', importe: 80 },\n  { producto: 'Auriculares', importe: 150 }\n];\nconsole.log(JSON.stringify(ventas));"
+        }
+      },
+      { "type": "sort", "data": { "fields": "-importe" } },
+      { "type": "limit", "data": { "skip": 0, "max_items": 3 } },
+      { "type": "write_file", "data": { "file_path": "~/top-ventas.txt", "content": "{{ $json.producto }}: {{ $json.importe }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "deduplicar-un-json",
+    "title": "Quitar repetidos de un JSON",
+    "description": "Elimina los objetos duplicados de una lista dejando la primera aparición",
+    "category": "archivos-disco",
+    "tags": ["json", "duplicados", "limpieza"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "lista",
+          "code": "const lista = [\n  { email: 'ana@mail.com' },\n  { email: 'luis@mail.com' },\n  { email: 'ana@mail.com' },\n  { email: 'marta@mail.com' }\n];\nconsole.log(JSON.stringify(lista));"
+        }
+      },
+      { "type": "remove_duplicates", "data": { "fields": "email", "keep": "first" } },
+      { "type": "write_file", "data": { "file_path": "~/sin-repetidos.txt", "content": "{{ $json.email }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "agrupar-y-contar-un-json",
+    "title": "Agrupar y contar un JSON",
+    "description": "Cuenta cuántos elementos hay de cada categoría en una lista",
+    "category": "archivos-disco",
+    "tags": ["json", "agrupar", "contar", "resumen"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "pedidos",
+          "code": "const pedidos = [\n  { estado: 'enviado' },\n  { estado: 'pendiente' },\n  { estado: 'enviado' },\n  { estado: 'enviado' },\n  { estado: 'cancelado' }\n];\nconsole.log(JSON.stringify(pedidos));"
+        }
+      },
+      { "type": "summarize", "data": { "group_by": "estado", "aggregations": [{ "operation": "count", "field": "", "output_field": "cuantos" }], "separator": ", " } },
+      { "type": "write_file", "data": { "file_path": "~/pedidos-por-estado.json", "content": "{{ $json }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "formatear-fechas-de-un-json",
+    "title": "Formatear las fechas de un JSON",
+    "description": "Reescribe las fechas de una lista con el formato año-mes-día",
+    "category": "archivos-disco",
+    "tags": ["json", "fechas", "formato"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "eventos",
+          "code": "const eventos = [\n  { nombre: 'Alta', fecha: '2026-03-14T09:30:00Z' },\n  { nombre: 'Baja', fecha: '2026-07-02T17:05:00Z' }\n];\nconsole.log(JSON.stringify(eventos));"
+        }
+      },
+      { "type": "date_time", "data": { "operation": "format", "field": "fecha", "format": "%Y-%m-%d", "unit": "days", "amount": 0, "result_field": "fecha_corta" } },
+      { "type": "write_file", "data": { "file_path": "~/eventos.txt", "content": "{{ $json.nombre }} → {{ $json.fecha_corta }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "filtrar-un-json-por-un-campo",
+    "title": "Filtrar un JSON por un campo",
+    "description": "Se queda solo con los objetos que superan un importe mínimo",
+    "category": "archivos-disco",
+    "tags": ["json", "filtrar", "condición"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "facturas",
+          "code": "const facturas = [\n  { cliente: 'Ana', importe: 120 },\n  { cliente: 'Luis', importe: 40 },\n  { cliente: 'Marta', importe: 260 }\n];\nconsole.log(JSON.stringify(facturas));"
+        }
+      },
+      { "type": "filter", "data": { "condition": "{{ $json.importe }} > 100", "mode": "keep" } },
+      { "type": "write_file", "data": { "file_path": "~/facturas-grandes.txt", "content": "{{ $json.cliente }}: {{ $json.importe }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "cifrar-un-archivo-con-hmac",
+    "title": "Firmar un archivo con HMAC",
+    "description": "Genera la firma HMAC del contenido para verificar su autenticidad",
+    "category": "archivos-disco",
+    "tags": ["archivos", "hmac", "firma", "criptografía"],
+    "popularity": 64,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.txt", "encoding": "utf8", "target_field": "data" } },
+      { "type": "crypto", "data": { "action": "hmac", "algorithm": "SHA256", "encoding": "hex", "value": "{{ $json.data }}", "secret": "frase-secreta-de-ejemplo", "length": 32, "target_field": "data" } },
+      { "type": "write_file", "data": { "file_path": "~/datos.hmac", "content": "{{ $json.data }}", "encoding": "utf8", "append": false } }
+    ]
+  }
+]

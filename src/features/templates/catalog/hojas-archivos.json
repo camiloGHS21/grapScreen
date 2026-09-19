@@ -1,0 +1,552 @@
+[
+  {
+    "id": "csv-a-excel",
+    "title": "CSV → Excel",
+    "description": "Lee un CSV del disco y lo convierte en un libro .xlsx conservando la cabecera",
+    "category": "hojas-archivos",
+    "tags": ["csv", "excel", "xlsx", "conversión"],
+    "popularity": 84,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "tabla",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').trim().split(/\\r?\\n/);\nconst cabecera = lineas[0].split(',');\nconst filas = lineas.slice(1).map((l) => l.split(','));\nconsole.log(JSON.stringify({ cabecera: cabecera, filas: filas }));\n})();"
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "datos.xlsx",
+          "header": "{{ $json.cabecera }}",
+          "values": "{{ $json.filas }}",
+          "delimiter": ",",
+          "overwrite": true,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "excel-de-gastos",
+    "title": "Registro de gastos → Excel",
+    "description": "Pide concepto e importe y los acumula en un libro de gastos",
+    "category": "hojas-archivos",
+    "tags": ["excel", "gastos", "formulario"],
+    "popularity": 78,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "concepto", "label": "Concepto", "type": "text", "required": true },
+            { "id": "importe", "label": "Importe", "type": "text", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "gastos.xlsx",
+          "header": "[\"Concepto\",\"Importe\"]",
+          "values": "[[\"{{ concepto }}\",\"{{ importe }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "csv-limpio",
+    "title": "Limpiar un CSV",
+    "description": "Quita líneas vacías y repetidas de un CSV y guarda el resultado aparte",
+    "category": "hojas-archivos",
+    "tags": ["csv", "limpieza", "deduplicar"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "limpio",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').trim().split(/\\r?\\n/);\nconst vistas = new Set([lineas[0]]);\nconst salida = [lineas[0]];\nfor (const linea of lineas.slice(1)) {\n  const limpia = linea.trim();\n  if (!limpia || vistas.has(limpia)) continue;\n  vistas.add(limpia);\n  salida.push(limpia);\n}\nconsole.log(JSON.stringify({ texto: salida.join(String.fromCharCode(10)), filas: salida.length }));\n})();"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/datos-limpio.csv", "content": "{{ $json.texto }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "sqlite-a-excel",
+    "title": "SQLite → Excel",
+    "description": "Crea la tabla si hace falta y vuelca el resultado de la consulta a un libro",
+    "category": "hojas-archivos",
+    "tags": ["sqlite", "excel", "consulta", "informe"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "registros.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, email TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "registros.db", "query": "SELECT nombre, email FROM registros ORDER BY id", "params": "" } },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "export.xlsx",
+          "header": "[\"Nombre\",\"Email\"]",
+          "values": "[[\"{{ $json.nombre }}\",\"{{ $json.email }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "json-a-excel",
+    "title": "JSON → Excel",
+    "description": "Lee un archivo JSON con una lista de objetos y lo vuelca como tabla",
+    "category": "hojas-archivos",
+    "tags": ["json", "excel", "conversión"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.json", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "tabla",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst objetos = JSON.parse(fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8'));\nconst lista = Array.isArray(objetos) ? objetos : [objetos];\nconst cabecera = Object.keys(lista[0] || {});\nconst filas = lista.map((o) => cabecera.map((c) => String(o[c] === undefined ? '' : o[c])));\nconsole.log(JSON.stringify({ cabecera: cabecera, filas: filas }));\n})();"
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "datos.xlsx",
+          "header": "{{ $json.cabecera }}",
+          "values": "{{ $json.filas }}",
+          "delimiter": ",",
+          "overwrite": true,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "csv-a-json",
+    "title": "CSV → JSON",
+    "description": "Convierte un CSV en una lista de objetos JSON listos para consumir",
+    "category": "hojas-archivos",
+    "tags": ["csv", "json", "conversión"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "json",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').trim().split(/\\r?\\n/);\nconst cabecera = lineas[0].split(',');\nconst objetos = lineas.slice(1).map((l) => {\n  const celdas = l.split(',');\n  const obj = {};\n  cabecera.forEach((c, i) => { obj[c] = celdas[i] === undefined ? '' : celdas[i]; });\n  return obj;\n});\nconsole.log(JSON.stringify({ texto: JSON.stringify(objetos, null, 2), filas: objetos.length }));\n})();"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/datos.json", "content": "{{ $json.texto }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "csv-sin-duplicados",
+    "title": "CSV sin duplicados",
+    "description": "Elimina las filas repetidas de un CSV dejando la primera aparición",
+    "category": "hojas-archivos",
+    "tags": ["csv", "duplicados", "limpieza"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "unico",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').trim().split(/\\r?\\n/);\nconst vistas = new Set();\nconst salida = [lineas[0]];\nfor (const linea of lineas.slice(1)) {\n  if (vistas.has(linea)) continue;\n  vistas.add(linea);\n  salida.push(linea);\n}\nconsole.log(JSON.stringify({ texto: salida.join(String.fromCharCode(10)), originales: lineas.length - 1, quedan: salida.length - 1 }));\n})();"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/datos-sin-duplicados.csv", "content": "{{ $json.texto }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "csv-ordenado",
+    "title": "CSV ordenado por una columna",
+    "description": "Ordena alfabéticamente las filas de un CSV por la primera columna",
+    "category": "hojas-archivos",
+    "tags": ["csv", "ordenar", "clasificar"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "ordenado",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').trim().split(/\\r?\\n/);\nconst filas = lineas.slice(1).sort((a, b) => a.split(',')[0].localeCompare(b.split(',')[0]));\nconsole.log(JSON.stringify({ texto: [lineas[0]].concat(filas).join(String.fromCharCode(10)) }));\n})();"
+        }
+      },
+      { "type": "write_file", "data": { "file_path": "~/datos-ordenado.csv", "content": "{{ $json.texto }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "csv-columnas-seleccionadas",
+    "title": "CSV con las columnas que elijas",
+    "description": "Conserva solo la primera y la tercera columna de cada fila",
+    "category": "hojas-archivos",
+    "tags": ["csv", "columnas", "recorte"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "recorte",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').trim().split(/\\r?\\n/);\nconst cabecera = [lineas[0].split(',')[0], lineas[0].split(',')[2] || ''];\nconst filas = lineas.slice(1).map((l) => { const c = l.split(','); return [c[0], c[2] || '']; });\nconsole.log(JSON.stringify({ cabecera: cabecera, filas: filas }));\n})();"
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "recorte.xlsx",
+          "header": "{{ $json.cabecera }}",
+          "values": "{{ $json.filas }}",
+          "delimiter": ",",
+          "overwrite": true,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "excel-de-inventario",
+    "title": "Inventario → Excel",
+    "description": "Registra producto, cantidad y precio en un libro de inventario",
+    "category": "hojas-archivos",
+    "tags": ["excel", "inventario", "productos"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "producto", "label": "Producto", "type": "text", "required": true },
+            { "id": "cantidad", "label": "Cantidad", "type": "text", "required": true },
+            { "id": "precio", "label": "Precio", "type": "text", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "inventario.xlsx",
+          "header": "[\"Producto\",\"Cantidad\",\"Precio\"]",
+          "values": "[[\"{{ producto }}\",\"{{ cantidad }}\",\"{{ precio }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "excel-de-suscriptores",
+    "title": "Suscriptores → Excel",
+    "description": "Añade cada email que se apunte a una lista de suscriptores en Excel",
+    "category": "hojas-archivos",
+    "tags": ["excel", "suscriptores", "email", "marketing"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "email", "label": "Email", "type": "email", "required": true },
+            { "id": "plan", "label": "Plan", "type": "text", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "suscriptores.xlsx",
+          "header": "[\"Email\",\"Plan\"]",
+          "values": "[[\"{{ email }}\",\"{{ plan }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "excel-de-asistencia",
+    "title": "Planilla de asistencia",
+    "description": "Anota la hora de entrada de cada persona en una planilla de asistencia",
+    "category": "hojas-archivos",
+    "tags": ["excel", "asistencia", "rrhh"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "persona", "label": "Persona", "type": "text", "required": true },
+            { "id": "entrada", "label": "Hora de entrada", "type": "text", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "asistencia.xlsx",
+          "header": "[\"Persona\",\"Entrada\"]",
+          "values": "[[\"{{ persona }}\",\"{{ entrada }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "csv-de-leads",
+    "title": "Leads → CSV",
+    "description": "Guarda nombre, email y empresa en un CSV fácil de importar a un CRM",
+    "category": "hojas-archivos",
+    "tags": ["csv", "leads", "crm", "ventas"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "nombre", "label": "Nombre", "type": "text", "required": true },
+            { "id": "email", "label": "Email", "type": "email", "required": true },
+            { "id": "empresa", "label": "Empresa", "type": "text", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "leads.csv",
+          "header": "[\"Nombre\",\"Email\",\"Empresa\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ email }}\",\"{{ empresa }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "csv"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sheets-de-inventario",
+    "title": "Inventario → Google Sheets",
+    "description": "Añade cada producto directamente a una hoja compartida del equipo",
+    "category": "hojas-archivos",
+    "tags": ["google sheets", "inventario", "equipo"],
+    "popularity": 68,
+    "requires": ["google"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "producto", "label": "Producto", "type": "text", "required": true },
+            { "id": "cantidad", "label": "Cantidad", "type": "text", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "google_sheets",
+        "data": {
+          "spreadsheet_id": "",
+          "range": "Inventario!A:C",
+          "values": "[[\"{{ producto }}\",\"{{ cantidad }}\"]]"
+        }
+      }
+    ]
+  },
+  {
+    "id": "sheets-desde-csv",
+    "title": "CSV → Google Sheets",
+    "description": "Sube de una vez todas las filas de un CSV a una hoja de cálculo",
+    "category": "hojas-archivos",
+    "tags": ["google sheets", "csv", "importar"],
+    "popularity": 66,
+    "requires": ["google"],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "tabla",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').trim().split(/\\r?\\n/);\nconst filas = lineas.map((l) => l.split(','));\nconsole.log(JSON.stringify({ filas: filas }));\n})();"
+        }
+      },
+      { "type": "google_sheets", "data": { "spreadsheet_id": "", "range": "Importado!A:Z", "values": "{{ $json.filas }}" } }
+    ]
+  },
+  {
+    "id": "docs-informe-desde-datos",
+    "title": "Informe en Google Docs",
+    "description": "Crea el cuerpo de un documento de Google con los datos de un formulario",
+    "category": "hojas-archivos",
+    "tags": ["google docs", "informe", "documento"],
+    "popularity": 66,
+    "requires": ["google"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "titulo", "label": "Título del informe", "type": "text", "required": true },
+            { "id": "contenido", "label": "Contenido", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      { "type": "google_docs", "data": { "document_id": "", "text": "# {{ titulo }}\n\n{{ contenido }}" } }
+    ]
+  },
+  {
+    "id": "docs-desde-markdown",
+    "title": "Markdown → Google Docs",
+    "description": "Convierte el markdown escrito por el usuario y lo publica en un documento",
+    "category": "hojas-archivos",
+    "tags": ["google docs", "markdown", "publicar"],
+    "popularity": 62,
+    "requires": ["google"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "markdown", "label": "Markdown", "type": "textarea", "required": true }] } },
+      { "type": "markdown", "data": { "mode": "markdown_to_html", "source": "{{ markdown }}", "target_field": "data" } },
+      { "type": "google_docs", "data": { "document_id": "", "text": "{{ $json.data }}" } }
+    ]
+  },
+  {
+    "id": "markdown-a-html",
+    "title": "Markdown → HTML",
+    "description": "Convierte el markdown que escriba el usuario en un archivo .html",
+    "category": "hojas-archivos",
+    "tags": ["markdown", "html", "conversión"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "markdown", "label": "Markdown", "type": "textarea", "required": true }] } },
+      { "type": "markdown", "data": { "mode": "markdown_to_html", "source": "{{ markdown }}", "target_field": "data" } },
+      { "type": "write_file", "data": { "file_path": "~/documento.html", "content": "{{ $json.data }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "html-a-markdown",
+    "title": "HTML → Markdown",
+    "description": "Convierte el HTML que pegues en un archivo markdown limpio",
+    "category": "hojas-archivos",
+    "tags": ["html", "markdown", "conversión"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "html", "label": "HTML", "type": "textarea", "required": true }] } },
+      { "type": "markdown", "data": { "mode": "html_to_markdown", "source": "{{ html }}", "target_field": "data" } },
+      { "type": "write_file", "data": { "file_path": "~/documento.md", "content": "{{ $json.data }}", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "excel-mensual-por-cron",
+    "title": "Excel nuevo cada mes",
+    "description": "Crea un libro distinto cada mes y escribe la cabecera del informe",
+    "category": "hojas-archivos",
+    "tags": ["excel", "cron", "informe", "mensual"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "set_var", "data": { "name": "mes", "value": "informe-mensual" } },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "informes/{{ mes }}.xlsx",
+          "header": "[\"Fecha\",\"Concepto\",\"Importe\"]",
+          "values": "[[\"{{ mes }}\",\"Cabecera creada por la plantilla\",\"0\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "planilla-con-codigo-de-referencia",
+    "title": "Planilla con código de referencia",
+    "description": "Genera un hash SHA-256 del nombre y lo guarda como código de referencia",
+    "category": "hojas-archivos",
+    "tags": ["excel", "hash", "criptografía", "referencia"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "nombre", "label": "Nombre", "type": "text", "required": true }] } },
+      {
+        "type": "crypto",
+        "data": {
+          "action": "hash",
+          "algorithm": "SHA256",
+          "encoding": "hex",
+          "value": "{{ nombre }}",
+          "secret": "",
+          "length": 32,
+          "target_field": "data"
+        }
+      },
+      {
+        "type": "excel_local",
+        "data": {
+          "file_path": "referencias.xlsx",
+          "header": "[\"Nombre\",\"Código\"]",
+          "values": "[[\"{{ nombre }}\",\"{{ $json.data }}\"]]",
+          "delimiter": ",",
+          "overwrite": false,
+          "format": "xlsx"
+        }
+      }
+    ]
+  },
+  {
+    "id": "informe-csv-a-telegram",
+    "title": "Resumen de un CSV por Telegram",
+    "description": "Cuenta las filas de un CSV y manda el resumen a tu chat",
+    "category": "hojas-archivos",
+    "tags": ["csv", "telegram", "resumen"],
+    "popularity": 68,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.csv", "encoding": "utf8", "target_field": "data" } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "resumen",
+          "code": "(async () => {\nconst fs = await import('node:fs');\nconst lineas = fs.readFileSync(String.raw`{{ $json.file_path }}`, 'utf8').trim().split(/\\r?\\n/);\nconst datos = Math.max(0, lineas.length - 1);\nconsole.log(JSON.stringify({ resumen: 'El CSV tiene ' + datos + ' filas de datos.' }));\n})();"
+        }
+      },
+      { "type": "telegram", "data": { "message": "{{ $json.resumen }}", "chat_id": "", "token": "" } }
+    ]
+  }
+]

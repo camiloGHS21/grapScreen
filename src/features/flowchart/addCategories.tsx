@@ -17,6 +17,8 @@ import {
   FileCode,
 } from "lucide-react";
 import { FlowNodeType } from "../../types";
+import { FLOW_TEMPLATE_CATALOG } from "../templates/catalog";
+import { categoryIcon } from "../templates/components/templateIcons";
 
 export interface AddCategory {
   title: string;
@@ -143,40 +145,26 @@ export const ADD_CATEGORIES: AddCategory[] = [
   },
 ];
 
-export const FLOW_TEMPLATES: { id: string; label: string; desc: string; icon: React.ReactNode; chain: FlowNodeType[] }[] = [
-  {
-    id: "form-to-excel",
-    label: "Formulario → Excel",
-    desc: "Pedir datos y guardarlos en Excel/CSV",
-    icon: React.createElement(FileSpreadsheet, { size: 15 }),
-    chain: ["form", "excel_local"],
-  },
-  {
-    id: "form-to-sheets",
-    label: "Formulario → Google Sheets",
-    desc: "Pedir datos y volcarlos a una hoja",
-    icon: React.createElement(FileSpreadsheet, { size: 15 }),
-    chain: ["form", "google_sheets"],
-  },
-  {
-    id: "app-form-excel",
-    label: "App → Form → Excel",
-    desc: "Abrir app, pedir datos y guardar",
-    icon: React.createElement(AppWindow, { size: 15 }),
-    chain: ["open_app", "form", "excel_local"],
-  },
-  {
-    id: "notify-on-error",
-    label: "Acción + Alerta",
-    desc: "Ejecutar y avisar por Telegram",
-    icon: React.createElement(Send, { size: 15 }),
-    chain: ["set_var", "telegram"],
-  },
-  {
-    id: "ai-process",
-    label: "IA → Resumen",
-    desc: "Procesar texto con IA y guardar",
-    icon: React.createElement(Sparkles, { size: 15 }),
-    chain: ["set_var", "ai_agent", "google_docs"],
-  },
-];
+/**
+ * The template list the add-node menu used to own.
+ *
+ * It is now a view over the marketplace catalog (`features/templates/catalog`)
+ * rather than a second, hand-kept list of five entries: two sources of truth
+ * meant a template could be offered in one place and missing from the other.
+ * The shape is unchanged so existing callers keep compiling.
+ */
+export const FLOW_TEMPLATES: {
+  id: string;
+  label: string;
+  desc: string;
+  icon: React.ReactNode;
+  chain: FlowNodeType[];
+  steps: { type: FlowNodeType; data?: Record<string, unknown> }[];
+}[] = FLOW_TEMPLATE_CATALOG.map((t) => ({
+  id: t.id,
+  label: t.title,
+  desc: t.description,
+  icon: categoryIcon(t.category, 15),
+  chain: t.chain,
+  steps: t.steps,
+}));

@@ -2,7 +2,7 @@ import React from "react";
 import { FlowNode, FlowConnection } from "../../types";
 import { NODE_W, NODE_COLORS } from "../../Flowchart";
 import { getNodePorts } from "./buildNodes";
-import { getNodeHeight, portY, resolvePortIndex } from "./utils/nodePorts";
+import { getNodeHeight, portY, portBottomX, resolvePortIndex } from "./utils/nodePorts";
 import { useDialog } from "../../components/DialogProvider";
 
 interface FlowchartCanvasProps {
@@ -65,7 +65,6 @@ export function FlowchartCanvas({
         const srcPorts = srcNode.ports || getNodePorts(srcNode.type);
         const tgtPorts = tgtNode.ports || getNodePorts(tgtNode.type);
         const srcCount = srcPorts.outputs.length;
-        const tgtCount = tgtPorts.inputs.length;
 
         const srcIdx = resolvePortIndex(srcPorts.outputs, conn.sourcePortId);
         const tgtIdx = resolvePortIndex(tgtPorts.inputs, conn.targetPortId);
@@ -75,12 +74,35 @@ export function FlowchartCanvas({
         const srcH = getNodeHeight(srcNode);
         const tgtH = getNodeHeight(tgtNode);
 
-        const x1 = a.x + NODE_W;
-        const y1 = a.y + portY(srcIdx, srcCount, srcH);
-        const x2 = b.x;
-        const y2 = b.y + portY(tgtIdx, tgtCount, tgtH);
+        const tgtPort = tgtPorts.inputs[tgtIdx];
+        const isBottom = tgtPort?.position === "bottom";
 
-        const d = getCurve(x1, y1, x2, y2);
+        let x1 = a.x + NODE_W;
+        let y1 = a.y + portY(srcIdx, srcCount, srcH);
+        if (isBottom && a.y > b.y) {
+          x1 = a.x + NODE_W / 2;
+          y1 = a.y;
+        }
+
+        let x2 = b.x;
+        let y2 = b.y;
+        if (isBottom) {
+          const bottomInputs = tgtPorts.inputs.filter((p) => p.position === "bottom");
+          const bIdx = bottomInputs.findIndex((p) => p.id === tgtPort.id);
+          x2 = b.x + portBottomX(bIdx >= 0 ? bIdx : 0, bottomInputs.length, NODE_W);
+          y2 = b.y + tgtH;
+        } else {
+          const sideInputs = tgtPorts.inputs.filter((p) => p.position !== "bottom");
+          const sIdx = sideInputs.findIndex((p) => p.id === tgtPort.id);
+          x2 = b.x;
+          y2 = b.y + portY(sIdx >= 0 ? sIdx : tgtIdx, sideInputs.length, tgtH);
+        }
+
+        const d = (isBottom && a.y > b.y)
+          ? `M ${x1} ${y1} C ${x1} ${y1 - 40}, ${x2} ${y2 + 40}, ${x2} ${y2}`
+          : isBottom
+          ? `M ${x1} ${y1} C ${x1 + 40} ${y1}, ${x2} ${y2 + 40}, ${x2} ${y2}`
+          : getCurve(x1, y1, x2, y2);
         const isDisabled = disabledNodes?.has(conn.sourceNodeId) || disabledNodes?.has(conn.targetNodeId);
         const isSrcActive = nodes.findIndex(n => n.id === conn.sourceNodeId) === activeNode;
         const isSelected = selectedWireId === conn.id;

@@ -6,6 +6,7 @@ interface ExecuteWorkflowButtonProps {
   onStop?: () => void;
   executing: boolean;
   disabled?: boolean;
+  hasErrors?: boolean;
   /** How many nodes will run, shown as a hint. */
   nodeCount?: number;
   /** Mirrors useExecution.bgMode: run without taking over the mouse/keyboard. */
@@ -18,18 +19,27 @@ export function ExecuteWorkflowButton({
   onStop,
   executing,
   disabled = false,
+  hasErrors = false,
   nodeCount,
   bgMode = false,
   onToggleBgMode,
 }: ExecuteWorkflowButtonProps) {
+  const isBlocked = !executing && (disabled || hasErrors);
+
   return (
     <div className="exec-fab-wrap">
       <button
         type="button"
-        className={"exec-fab" + (executing ? " running" : "")}
+        className={"exec-fab" + (executing ? " running" : "") + (hasErrors && !executing ? " has-errors" : "")}
         onClick={executing ? onStop : onExecute}
-        disabled={!executing && disabled}
-        title={executing ? "Detener la ejecución" : "Ejecutar el flujo de trabajo"}
+        disabled={isBlocked}
+        title={
+          executing
+            ? "Detener la ejecución"
+            : hasErrors
+            ? "No se puede ejecutar: hay nodos con errores o sin configurar"
+            : "Iniciar el flujo de trabajo"
+        }
       >
         {executing ? (
           <>
@@ -39,7 +49,7 @@ export function ExecuteWorkflowButton({
         ) : (
           <>
             <Play size={15} />
-            Ejecutar Flujo
+            Iniciar Flujo
           </>
         )}
       </button>

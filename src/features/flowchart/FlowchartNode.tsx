@@ -1,9 +1,34 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Plus, Pencil, Check, X } from "lucide-react";
 import { FlowNode } from "../../types";
 import { NODE_COLORS, NODE_W } from "../../Flowchart";
 import { getNodeIcon, getNodePorts } from "./buildNodes";
 import { getNodeHeight, portY } from "./utils/nodePorts";
+import n8nCatalog from "../../data/n8n-catalog.json";
+
+const N8N_CATALOG = n8nCatalog as unknown as Array<{
+  key: string;
+  displayName: string;
+  icon: string | null;
+  glyph: { type: string; name: string } | null;
+}>;
+const N8N_ICON_BY_KEY = new Map(N8N_CATALOG.map((e) => [e.key, e.icon || e.glyph?.name || null]));
+const N8N_NAME_BY_KEY = new Map(N8N_CATALOG.map((e) => [e.key, e.displayName]));
+
+function n8nIconUrl(key: string): string | null {
+  const icon = N8N_ICON_BY_KEY.get(key);
+  if (!icon) return null;
+  if (icon.endsWith(".svg")) {
+    return `${import.meta.env.BASE_URL}n8n-icons/${icon}`;
+  }
+  // glyph name without extension → try the glyph SVG set
+  return `${import.meta.env.BASE_URL}n8n-icons/${icon}.svg`;
+}
+
+function n8nInitialFor(key: string): string {
+  const name = N8N_NAME_BY_KEY.get(key) || key;
+  return name.trim().charAt(0).toUpperCase();
+}
 
 interface FlowchartNodeProps {
   node: FlowNode;
@@ -44,11 +69,15 @@ export function FlowchartNode({
   const eventCount = (node.start == null || node.end == null) ? 0 : node.end - node.start + 1;
   const ports = node.ports || getNodePorts(node.type);
   const dynamicH = getNodeHeight(node);
+  const sideInputs = ports.inputs.filter((p) => p.position !== "bottom");
+  const bottomInputs = ports.inputs.filter((p) => p.position === "bottom");
+
+  const isTrigger = node.type === "trigger" || node.type === "n8n_trigger" || node.type.endsWith("_trigger");
 
   return (
     <div
       data-id={node.id}
-      className={`n8n-node${isExpanded ? " expanded" : ""}${isActive ? " active" : ""}${isDisabled ? " disabled" : ""}${isSelected ? " selected" : ""}${execStatus === "ok" ? " exec-ok" : ""}${execStatus === "error" ? " exec-error" : ""}`}
+      className={`n8n-node${isTrigger ? " is-trigger" : ""}${isExpanded ? " expanded" : ""}${isActive ? " active" : ""}${isDisabled ? " disabled" : ""}${isSelected ? " selected" : ""}${execStatus === "ok" ? " exec-ok" : ""}${execStatus === "error" ? " exec-error" : ""}`}
       style={{
         position: "absolute",
         left: pos.x,
@@ -79,25 +108,64 @@ export function FlowchartNode({
         <span className="n8n-status n8n-status-pin" title="Datos de prueba fijados (Pin Data)">📌</span>
       )}
 
-
-      {/* Input ports */}
-      {ports.inputs.map((port, pi) => (
+      {/* Left side input ports */}
+      {sideInputs.map((port, pi) => (
         <span
           key={port.id}
           className="n8n-port n8n-port-in"
           data-port={port.id}
-          style={{ top: portY(pi, ports.inputs.length, dynamicH), borderColor: port.color || color }}
+          style={{ top: portY(pi, sideInputs.length, dynamicH), borderColor: port.color || color }}
           title={port.label}
           onMouseDown={(e) => {
             e.stopPropagation();
             onInputPortMouseDown?.(e, node, port.id, port.color || color);
           }}
         >
-          {ports.inputs.length > 1 && (
+          {sideInputs.length > 1 && (
             <span className="n8n-port-label n8n-port-label-in">{port.label}</span>
           )}
         </span>
       ))}
+
+      {/* Bottom sub-node input ports (n8n AI Agent sub-ports: Chat Model*, Memory, Tool) */}
+      {bottomInputs.map((port, bi) => {
+        const leftPct = ((bi + 1) / (bottomInputs.length + 1)) * 100;
+        return (
+          <div
+            key={port.id}
+            className="n8n-bottom-port-col"
+            style={{ left: `${leftPct}%` }}
+          >
+            <span
+              className={`n8n-port n8n-port-bottom ${port.shape === "diamond" ? "diamond-port" : ""}`}
+              data-port={port.id}
+              style={{ borderColor: port.color || color }}
+              title={port.label}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                onInputPortMouseDown?.(e, node, port.id, port.color || color);
+              }}
+            />
+            <span className="n8n-bottom-port-label">
+              {port.label?.replace("*", "")}
+              {port.required && <span className="req-asterisk">*</span>}
+            </span>
+            <div className="n8n-bottom-port-stem" />
+            <button
+              type="button"
+              className="n8n-bottom-add-btn"
+              title={`Añadir ${port.label}`}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+                onAddClick(e, node, port.id);
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Plus size={9} />
+            </button>
+          </div>
+        );
+      })}
 
       {/* Output ports */}
       {ports.outputs.map((port, pi) => (
@@ -130,7 +198,33 @@ export function FlowchartNode({
 
       {/* Node icon */}
       <div className="n8n-node-icon" style={{ color, borderColor: color }}>
-        {getNodeIcon(node.type)}
+        {node.n8nKey ? (
+          <img
+            src={n8nIconUrl(node.n8nKey) || undefined}
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px", display: "block" }}
+            onError={(e) => {
+              const img = e.target as HTMLImageElement;
+              img.style.display = "none";
+              // Show a coloured initial badge as fallback, exactly like the
+              // side panel does, so a missing icon never leaves a blank hole.
+              const parent = img.parentElement;
+              if (parent && !parent.querySelector(".n8n-initial-fallback")) {
+                const span = document.createElement("span");
+                span.className = "n8n-initial-fallback";
+                span.textContent = n8nInitialFor(node.n8nKey!);
+                span.style.cssText = `
+                  position:absolute; inset:0; display:flex; align-items:center;
+                  justify-content:center; font:700 14px Manrope; color:#fff;
+                  background:${color}; border-radius:inherit;
+                `;
+                parent.appendChild(span);
+              }
+            }}
+          />
+        ) : (
+          getNodeIcon(node.type)
+        )}
       </div>
 
       {/* Node body */}
@@ -153,6 +247,24 @@ export function FlowchartNode({
       >
         <Pencil size={12} />
       </button>
+
+      {/* Node warning badge (unconfigured node, n8n parity) */}
+      {node.hasWarning && (
+        <span
+          className="n8n-node-warning"
+          title="Este nodo no está configurado correctamente"
+          onClick={(e) => {
+            e.stopPropagation();
+            onEditClick?.(node);
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444" stroke="#ffffff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" stroke="#ffffff" strokeWidth="2.2" />
+            <circle cx="12" cy="17" r="1" fill="#ffffff" stroke="none" />
+          </svg>
+        </span>
+      )}
     </div>
   );
 }

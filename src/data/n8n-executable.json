@@ -1,0 +1,1285 @@
+{
+ "generatedBy": "scripts/n8n-runmap-report.mjs",
+ "source": {
+  "repo": "n8n-io/n8n",
+  "sha": "4169b55bf3b3e6c255d7361642bc5243bd04345a"
+ },
+ "keys": [
+  "ActionNetwork",
+  "ActiveCampaign",
+  "Affinity",
+  "AgileCrm",
+  "Airtable",
+  "AlibabaCloud",
+  "Anthropic",
+  "ApiTemplateIo",
+  "Asana",
+  "Autopilot",
+  "AwsCertificateManager",
+  "AwsComprehend",
+  "AwsLambda",
+  "AwsRekognition",
+  "AwsSns",
+  "AwsTextract",
+  "BambooHr",
+  "Bannerbear",
+  "Baserow",
+  "Beeminder",
+  "Bitly",
+  "Bitwarden",
+  "Box",
+  "Brandfetch",
+  "Bubble",
+  "Chargebee",
+  "CircleCi",
+  "CiscoWebex",
+  "Clearbit",
+  "ClickUp",
+  "Clockify",
+  "Cloudflare",
+  "Cockpit",
+  "Coda",
+  "CoinGecko",
+  "Confluence",
+  "Contentful",
+  "ConvertKit",
+  "Copper",
+  "Cortex",
+  "CustomerIo",
+  "Databricks",
+  "DeepL",
+  "Demio",
+  "Dhl",
+  "Discord",
+  "Discourse",
+  "Disqus",
+  "Drift",
+  "Dropbox",
+  "Dropcontact",
+  "ERPNext",
+  "Egoi",
+  "ElasticSecurity",
+  "Elasticsearch",
+  "Emelia",
+  "Flow",
+  "Freshdesk",
+  "Freshservice",
+  "FreshworksCrm",
+  "GSuiteAdmin",
+  "GetResponse",
+  "Ghost",
+  "Github",
+  "Gitlab",
+  "Gmail",
+  "GoToWebinar",
+  "GoogleAnalytics",
+  "GoogleBigQuery",
+  "GoogleCloudNaturalLanguage",
+  "GoogleContacts",
+  "GoogleDrive",
+  "GoogleFirebaseCloudFirestore",
+  "GoogleFirebaseRealtimeDatabase",
+  "GoogleSheets",
+  "GoogleTasks",
+  "Gotify",
+  "Grafana",
+  "Grist",
+  "HackerNews",
+  "HaloPSA",
+  "Harvest",
+  "HelpScout",
+  "HomeAssistant",
+  "HumanticAi",
+  "Hunter",
+  "Intercom",
+  "InvoiceNinja",
+  "Iterable",
+  "Jenkins",
+  "Jira",
+  "Keap",
+  "KoBoToolbox",
+  "Lemlist",
+  "Linear",
+  "LingvaNex",
+  "LinkedIn",
+  "LoneScale",
+  "Magento2",
+  "Mailcheck",
+  "Mailchimp",
+  "MailerLite",
+  "Mandrill",
+  "Marketstack",
+  "Matrix",
+  "Mattermost",
+  "Mautic",
+  "Medium",
+  "MessageBird",
+  "MicrosoftDynamicsCrm",
+  "MicrosoftExcel",
+  "MicrosoftExcelSharePoint",
+  "MicrosoftGraphSecurity",
+  "MicrosoftOneDrive",
+  "MicrosoftSharePoint",
+  "MicrosoftTeams",
+  "MicrosoftToDo",
+  "Mindee",
+  "MiniMax",
+  "Misp",
+  "Mocean",
+  "MondayCom",
+  "MonicaCrm",
+  "Moonshot",
+  "Msg91",
+  "Nasa",
+  "Netlify",
+  "NetscalerAdc",
+  "NocoDB",
+  "Notion",
+  "Odoo",
+  "OneSimpleApi",
+  "Onfleet",
+  "OpenThesaurus",
+  "OpenWeatherMap",
+  "Oura",
+  "Paddle",
+  "PagerDuty",
+  "PayPal",
+  "PhilipsHue",
+  "Pipedrive",
+  "Plivo",
+  "PostHog",
+  "ProfitWell",
+  "Pushbullet",
+  "Pushcut",
+  "Pushover",
+  "QuickBase",
+  "QuickBooks",
+  "Raindrop",
+  "Reddit",
+  "Rocketchat",
+  "Rundeck",
+  "Salesforce",
+  "Salesmate",
+  "SeaTable",
+  "SecurityScorecard",
+  "Segment",
+  "SendGrid",
+  "Sendy",
+  "SentryIo",
+  "ServiceNow",
+  "Shopify",
+  "Signl4",
+  "Slack",
+  "Sms77",
+  "Spotify",
+  "Stackby",
+  "Storyblok",
+  "Strapi",
+  "Stripe",
+  "Supabase",
+  "SyncroMsp",
+  "Taiga",
+  "Tapfiliate",
+  "Telegram",
+  "TheHive",
+  "TheHiveProject",
+  "Todoist",
+  "TravisCi",
+  "Trello",
+  "Twake",
+  "Twilio",
+  "Twist",
+  "Twitter",
+  "Uplead",
+  "UptimeRobot",
+  "UrlScanIo",
+  "VenafiTlsProtectCloud",
+  "VenafiTlsProtectDatacenter",
+  "Vero",
+  "Vonage",
+  "Webflow",
+  "Wekan",
+  "Wise",
+  "WooCommerce",
+  "Wordpress",
+  "Xero",
+  "YouTube",
+  "Yourls",
+  "Zammad",
+  "Zendesk",
+  "ZohoCrm",
+  "Zoom",
+  "Zulip"
+ ],
+ "complete": [
+  "ActiveCampaign",
+  "Affinity",
+  "AlibabaCloud",
+  "Asana",
+  "AwsCertificateManager",
+  "AwsComprehend",
+  "AwsLambda",
+  "AwsRekognition",
+  "AwsSns",
+  "AwsTextract",
+  "Bannerbear",
+  "Baserow",
+  "Beeminder",
+  "Bitly",
+  "Bitwarden",
+  "Box",
+  "Brandfetch",
+  "Chargebee",
+  "CircleCi",
+  "Clearbit",
+  "Clockify",
+  "Cloudflare",
+  "Cockpit",
+  "Coda",
+  "CoinGecko",
+  "Contentful",
+  "ConvertKit",
+  "Copper",
+  "CustomerIo",
+  "DeepL",
+  "Demio",
+  "Dhl",
+  "Discourse",
+  "Disqus",
+  "Drift",
+  "Dropbox",
+  "Dropcontact",
+  "Egoi",
+  "Emelia",
+  "Flow",
+  "GoogleCloudNaturalLanguage",
+  "GoogleTasks",
+  "Gotify",
+  "Grafana",
+  "HackerNews",
+  "HaloPSA",
+  "Harvest",
+  "HelpScout",
+  "HomeAssistant",
+  "HumanticAi",
+  "Hunter",
+  "Intercom",
+  "InvoiceNinja",
+  "Jira",
+  "KoBoToolbox",
+  "Lemlist",
+  "Linear",
+  "LingvaNex",
+  "LinkedIn",
+  "LoneScale",
+  "Magento2",
+  "Mailcheck",
+  "Mailchimp",
+  "MailerLite",
+  "Mandrill",
+  "Matrix",
+  "Mautic",
+  "Medium",
+  "MessageBird",
+  "MicrosoftDynamicsCrm",
+  "MicrosoftExcel",
+  "MicrosoftExcelSharePoint",
+  "MicrosoftGraphSecurity",
+  "MicrosoftToDo",
+  "Mindee",
+  "MiniMax",
+  "Mocean",
+  "MonicaCrm",
+  "Moonshot",
+  "Msg91",
+  "Nasa",
+  "Netlify",
+  "NetscalerAdc",
+  "NocoDB",
+  "OneSimpleApi",
+  "OpenThesaurus",
+  "OpenWeatherMap",
+  "Oura",
+  "Paddle",
+  "PagerDuty",
+  "PhilipsHue",
+  "Pipedrive",
+  "Plivo",
+  "PostHog",
+  "ProfitWell",
+  "Pushbullet",
+  "Pushcut",
+  "Pushover",
+  "QuickBase",
+  "Raindrop",
+  "Reddit",
+  "Rocketchat",
+  "Rundeck",
+  "Salesmate",
+  "SecurityScorecard",
+  "Segment",
+  "Sendy",
+  "SentryIo",
+  "Signl4",
+  "Sms77",
+  "Spotify",
+  "Stackby",
+  "Strapi",
+  "Taiga",
+  "TheHive",
+  "Todoist",
+  "TravisCi",
+  "Trello",
+  "Twake",
+  "Twilio",
+  "Twist",
+  "Twitter",
+  "Uplead",
+  "UptimeRobot",
+  "UrlScanIo",
+  "VenafiTlsProtectCloud",
+  "VenafiTlsProtectDatacenter",
+  "Vero",
+  "Vonage",
+  "Wekan",
+  "WooCommerce",
+  "Wordpress",
+  "Xero",
+  "Yourls",
+  "Zendesk",
+  "Zoom"
+ ],
+ "counts": {
+  "ActionNetwork": [
+   21,
+   23
+  ],
+  "ActiveCampaign": [
+   48,
+   48
+  ],
+  "Affinity": [
+   16,
+   16
+  ],
+  "AgileCrm": [
+   11,
+   15
+  ],
+  "Airtable": [
+   7,
+   8
+  ],
+  "AlibabaCloud": [
+   5,
+   5
+  ],
+  "Anthropic": [
+   9,
+   10
+  ],
+  "ApiTemplateIo": [
+   2,
+   3
+  ],
+  "Asana": [
+   22,
+   22
+  ],
+  "Autopilot": [
+   10,
+   11
+  ],
+  "AwsCertificateManager": [
+   5,
+   5
+  ],
+  "AwsComprehend": [
+   3,
+   3
+  ],
+  "AwsLambda": [
+   1,
+   1
+  ],
+  "AwsRekognition": [
+   1,
+   1
+  ],
+  "AwsSns": [
+   3,
+   3
+  ],
+  "AwsTextract": [
+   1,
+   1
+  ],
+  "BambooHr": [
+   13,
+   15
+  ],
+  "Bannerbear": [
+   4,
+   4
+  ],
+  "Baserow": [
+   8,
+   8
+  ],
+  "Beeminder": [
+   18,
+   18
+  ],
+  "Bitly": [
+   3,
+   3
+  ],
+  "Bitwarden": [
+   19,
+   19
+  ],
+  "Box": [
+   13,
+   13
+  ],
+  "Brandfetch": [
+   4,
+   4
+  ],
+  "Bubble": [
+   3,
+   5
+  ],
+  "Chargebee": [
+   5,
+   5
+  ],
+  "CircleCi": [
+   3,
+   3
+  ],
+  "Clearbit": [
+   3,
+   3
+  ],
+  "ClickUp": [
+   55,
+   57
+  ],
+  "Clockify": [
+   25,
+   25
+  ],
+  "Cloudflare": [
+   4,
+   4
+  ],
+  "Cockpit": [
+   5,
+   5
+  ],
+  "Coda": [
+   18,
+   18
+  ],
+  "CoinGecko": [
+   9,
+   9
+  ],
+  "Confluence": [
+   17,
+   18
+  ],
+  "Contentful": [
+   7,
+   7
+  ],
+  "ConvertKit": [
+   15,
+   15
+  ],
+  "Copper": [
+   32,
+   32
+  ],
+  "Cortex": [
+   2,
+   4
+  ],
+  "CustomerIo": [
+   9,
+   9
+  ],
+  "Databricks": [
+   28,
+   36
+  ],
+  "DeepL": [
+   1,
+   1
+  ],
+  "Demio": [
+   4,
+   4
+  ],
+  "Dhl": [
+   1,
+   1
+  ],
+  "Discord": [
+   15,
+   21
+  ],
+  "Discourse": [
+   16,
+   16
+  ],
+  "Disqus": [
+   4,
+   4
+  ],
+  "Drift": [
+   5,
+   5
+  ],
+  "Dropbox": [
+   11,
+   11
+  ],
+  "Dropcontact": [
+   2,
+   2
+  ],
+  "Egoi": [
+   4,
+   4
+  ],
+  "ElasticSecurity": [
+   13,
+   14
+  ],
+  "Elasticsearch": [
+   7,
+   9
+  ],
+  "Emelia": [
+   9,
+   9
+  ],
+  "ERPNext": [
+   2,
+   5
+  ],
+  "Flow": [
+   4,
+   4
+  ],
+  "Freshdesk": [
+   6,
+   10
+  ],
+  "Freshservice": [
+   71,
+   72
+  ],
+  "FreshworksCrm": [
+   30,
+   32
+  ],
+  "GetResponse": [
+   4,
+   5
+  ],
+  "Ghost": [
+   4,
+   7
+  ],
+  "Github": [
+   46,
+   48
+  ],
+  "Gitlab": [
+   16,
+   18
+  ],
+  "Gmail": [
+   19,
+   26
+  ],
+  "GoogleAnalytics": [
+   1,
+   2
+  ],
+  "GoogleBigQuery": [
+   1,
+   2
+  ],
+  "GoogleFirebaseCloudFirestore": [
+   6,
+   7
+  ],
+  "GoogleCloudNaturalLanguage": [
+   1,
+   1
+  ],
+  "GoogleFirebaseRealtimeDatabase": [
+   2,
+   5
+  ],
+  "GoogleContacts": [
+   3,
+   5
+  ],
+  "GoogleDrive": [
+   16,
+   17
+  ],
+  "GoogleSheets": [
+   9,
+   10
+  ],
+  "GoogleTasks": [
+   5,
+   5
+  ],
+  "GSuiteAdmin": [
+   15,
+   16
+  ],
+  "Gotify": [
+   3,
+   3
+  ],
+  "GoToWebinar": [
+   21,
+   22
+  ],
+  "Grafana": [
+   16,
+   16
+  ],
+  "Grist": [
+   1,
+   5
+  ],
+  "HackerNews": [
+   3,
+   3
+  ],
+  "HaloPSA": [
+   20,
+   20
+  ],
+  "Harvest": [
+   51,
+   51
+  ],
+  "HelpScout": [
+   13,
+   13
+  ],
+  "HomeAssistant": [
+   13,
+   13
+  ],
+  "HumanticAi": [
+   3,
+   3
+  ],
+  "Hunter": [
+   3,
+   3
+  ],
+  "Intercom": [
+   15,
+   15
+  ],
+  "InvoiceNinja": [
+   31,
+   31
+  ],
+  "Iterable": [
+   4,
+   6
+  ],
+  "Jenkins": [
+   10,
+   11
+  ],
+  "Jira": [
+   20,
+   20
+  ],
+  "Keap": [
+   27,
+   28
+  ],
+  "KoBoToolbox": [
+   17,
+   17
+  ],
+  "Lemlist": [
+   15,
+   15
+  ],
+  "Linear": [
+   7,
+   7
+  ],
+  "LingvaNex": [
+   1,
+   1
+  ],
+  "LinkedIn": [
+   1,
+   1
+  ],
+  "LoneScale": [
+   5,
+   5
+  ],
+  "Magento2": [
+   15,
+   15
+  ],
+  "Mailcheck": [
+   1,
+   1
+  ],
+  "Mailchimp": [
+   14,
+   14
+  ],
+  "MailerLite": [
+   4,
+   4
+  ],
+  "Mandrill": [
+   2,
+   2
+  ],
+  "Marketstack": [
+   2,
+   3
+  ],
+  "Matrix": [
+   11,
+   11
+  ],
+  "Mattermost": [
+   18,
+   19
+  ],
+  "Mautic": [
+   20,
+   20
+  ],
+  "Medium": [
+   2,
+   2
+  ],
+  "MessageBird": [
+   2,
+   2
+  ],
+  "MicrosoftDynamicsCrm": [
+   5,
+   5
+  ],
+  "MicrosoftExcel": [
+   17,
+   17
+  ],
+  "MicrosoftExcelSharePoint": [
+   18,
+   18
+  ],
+  "MicrosoftGraphSecurity": [
+   5,
+   5
+  ],
+  "MicrosoftOneDrive": [
+   15,
+   16
+  ],
+  "MicrosoftSharePoint": [
+   7,
+   11
+  ],
+  "MicrosoftTeams": [
+   25,
+   28
+  ],
+  "MicrosoftToDo": [
+   15,
+   15
+  ],
+  "Mindee": [
+   2,
+   2
+  ],
+  "MiniMax": [
+   5,
+   5
+  ],
+  "Misp": [
+   43,
+   44
+  ],
+  "Mocean": [
+   2,
+   2
+  ],
+  "MondayCom": [
+   17,
+   18
+  ],
+  "MonicaCrm": [
+   52,
+   52
+  ],
+  "Moonshot": [
+   2,
+   2
+  ],
+  "Msg91": [
+   1,
+   1
+  ],
+  "Nasa": [
+   15,
+   15
+  ],
+  "Netlify": [
+   7,
+   7
+  ],
+  "NetscalerAdc": [
+   5,
+   5
+  ],
+  "NocoDB": [
+   2,
+   2
+  ],
+  "Notion": [
+   7,
+   17
+  ],
+  "Odoo": [
+   18,
+   20
+  ],
+  "OneSimpleApi": [
+   10,
+   10
+  ],
+  "Onfleet": [
+   35,
+   37
+  ],
+  "OpenThesaurus": [
+   1,
+   1
+  ],
+  "OpenWeatherMap": [
+   2,
+   2
+  ],
+  "Oura": [
+   4,
+   4
+  ],
+  "Paddle": [
+   9,
+   9
+  ],
+  "PagerDuty": [
+   9,
+   9
+  ],
+  "PayPal": [
+   3,
+   4
+  ],
+  "PhilipsHue": [
+   4,
+   4
+  ],
+  "Pipedrive": [
+   49,
+   49
+  ],
+  "Plivo": [
+   3,
+   3
+  ],
+  "PostHog": [
+   5,
+   5
+  ],
+  "ProfitWell": [
+   2,
+   2
+  ],
+  "Pushbullet": [
+   4,
+   4
+  ],
+  "Pushcut": [
+   1,
+   1
+  ],
+  "Pushover": [
+   1,
+   1
+  ],
+  "QuickBase": [
+   10,
+   10
+  ],
+  "QuickBooks": [
+   39,
+   42
+  ],
+  "Raindrop": [
+   13,
+   13
+  ],
+  "Reddit": [
+   13,
+   13
+  ],
+  "Rocketchat": [
+   4,
+   4
+  ],
+  "Rundeck": [
+   2,
+   2
+  ],
+  "Salesforce": [
+   56,
+   65
+  ],
+  "Salesmate": [
+   15,
+   15
+  ],
+  "SeaTable": [
+   13,
+   16
+  ],
+  "SecurityScorecard": [
+   19,
+   19
+  ],
+  "Segment": [
+   4,
+   4
+  ],
+  "SendGrid": [
+   9,
+   10
+  ],
+  "Sendy": [
+   6,
+   6
+  ],
+  "SentryIo": [
+   25,
+   25
+  ],
+  "ServiceNow": [
+   23,
+   25
+  ],
+  "Sms77": [
+   2,
+   2
+  ],
+  "Shopify": [
+   9,
+   10
+  ],
+  "Signl4": [
+   2,
+   2
+  ],
+  "Slack": [
+   46,
+   48
+  ],
+  "Spotify": [
+   30,
+   30
+  ],
+  "Stackby": [
+   4,
+   4
+  ],
+  "Storyblok": [
+   4,
+   7
+  ],
+  "Strapi": [
+   5,
+   5
+  ],
+  "Stripe": [
+   14,
+   20
+  ],
+  "Supabase": [
+   1,
+   5
+  ],
+  "SyncroMsp": [
+   15,
+   20
+  ],
+  "Taiga": [
+   20,
+   20
+  ],
+  "Tapfiliate": [
+   10,
+   12
+  ],
+  "Telegram": [
+   26,
+   27
+  ],
+  "TheHive": [
+   4,
+   4
+  ],
+  "TheHiveProject": [
+   33,
+   48
+  ],
+  "Todoist": [
+   36,
+   36
+  ],
+  "TravisCi": [
+   5,
+   5
+  ],
+  "Trello": [
+   41,
+   41
+  ],
+  "Twake": [
+   1,
+   1
+  ],
+  "Twilio": [
+   2,
+   2
+  ],
+  "Twist": [
+   22,
+   22
+  ],
+  "Uplead": [
+   2,
+   2
+  ],
+  "UptimeRobot": [
+   21,
+   21
+  ],
+  "UrlScanIo": [
+   3,
+   3
+  ],
+  "VenafiTlsProtectCloud": [
+   8,
+   8
+  ],
+  "VenafiTlsProtectDatacenter": [
+   7,
+   7
+  ],
+  "Vero": [
+   8,
+   8
+  ],
+  "Vonage": [
+   1,
+   1
+  ],
+  "CiscoWebex": [
+   9,
+   10
+  ],
+  "Webflow": [
+   3,
+   5
+  ],
+  "Wekan": [
+   24,
+   24
+  ],
+  "Wise": [
+   11,
+   14
+  ],
+  "WooCommerce": [
+   15,
+   15
+  ],
+  "Wordpress": [
+   12,
+   12
+  ],
+  "Twitter": [
+   8,
+   8
+  ],
+  "Xero": [
+   8,
+   8
+  ],
+  "Yourls": [
+   3,
+   3
+  ],
+  "YouTube": [
+   19,
+   20
+  ],
+  "Zammad": [
+   13,
+   21
+  ],
+  "Zendesk": [
+   23,
+   23
+  ],
+  "ZohoCrm": [
+   31,
+   61
+  ],
+  "Zoom": [
+   5,
+   5
+  ],
+  "Zulip": [
+   15,
+   16
+  ]
+ },
+ "skipped": {
+  "LmChatAnthropic": "sub-nodo de agente: no es un paso",
+  "VectorStoreChromaDB": "sub-nodo de agente: no es un paso",
+  "OutputParserAutofixing": "sub-nodo de agente: no es un paso",
+  "LmChatAwsBedrock": "sub-nodo de agente: no es un paso",
+  "LmChatAzureOpenAi": "sub-nodo de agente: no es un paso",
+  "ChainLlm": "sub-nodo de agente: no es un paso",
+  "DocumentBinaryInputLoader": "sub-nodo de agente: no es un paso",
+  "ToolCalculator": "sub-nodo de agente: no es un paso",
+  "ToolWorkflow": "sub-nodo de agente: no es un paso",
+  "TextSplitterCharacterTextSplitter": "sub-nodo de agente: no es un paso",
+  "Chat": "sub-nodo de agente: no es un paso",
+  "MemoryManager": "sub-nodo de agente: no es un paso",
+  "MemoryChatRetriever": "sub-nodo de agente: no es un paso",
+  "VectorStoreInMemory": "sub-nodo de agente: no es un paso",
+  "ToolCode": "sub-nodo de agente: no es un paso",
+  "LmChatCohere": "sub-nodo de agente: no es un paso",
+  "LmCohere": "sub-nodo de agente: no es un paso",
+  "VectorStoreQdrant": "sub-nodo de agente: no es un paso",
+  "RetrieverContextualCompression": "sub-nodo de agente: no es un paso",
+  "LmChatDatabricks": "sub-nodo de agente: no es un paso",
+  "LmChatDeepSeek": "sub-nodo de agente: no es un paso",
+  "DocumentDefaultDataLoader": "sub-nodo de agente: no es un paso",
+  "VectorStoreZep": "sub-nodo de agente: no es un paso",
+  "EmbeddingsAwsBedrock": "sub-nodo de agente: no es un paso",
+  "EmbeddingsAzureOpenAi": "sub-nodo de agente: no es un paso",
+  "EmbeddingsCohere": "sub-nodo de agente: no es un paso",
+  "EmbeddingsGoogleGemini": "sub-nodo de agente: no es un paso",
+  "EmbeddingsGoogleVertex": "sub-nodo de agente: no es un paso",
+  "EmbeddingsHuggingFaceInference": "sub-nodo de agente: no es un paso",
+  "EmbeddingsLemonade": "sub-nodo de agente: no es un paso",
+  "EmbeddingsMistralCloud": "sub-nodo de agente: no es un paso",
+  "EmbeddingsOllama": "sub-nodo de agente: no es un paso",
+  "EmbeddingsOpenAi": "sub-nodo de agente: no es un paso",
+  "EmbeddingsOracleDb": "sub-nodo de agente: no es un paso",
+  "DocumentGithubLoader": "sub-nodo de agente: no es un paso",
+  "LmChatGoogleGemini": "sub-nodo de agente: no es un paso",
+  "LmChatGoogleVertex": "sub-nodo de agente: no es un paso",
+  "LmChatGroq": "sub-nodo de agente: no es un paso",
+  "Guardrails": "sub-nodo de agente: no es un paso",
+  "ToolHttpRequest": "sub-nodo de agente: no es un paso",
+  "LmOpenHuggingFaceInference": "sub-nodo de agente: no es un paso",
+  "VectorStoreInMemoryInsert": "sub-nodo de agente: no es un paso",
+  "VectorStoreInMemoryLoad": "sub-nodo de agente: no es un paso",
+  "VectorStoreAzureAISearch": "sub-nodo de agente: no es un paso",
+  "InformationExtractor": "sub-nodo de agente: no es un paso",
+  "OutputParserItemList": "sub-nodo de agente: no es un paso",
+  "DocumentJsonInputLoader": "sub-nodo de agente: no es un paso",
+  "Code": "sub-nodo de agente: no es un paso",
+  "LmChatLemonade": "sub-nodo de agente: no es un paso",
+  "LmLemonade": "sub-nodo de agente: no es un paso",
+  "McpClient": "sub-nodo de agente: no es un paso",
+  "McpClientTool": "sub-nodo de agente: no es un paso",
+  "McpRegistryClientTool": "sub-nodo de agente: no es un paso",
+  "LmChatMinimax": "sub-nodo de agente: no es un paso",
+  "LmChatMistralCloud": "sub-nodo de agente: no es un paso",
+  "ChainSummarizationV1": "sub-nodo de agente: no es un paso",
+  "ModelSelector": "sub-nodo de agente: no es un paso",
+  "MemoryMongoDbChat": "sub-nodo de agente: no es un paso",
+  "VectorStoreMongoDBAtlas": "sub-nodo de agente: no es un paso",
+  "LmChatMoonshot": "sub-nodo de agente: no es un paso",
+  "MemoryMotorhead": "sub-nodo de agente: no es un paso",
+  "RetrieverMultiQuery": "sub-nodo de agente: no es un paso",
+  "LmChatNvidia": "sub-nodo de agente: no es un paso",
+  "EmbeddingsNvidia": "sub-nodo de agente: no es un paso",
+  "LmChatOllama": "sub-nodo de agente: no es un paso",
+  "LmOllama": "sub-nodo de agente: no es un paso",
+  "OpenAi": "sub-nodo de agente: no es un paso",
+  "OpenAiAssistant": "sub-nodo de agente: no es un paso",
+  "LmChatOpenAi": "sub-nodo de agente: no es un paso",
+  "LmOpenAi": "sub-nodo de agente: no es un paso",
+  "LmChatOpenRouter": "sub-nodo de agente: no es un paso",
+  "ChatHubVectorStorePGVector": "sub-nodo de agente: no es un paso",
+  "Phantombuster": "el bucle del nodo no termina con respuestas simuladas",
+  "VectorStorePinecone": "sub-nodo de agente: no es un paso",
+  "VectorStorePineconeInsert": "sub-nodo de agente: no es un paso",
+  "VectorStorePineconeLoad": "sub-nodo de agente: no es un paso",
+  "MemoryPostgresChat": "sub-nodo de agente: no es un paso",
+  "VectorStoreSupabase": "sub-nodo de agente: no es un paso",
+  "ChainRetrievalQa": "sub-nodo de agente: no es un paso",
+  "LmChatAlibabaCloud": "sub-nodo de agente: no es un paso",
+  "TextSplitterRecursiveCharacterTextSplitter": "sub-nodo de agente: no es un paso",
+  "MemoryRedisChat": "sub-nodo de agente: no es un paso",
+  "VectorStoreRedis": "sub-nodo de agente: no es un paso",
+  "RerankerCohere": "sub-nodo de agente: no es un paso",
+  "ToolSearXng": "sub-nodo de agente: no es un paso",
+  "SentimentAnalysis": "sub-nodo de agente: no es un paso",
+  "ToolSerpApi": "sub-nodo de agente: no es un paso",
+  "MemoryBufferWindow": "sub-nodo de agente: no es un paso",
+  "OutputParserStructured": "sub-nodo de agente: no es un paso",
+  "ChainSummarization": "sub-nodo de agente: no es un paso",
+  "VectorStoreSupabaseInsert": "sub-nodo de agente: no es un paso",
+  "VectorStoreSupabaseLoad": "sub-nodo de agente: no es un paso",
+  "VectorStoreOracleDB": "sub-nodo de agente: no es un paso",
+  "VectorStoreWeaviate": "sub-nodo de agente: no es un paso",
+  "TextClassifier": "sub-nodo de agente: no es un paso",
+  "ToolThink": "sub-nodo de agente: no es un paso",
+  "TextSplitterTokenSplitter": "sub-nodo de agente: no es un paso",
+  "ToolExecutor": "sub-nodo de agente: no es un paso",
+  "ToolVectorStore": "sub-nodo de agente: no es un paso",
+  "RetrieverVectorStore": "sub-nodo de agente: no es un paso",
+  "LmChatVercelAiGateway": "sub-nodo de agente: no es un paso",
+  "ToolWikipedia": "sub-nodo de agente: no es un paso",
+  "ToolWolframAlpha": "sub-nodo de agente: no es un paso",
+  "RetrieverWorkflow": "sub-nodo de agente: no es un paso",
+  "LmChatXAiGrok": "sub-nodo de agente: no es un paso",
+  "MemoryXata": "sub-nodo de agente: no es un paso",
+  "MemoryZep": "sub-nodo de agente: no es un paso",
+  "VectorStoreZepInsert": "sub-nodo de agente: no es un paso",
+  "VectorStoreZepLoad": "sub-nodo de agente: no es un paso"
+ }
+}

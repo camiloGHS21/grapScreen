@@ -1,0 +1,356 @@
+[
+  {
+    "id": "aviso-a-telegram",
+    "title": "Aviso por Telegram",
+    "description": "Define un mensaje y envíalo a tu chat de Telegram con un bot",
+    "category": "notificaciones",
+    "tags": ["telegram", "aviso", "mensajería"],
+    "popularity": 88,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Proceso terminado correctamente." } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "alerta-a-slack",
+    "title": "Alerta en Slack",
+    "description": "Publica un mensaje en un canal de Slack con un webhook entrante",
+    "category": "notificaciones",
+    "tags": ["slack", "alerta", "equipo"],
+    "popularity": 86,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Alerta: revisa el panel de incidencias." } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ mensaje }}", "channel": "#alertas", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "recordatorio-por-telegram",
+    "title": "Recordatorio cada hora",
+    "description": "Envía un recordatorio a Telegram una vez por hora mientras la app esté abierta",
+    "category": "notificaciones",
+    "tags": ["telegram", "recordatorio", "cron", "cada hora"],
+    "popularity": 84,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1h" } },
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Recordatorio: revisa las tareas pendientes." } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "correo-de-aviso",
+    "title": "Correo de aviso",
+    "description": "Envía un correo con asunto y cuerpo fijos por tu servidor SMTP",
+    "category": "notificaciones",
+    "tags": ["email", "smtp", "correo", "aviso"],
+    "popularity": 82,
+    "requires": ["smtp"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "asunto", "value": "Aviso automático de grapScreen" } },
+      { "type": "set_var", "data": { "name": "cuerpo", "value": "Este correo lo ha enviado una automatización." } },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "destino@ejemplo.com",
+          "subject": "{{ asunto }}",
+          "body": "{{ cuerpo }}",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "aviso-desde-un-formulario",
+    "title": "Aviso desde un formulario",
+    "description": "El usuario escribe un mensaje en una ventana y llega a tu Telegram",
+    "category": "notificaciones",
+    "tags": ["telegram", "formulario", "aviso"],
+    "popularity": 82,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "mensaje", "label": "Mensaje a enviar", "type": "textarea", "required": true }] } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "aviso-a-discord",
+    "title": "Aviso en Discord",
+    "description": "Manda la alerta a un canal de Discord mediante su webhook",
+    "category": "notificaciones",
+    "tags": ["discord", "aviso", "comunidad"],
+    "popularity": 80,
+    "requires": ["discord"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Nuevo aviso desde grapScreen." } },
+      { "type": "discord_webhook", "data": { "webhook_url": "", "content": "{{ mensaje }}", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "whatsapp-de-aviso",
+    "title": "Aviso por WhatsApp",
+    "description": "Envía un mensaje de WhatsApp a un número usando la Cloud API",
+    "category": "notificaciones",
+    "tags": ["whatsapp", "aviso", "mensajería"],
+    "popularity": 80,
+    "requires": ["whatsapp"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Aviso enviado desde una automatización." } },
+      { "type": "whatsapp", "data": { "to": "34600000000", "message": "{{ mensaje }}", "api_type": "api", "token": "", "phone_id": "" } }
+    ]
+  },
+  {
+    "id": "aviso-diario-a-slack",
+    "title": "Aviso diario en Slack",
+    "description": "Publica un recordatorio en Slack una vez al día",
+    "category": "notificaciones",
+    "tags": ["slack", "cron", "diario"],
+    "popularity": 78,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "1d" } },
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Buenos días: repasa las tareas de hoy." } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ mensaje }}", "channel": "#general", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "aviso-al-arrancar",
+    "title": "Aviso al arrancar",
+    "description": "Avisa por Telegram cada vez que se inicia el equipo o la aplicación",
+    "category": "notificaciones",
+    "tags": ["telegram", "startup", "inicio"],
+    "popularity": 78,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "startup", "data": { "mode": "system", "delay_seconds": 0 } },
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Equipo iniciado. Automatizaciones listas." } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "aviso-a-telegram-y-slack",
+    "title": "Aviso a Telegram y Slack",
+    "description": "Un mismo mensaje a la vez a tu chat y a un canal del equipo",
+    "category": "notificaciones",
+    "tags": ["telegram", "slack", "multicanal"],
+    "popularity": 78,
+    "requires": ["telegram", "slack"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Aviso para todos los canales." } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ mensaje }}", "channel": "#general", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "aviso-con-atajo-de-teclado",
+    "title": "Aviso con un atajo de teclado",
+    "description": "Lanza una alerta cuando pulses Ctrl+Alt+A en cualquier momento",
+    "category": "notificaciones",
+    "tags": ["telegram", "atajo", "hotkey"],
+    "popularity": 76,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "hotkey_trigger", "data": { "shortcut": "Ctrl+Alt+A" } },
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Has lanzado la alerta con el atajo de teclado." } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "aviso-de-archivo-modificado",
+    "title": "Aviso al cambiar un archivo",
+    "description": "Vigila un archivo y avisa por Telegram cuando su contenido cambie",
+    "category": "notificaciones",
+    "tags": ["telegram", "file_change", "vigilancia"],
+    "popularity": 76,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "file_change", "data": { "path": "~/importante.txt", "event": "Modify" } },
+      { "type": "set_var", "data": { "name": "mensaje", "value": "El archivo vigilado ha cambiado." } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "aviso-a-telegram-y-discord",
+    "title": "Aviso a Telegram y Discord",
+    "description": "Difunde la alerta al chat privado y a la comunidad a la vez",
+    "category": "notificaciones",
+    "tags": ["telegram", "discord", "multicanal"],
+    "popularity": 76,
+    "requires": ["telegram", "discord"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Aviso difundido a todos los canales." } },
+      { "type": "telegram", "data": { "message": "{{ mensaje }}", "chat_id": "", "token": "" } },
+      { "type": "discord_webhook", "data": { "webhook_url": "", "content": "{{ mensaje }}", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "alerta-desde-un-webhook",
+    "title": "Alerta desde un webhook",
+    "description": "Recibe una petición HTTP en local y reenvíala a un canal de Slack",
+    "category": "notificaciones",
+    "tags": ["webhook", "slack", "entrada"],
+    "popularity": 74,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "webhook", "data": { "path": "/alerta", "method": "POST" } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "Evento recibido: {{ webhook.body }}", "channel": "#alertas", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "correo-formal-desde-formulario",
+    "title": "Correo formal desde un formulario",
+    "description": "El usuario rellena destinatario y mensaje y el correo sale por SMTP",
+    "category": "notificaciones",
+    "tags": ["email", "smtp", "formulario"],
+    "popularity": 74,
+    "requires": ["smtp"],
+    "steps": [
+      {
+        "type": "form",
+        "data": {
+          "fields": [
+            { "id": "destinatario", "label": "Destinatario", "type": "email", "required": true },
+            { "id": "asunto", "label": "Asunto", "type": "text", "required": true },
+            { "id": "cuerpo", "label": "Cuerpo del correo", "type": "textarea", "required": true }
+          ]
+        }
+      },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "{{ destinatario }}",
+          "subject": "{{ asunto }}",
+          "body": "{{ cuerpo }}",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "aviso-de-rss-nuevo",
+    "title": "Aviso cuando el feed cambie",
+    "description": "Vigila un feed RSS y avisa por Telegram en cuanto publica algo nuevo",
+    "category": "notificaciones",
+    "tags": ["rss", "telegram", "vigilancia"],
+    "popularity": 74,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "rss_trigger", "data": { "url": "https://news.ycombinator.com/rss", "interval": 900 } },
+      { "type": "telegram", "data": { "message": "El feed ha cambiado. Último contenido:\n{{ rss.body }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "alerta-de-umbral-superado",
+    "title": "Alerta si se supera un umbral",
+    "description": "Comprueba una condición antes de mandar la alerta, sin avisar de más",
+    "category": "notificaciones",
+    "tags": ["telegram", "condición", "umbral"],
+    "popularity": 72,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "estado", "value": "ok" } },
+      { "type": "condition", "data": { "description": "¿Se ha superado el umbral?", "condition_type": "expression", "expression": "\"{{ estado }}\" == \"ok\"" } },
+      { "type": "telegram", "data": { "message": "El umbral configurado se ha superado.", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "aviso-a-dos-canales-de-slack",
+    "title": "Aviso a dos canales de Slack",
+    "description": "Publica el mismo texto en un canal general y en uno de alertas",
+    "category": "notificaciones",
+    "tags": ["slack", "dos canales", "equipo"],
+    "popularity": 70,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Aviso replicado en dos canales." } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ mensaje }}", "channel": "#general", "bot_name": "grapScreen" } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ mensaje }}", "channel": "#alertas", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "correo-y-aviso-en-slack",
+    "title": "Correo y aviso en Slack",
+    "description": "Deja constancia por correo y avisa al equipo en Slack a la vez",
+    "category": "notificaciones",
+    "tags": ["email", "slack", "multicanal"],
+    "popularity": 70,
+    "requires": ["smtp", "slack"],
+    "steps": [
+      { "type": "set_var", "data": { "name": "mensaje", "value": "Incidencia registrada." } },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "destino@ejemplo.com",
+          "subject": "Incidencia registrada",
+          "body": "{{ mensaje }}",
+          "is_html": false
+        }
+      },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ mensaje }}", "channel": "#alertas", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "aviso-de-cambio-en-una-api",
+    "title": "Aviso si una API cambia",
+    "description": "Consulta una API cada rato y avisa en Slack cuando su respuesta cambie",
+    "category": "notificaciones",
+    "tags": ["polling", "slack", "api", "vigilancia"],
+    "popularity": 70,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "polling", "data": { "url": "https://api.github.com/repos/tauri-apps/tauri", "method": "GET", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "interval": 900 } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "La API ha cambiado ({{ polling.status }}):\n{{ polling.body }}", "channel": "#alertas", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "aviso-con-datos-de-sqlite",
+    "title": "Aviso con el recuento de la base",
+    "description": "Cuenta los registros de una base local y manda el total por Telegram",
+    "category": "notificaciones",
+    "tags": ["telegram", "sqlite", "recuento"],
+    "popularity": 70,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "registros.db", "query": "CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "registros.db", "query": "SELECT COUNT(*) AS total FROM registros", "params": "" } },
+      { "type": "telegram", "data": { "message": "Registros guardados hasta ahora: {{ $json.total }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "aviso-de-hora-por-telegram",
+    "title": "Aviso con la hora actual",
+    "description": "Genera la hora del sistema con un script y la envía a Telegram",
+    "category": "notificaciones",
+    "tags": ["telegram", "código", "hora"],
+    "popularity": 68,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "startup", "data": { "mode": "system", "delay_seconds": 0 } },
+      {
+        "type": "code",
+        "data": {
+          "language": "javascript",
+          "output_var": "hora",
+          "code": "const ahora = new Date();\nconst texto = ahora.toLocaleString('es-ES');\nconsole.log(JSON.stringify({ mensaje: 'Arranque registrado a las ' + texto }));"
+        }
+      },
+      { "type": "telegram", "data": { "message": "{{ $json.mensaje }}", "chat_id": "", "token": "" } }
+    ]
+  }
+]

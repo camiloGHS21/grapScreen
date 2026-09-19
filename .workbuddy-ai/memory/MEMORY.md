@@ -1,32 +1,42 @@
-# grapScreen — project essentials
+# grapScreen — essentials
 
-Windows desktop automation: Tauri 2 / Rust (`src-tauri/src/`) + React 18 / TypeScript / Vite 6 (`src/`). Detailed history: daily logs; node registration: `grapscreen-add-node-type` skill.
+Tauri 2 / Rust (`src-tauri/src/`) + React 18 / TS / Vite 6 (`src/`).
+Deep detail on the n8n catalogue, credentials and panel shape:
+**`.workbuddy-ai/memory/reference/n8n-catalogue.md`**.
+Skills: `grapscreen-add-node-type`, `n8n-node-catalog-extract`,
+`n8n-typed-credential-editor`, `ui-visual-verify`, `windows-rust-test-manifest`.
 
-## User intent / UX
-- One EditorTopBar, no AI selector or duplicate Run button. Run lives on canvas. Keep rename/export/delete/re-record in menu.
-- Right catalog hidden, logs collapsed by default; + toggles catalog; selecting a node inserts directly, not another add modal.
-- IMPORTANT clarification 2026-09-13: "segundo plano" means EXECUTING a recorded automation without taking mouse/keyboard while the user works elsewhere. Recording controls must remain visible. The recently added hide_app / invisible-recording feature was a mistaken interpretation, not a requirement. Restore the existing bgMode selector removed with StatsHeader; do not replace playback mode with hiding the recorder.
-- Use theme CSS variables, light theme. Search duplicate selectors before changes; later hardcoded dark rules have overridden the + button. Same trap hit .n8n-node-title/.n8n-node-sub: a later duplicate block re-set max-width. Node text needs white-space:nowrap + overflow:hidden + text-overflow:ellipsis + max-width:100% or it spills outside the card.
+## UX intent
+- One EditorTopBar; Run lives on canvas; rename/export/delete/re-record in the menu. Publicar = arming triggers.
+- Right catalogue hidden + logs collapsed; `+` toggles it, picking inserts. Node `+` sets `panelSource` so the wire lands on that port; `StepAddMenu` only for canvas double-click / empty-canvas CTA.
+- "segundo plano" = run a recording without stealing mouse/keyboard; recorder controls stay visible (`bgMode`).
+- Canvas node = n8n card: 8px radius, hairline border, soft shadow, no hover scale, colour rail on the left. Node text needs `nowrap + ellipsis + max-width:100%`. Light theme via CSS vars.
+
+## Traps that have cost real debugging time
+- **CSS duplicate-selector trap**: `.n8n-node` is defined ~5× (styles.css ~1650/3583/3933/4522/5093); later blocks silently win. Grep a selector before editing; append at EOF to win by order, not specificity.
+- **Loose class names are global**: `.primary` (~240) styles the big CTAs and leaked onto `.ftb-btn.primary`. Fixed with `.primary:not(.ftb-btn)`.
+- **`NODE_W` (`src/Flowchart.tsx`) is both canvas geometry and the card's inline `width`** — it must match the `.n8n-node` rule. Was 104 vs CSS 240px; inline won, so nodes collapsed to 1-char squares. Now 240. Wires/minimap/`findFreeSpot` derive from it; layouts saved at the old width may overlap.
+- **Truncation needs `min-width: 0`**: a flex item defaults to `min-width: auto` and refuses to shrink below its content, so `nowrap` text overflows and paints over siblings instead of ellipsing.
+- **Inline styles beat `!important`**: sidebar labels carry inline `font-size`, so `font-size: 0` does nothing — hide with `display: none`.
+- **`onError` that only hides leaves a hole.** An `<img>` fallback must swap in another node (state flag → badge/glyph), not `display:none`.
 
 ## Graph invariants
-- Shared geometry: `features/flowchart/utils/nodePorts.ts` (getNodeHeight, portY, PORT_SPACING, resolvePortIndex). Node wrappers and wire endpoints must use dynamic height (switch 140, base 96). Never clamp missing ports to 0.
-- Preserve event data.id and layout positions through saves; onAddStep accepts optional fourth position argument. Date-based IDs are stable only once assigned, not deterministic across fresh inputs.
-- NEVER stamp one shared id across events. buildNodes derives node ids from e.data.id (`form-${id}`, `click-${id}`...), so a shared id collapses nodes into duplicates. Layout keys are the FULL node id (`form-…`), not the raw data id; use the newNodeId returned by computeAddStepEvents.
-- Adding a node: canvas `+` and node `+` both open the right-side catalogue panel (node `+` anchors source node+port in panelSource so the pick is wired straight onto that port). The StepAddMenu modal is only for canvas double-click and the empty-canvas CTA.
-- Controls inside `.n8n-node` (the `+`, the pencil) MUST stopPropagation on BOTH mousedown and click. The node body listens to both; stopping only one lets the other action through (the `+` opened the panel on mousedown and the trailing click closed it again).
-- `app` is ENTRY but NOT PASSTHROUGH: it owns the recorded event range, replayed by exec_range. Adding it to passthrough silently breaks recordings.
-- Register kinds in engine ITEM_AWARE_KINDS / TRANSFORM_KINDS and node_runners dispatch as appropriate. Registry tests protect invariants.
-- Items wrapped as {json:...}; unwrap_item before path navigation. GraphNode has no label; visible name is event data.name.
-- Reset expression thread-locals per run, preserve trigger payload on graph entry and credential scope around subflows.
+- Geometry in `flowchart/utils/nodePorts.ts` (`getNodeHeight`/`portY`/`resolvePortIndex`); wrappers and wires both use dynamic height (switch 140, base 96). Never clamp missing ports to 0.
+- Preserve event `data.id` + layout through saves. `onAddStep` takes optional position (4th) and `extra` (5th, n8n payload).
+- Never stamp one id across events — `buildNodes` derives ids from `e.data.id`; sharing collapses nodes. Layout keys use the FULL id (`newNodeId`).
+- Controls inside `.n8n-node` MUST `stopPropagation` on mousedown AND click.
+- `app` is entry but NOT passthrough (owns the recorded range, replayed by `exec_range`). Items wrapped `{json:…}`; `unwrap_item` before path navigation. `GraphNode` has no label — the name is `data.name`.
+- Reset expression thread-locals per run; trigger payload on graph entry, credential scope around subflows.
 
-## Services
-- useExecution.bgMode dispatches execute_automation_background vs execute_automation. Background replay skips global-input backend and window focus; does not mean hiding windows.
-- HTTP centralized in application/http_client.rs, rustls, deliberate no_proxy; node headers override credential headers; non-2xx fails.
-- Vault import: application::vault_service::service::get_vault_service.
-- SQLite uses bound params, relative paths under Documents/automateScreen/databases. XML parser drops root; scalar item json wrapped in value.
+## Services & validation
+- `useExecution.bgMode` picks `execute_automation_background` vs `execute_automation`; background skips global input and window focus.
+- HTTP in `application/http_client.rs` (rustls, no_proxy); node headers override credential headers. Vault via `vault_service::service::get_vault_service`. SQLite bound params under `Documents/automateScreen/databases`.
+- Cargo PATH `/c/Users/Administrator/.cargo/bin`. Verify with `tsc --noEmit` + `vite build`; **tsc is clean (0 errors)**. i18n is installed (`i18next`/`react-i18next`, empty `src/i18n/locales/{es,en}.json`) but NOT wired — nothing imports `src/i18n/i18n.ts`, so the switcher only persists `grap_lang`.
+- **`vite build` cannot empty an existing `dist/`** (bulk-delete guard, and `dist/n8n-icons` alone trips it at 409 files). Empty it first under `dangerouslyDisableSandbox`: `find dist -type f -delete` then `find dist -depth -type d -exec rmdir {} \;`. Public assets with no `index.html` = an earlier build aborted and `tauri build` would ship a broken app.
+- Windows Rust tests: compile `--no-run`, embed `src-tauri/comctl.manifest` with SDK `mt.exe` using ABSOLUTE paths. Empty PowerShell output ≠ tests ran. Nested `powershell -File x.ps1` is silently dropped; dot-source instead.
 
-## Validation
-- Cargo PATH: /c/Users/Administrator/.cargo/bin. Check --all-targets; frontend tsc + vite. i18n has known missing packages/locales; do not report tsc clean without reading actual errors.
-- Windows Rust tests: compile --no-run, embed src-tauri/comctl.manifest using SDK mt.exe, run exact patched binary via Bash. See windows-rust-test-manifest skill. Empty PowerShell output/null exit is NOT proof tests ran.
-- Nested `powershell -File x.ps1` from the PowerShell tool is silently dropped (no output, no side effects). Dot-source instead: `. .\scripts\patch-manifest.ps1`. `[Diagnostics.Process]::Start` is blocked inline but allowed inside a .ps1 file.
-- Git previously reported not a repository; avoid stash/reset. Static previews do not prove native interactions.
+## Responsive layout (measured, not guessed)
+- Breakpoints measured with a DOM probe, never estimated. Ladder: `1450px` → `.flow-topbar` wraps, `.ftb-tabs` to its own row; `980px` → `DURACIÓN/PASOS/VIDEO` readout hides; `900px` → sidebar collapses to an 86px icon rail (= window `minWidth`, so reachable).
+- The icon-rail rules live at **EOF** — `.sidebar-section-title` and the settings buttons are redefined later, so an early equal-specificity rule loses. The rail also needs its own class (`.sidebar-user`) because that block had none.
+- **Measuring the real app past the login gate**: auth is only `localStorage["gs_user"]`. A page served from `dist/` (same origin) can seed it and `location.replace("/")`, and headless Chrome screenshots the redirect target — the library view renders with no Tauri backend. The *editor* still needs the backend (creating a project invokes Rust), so verify the panel with a harness that loads the real compiled `styles.css` and is generated from the real sources.
+- **Generate harness data, never hand-copy it.** `.workbuddy-ai/preview/gen-panel-categories.mjs` reads the real component maps, the real Lucide glyph files and the real catalogue JSON, and fails loudly on a coverage gap. Hand-copied fixtures drift.

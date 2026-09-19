@@ -1,0 +1,1 @@
+{"key":"RetrieverContextualCompression","displayName":"Contextual Compression Retriever","description":"Enhances document similarity search by contextual compression.","version":1,"defaults":{"name":"Contextual Compression Retriever"},"properties":[]}

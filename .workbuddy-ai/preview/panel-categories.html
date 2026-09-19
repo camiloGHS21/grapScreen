@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>grapScreen — categorías con icono (datos reales)</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  html, body { margin: 0; background: var(--bg); font: 400 13px Manrope, sans-serif; }
+  .demo { display: flex; gap: 24px; padding: 20px; align-items: flex-start; }
+  .col > h3 { font: 700 12px Manrope, sans-serif; margin: 0 0 8px; color: var(--text); }
+  .col > p  { font: 400 11px Manrope, sans-serif; margin: 0 0 12px; color: var(--muted); max-width: 330px; line-height: 1.5; }
+  .panel { width: 330px; background: var(--s1); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+  #measure { font: 400 10px monospace; color: var(--dim); white-space: pre-wrap; max-width: 380px; margin: 0; }
+  .verdict { font: 700 12px Manrope, sans-serif; padding: 6px 10px; border-radius: 8px; display: inline-block; margin-bottom: 10px; }
+  .verdict.ok { background: rgba(34,197,94,.14); color: #16a34a; }
+  .verdict.bad { background: rgba(239,68,68,.14); color: #dc2626; }
+</style>
+</head>
+<body>
+<div class="demo">
+  <div class="col">
+    <h3>Lienzo vacío — "Explorar categorías"</h3>
+    <p>Datos reales del catálogo (9 categorías, 94 disparadores) y los
+       glifos reales de Lucide. Cada fila debe mostrar su icono coloreado.</p>
+    <div class="verdict" id="verdict">midiendo…</div>
+    <div class="panel">
+      <div class="fsp-section">
+        <div class="fsp-section-title">Explorar categorías</div>
+        
+      <button type="button" class="fsp-row" data-cat="">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #6E58F2 15%, transparent);color:#6E58F2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Integrados</span><span class="fsp-row-desc">12 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Productividad">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #7C5CFF 15%, transparent);color:#7C5CFF">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Productividad</span><span class="fsp-row-desc">12 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Comunicación">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #2CB1FF 15%, transparent);color:#2CB1FF">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Comunicación</span><span class="fsp-row-desc">28 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Marketing">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #FF7A59 15%, transparent);color:#FF7A59">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Marketing</span><span class="fsp-row-desc">10 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Ventas">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #22C55E 15%, transparent);color:#22C55E">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Ventas</span><span class="fsp-row-desc">11 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Finanzas y contabilidad">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #F5A524 15%, transparent);color:#F5A524">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="22" y2="22"/><line x1="6" x2="6" y1="18" y2="11"/><line x1="10" x2="10" y1="18" y2="11"/><line x1="14" x2="14" y1="18" y2="11"/><line x1="18" x2="18" y1="18" y2="11"/><polygon points="12 2 20 7 4 7"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Finanzas y contabilidad</span><span class="fsp-row-desc">5 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Datos y almacenamiento">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #0EA5E9 15%, transparent);color:#0EA5E9">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Datos y almacenamiento</span><span class="fsp-row-desc">6 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Desarrollo">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #64748B 15%, transparent);color:#64748B">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Desarrollo</span><span class="fsp-row-desc">18 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Utilidades">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #94A3B8 15%, transparent);color:#94A3B8">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Utilidades</span><span class="fsp-row-desc">1 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Varios">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #8B8FA3 15%, transparent);color:#8B8FA3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"/><path d="m7 16.5-4.74-2.85"/><path d="m7 16.5 5-3"/><path d="M7 16.5v5.17"/><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"/><path d="m17 16.5-5-3"/><path d="m17 16.5 4.74-2.85"/><path d="M17 16.5v5.17"/><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"/><path d="M12 8 7.26 5.15"/><path d="m12 8 4.74-2.85"/><path d="M12 13.5V8"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Varios</span><span class="fsp-row-desc">3 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      <button type="button" class="fsp-row" data-cat="Otros">
+        <span class="fsp-row-icon" style="background:color-mix(in srgb, #8B8FA3 15%, transparent);color:#8B8FA3">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z"/><path d="m7 16.5-4.74-2.85"/><path d="m7 16.5 5-3"/><path d="M7 16.5v5.17"/><path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z"/><path d="m17 16.5-5-3"/><path d="m17 16.5 4.74-2.85"/><path d="M17 16.5v5.17"/><path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z"/><path d="M12 8 7.26 5.15"/><path d="m12 8 4.74-2.85"/><path d="M12 13.5V8"/></svg>
+        </span>
+        <span class="fsp-row-text"><span class="fsp-row-title">Otros</span><span class="fsp-row-desc">17 disparadores</span></span>
+        <span class="fsp-row-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>
+      </button>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <h3>Medición</h3>
+    <pre id="measure"></pre>
+  </div>
+</div>
+<script>
+window.addEventListener("load", () => setTimeout(() => {
+  const rows = [...document.querySelectorAll(".fsp-row")];
+  const probe = rows.map((el, i) => {
+    const slot = el.querySelector(".fsp-row-icon");
+    const kid = slot && slot.firstElementChild;
+    const r = kid ? kid.getBoundingClientRect() : { width: 0, height: 0 };
+    const st = slot ? getComputedStyle(slot) : null;
+    return {
+      row: i + 1,
+      title: el.querySelector(".fsp-row-title").textContent,
+      glyph: kid ? kid.tagName.toLowerCase() : "none",
+      painted: r.width > 4 && r.height > 4,
+      color: st ? st.color : "",
+      tint: st ? st.backgroundColor : "",
+    };
+  });
+  const bad = probe.filter((p) => !p.painted);
+  document.getElementById("measure").textContent =
+    JSON.stringify({ filas: probe.length, conIcono: probe.length - bad.length, vacias: bad.length, detalle: probe }, null, 2)
+    + "\n\n" + (bad.length ? "FAILURES" : "ALL-OK");
+  const v = document.getElementById("verdict");
+  v.textContent = bad.length
+    ? "✗ " + bad.length + " fila(s) sin icono: " + bad.map((b) => b.title).join(", ")
+    : "✓ " + probe.length + "/" + probe.length + " filas con icono";
+  v.className = "verdict " + (bad.length ? "bad" : "ok");
+  document.title = (bad.length ? "HAS-FAILURES" : "ALL-OK") + " — categorías";
+}, 500));
+</script>
+</body>
+</html>

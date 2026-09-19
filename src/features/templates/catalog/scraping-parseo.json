@@ -1,0 +1,278 @@
+[
+  {
+    "id": "extraer-enlaces-de-una-web",
+    "title": "Extraer los enlaces de una web",
+    "description": "Descarga la página, saca todos los enlaces y los guarda en un archivo",
+    "category": "scraping-parseo",
+    "tags": ["scraping", "html", "enlaces", "css"],
+    "popularity": 80,
+    "requires": [],
+    "steps": [
+      { "type": "http_request", "data": { "method": "GET", "url": "https://example.com", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "respuesta" } },
+      { "type": "html_extract", "data": { "source": "{{ respuesta }}", "selector": "a", "attr": "href" } },
+      { "type": "write_file", "data": { "file_path": "~/enlaces.txt", "content": "{{ $json.text }} → {{ $json.href }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "extraer-titulares-de-una-web",
+    "title": "Extraer los titulares de una web",
+    "description": "Lee los encabezados principales de una página y los deja en un archivo",
+    "category": "scraping-parseo",
+    "tags": ["scraping", "html", "titulares", "css"],
+    "popularity": 78,
+    "requires": [],
+    "steps": [
+      { "type": "http_request", "data": { "method": "GET", "url": "https://example.com", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "respuesta" } },
+      { "type": "html_extract", "data": { "source": "{{ respuesta }}", "selector": "h1, h2", "attr": "" } },
+      { "type": "write_file", "data": { "file_path": "~/titulares.txt", "content": "{{ $json.text }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "leer-un-feed-rss",
+    "title": "Leer un feed RSS",
+    "description": "Trae las últimas entradas de un feed y las guarda como lista de texto",
+    "category": "scraping-parseo",
+    "tags": ["rss", "feed", "noticias"],
+    "popularity": 78,
+    "requires": [],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 20 } },
+      { "type": "write_file", "data": { "file_path": "~/feed.txt", "content": "{{ $json.title }}\n{{ $json.link }}\n\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "feed-a-excel",
+    "title": "Feed RSS → Excel",
+    "description": "Vuelca los titulares y sus enlaces a un libro de Excel con una fila por entrada",
+    "category": "scraping-parseo",
+    "tags": ["rss", "excel", "informe"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 20 } },
+      { "type": "excel_local", "data": { "file_path": "feed.xlsx", "header": "[\"Titular\",\"Enlace\",\"Fecha\"]", "values": "[[\"{{ $json.title }}\",\"{{ $json.link }}\",\"{{ $json.pub_date }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "feed-a-telegram",
+    "title": "Titulares del feed por Telegram",
+    "description": "Manda cada titular nuevo del feed a tu chat de Telegram",
+    "category": "scraping-parseo",
+    "tags": ["rss", "telegram", "noticias"],
+    "popularity": 74,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 5 } },
+      { "type": "telegram", "data": { "message": "{{ $json.title }}\n{{ $json.link }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "feed-filtrado-por-palabra",
+    "title": "Feed filtrado por palabra",
+    "description": "Del feed completo se queda solo con las entradas que mencionan un término",
+    "category": "scraping-parseo",
+    "tags": ["rss", "filtrar", "palabra clave"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 30 } },
+      { "type": "filter", "data": { "condition": "{{ $json.title }} != \"\"", "mode": "keep" } },
+      { "type": "write_file", "data": { "file_path": "~/feed-filtrado.txt", "content": "{{ $json.title }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "parsear-un-xml-de-ejemplo",
+    "title": "Parsear un XML de ejemplo",
+    "description": "Parte de un XML escrito por ti y lo convierte en elementos manejables",
+    "category": "scraping-parseo",
+    "tags": ["xml", "parsear", "ejemplo"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "xml", "value": "<nota><de>Ana</de><para>Luis</para><cuerpo>Nos vemos el jueves</cuerpo></nota>" } },
+      { "type": "xml_parse", "data": { "source": "{{ xml }}", "root": "" } },
+      { "type": "write_file", "data": { "file_path": "~/nota-parseada.txt", "content": "{{ $json }}\n", "encoding": "utf8", "append": false } }
+    ]
+  },
+  {
+    "id": "xml-con-elementos-repetidos",
+    "title": "XML con elementos repetidos",
+    "description": "Convierte cada elemento repetido del XML en una fila independiente",
+    "category": "scraping-parseo",
+    "tags": ["xml", "parsear", "raíz", "fila"],
+    "popularity": 72,
+    "requires": [],
+    "steps": [
+      { "type": "set_var", "data": { "name": "xml", "value": "<catalogo><producto><n>Teclado</n><precio>25</precio></producto><producto><n>Ratón</n><precio>15</precio></producto></catalogo>" } },
+      { "type": "xml_parse", "data": { "source": "{{ xml }}", "root": "producto" } },
+      { "type": "excel_local", "data": { "file_path": "catalogo.xml.xlsx", "header": "[\"Producto\",\"Precio\"]", "values": "[[\"{{ $json.n }}\",\"{{ $json.precio }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "xml-de-archivo-a-tabla",
+    "title": "XML de un archivo → tabla",
+    "description": "Lee un XML del disco, toma sus elementos repetidos y los pasa a Excel",
+    "category": "scraping-parseo",
+    "tags": ["xml", "read_file", "excel"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/datos.xml", "encoding": "utf8", "target_field": "data" } },
+      { "type": "xml_parse", "data": { "source": "{{ $json.data }}", "root": "item" } },
+      { "type": "excel_local", "data": { "file_path": "xml-a-tabla.xlsx", "header": "[\"Elemento\"]", "values": "[[\"{{ $json.n }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "extraer-las-imagenes-de-una-web",
+    "title": "Extraer las imágenes de una web",
+    "description": "Saca las direcciones de todas las imágenes de la página a un archivo",
+    "category": "scraping-parseo",
+    "tags": ["scraping", "imágenes", "html"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "http_request", "data": { "method": "GET", "url": "https://example.com", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "respuesta" } },
+      { "type": "html_extract", "data": { "source": "{{ respuesta }}", "selector": "img", "attr": "src,alt" } },
+      { "type": "write_file", "data": { "file_path": "~/imagenes.txt", "content": "{{ $json.src }} — {{ $json.alt }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "enlaces-a-csv",
+    "title": "Enlaces de una web → CSV",
+    "description": "Recoge los enlaces con su texto y los deja en un CSV de intercambio",
+    "category": "scraping-parseo",
+    "tags": ["scraping", "csv", "enlaces"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "http_request", "data": { "method": "GET", "url": "https://example.com", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "respuesta" } },
+      { "type": "html_extract", "data": { "source": "{{ respuesta }}", "selector": "a", "attr": "href" } },
+      { "type": "excel_local", "data": { "file_path": "enlaces.csv", "header": "", "values": "[[\"{{ $json.text }}\",\"{{ $json.href }}\"]]", "delimiter": ",", "overwrite": false, "format": "csv" } }
+    ]
+  },
+  {
+    "id": "titulares-a-slack",
+    "title": "Titulares del feed a Slack",
+    "description": "Publica en el canal del equipo los titulares que traiga el feed",
+    "category": "scraping-parseo",
+    "tags": ["rss", "slack", "noticias"],
+    "popularity": 68,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 5 } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ $json.title }} — {{ $json.link }}", "channel": "#noticias", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "feed-sin-repetidos",
+    "title": "Feed sin titulares repetidos",
+    "description": "Elimina los titulares duplicados que a veces trae un feed mal formado",
+    "category": "scraping-parseo",
+    "tags": ["rss", "duplicados", "limpieza"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 30 } },
+      { "type": "remove_duplicates", "data": { "fields": "title", "keep": "first" } },
+      { "type": "write_file", "data": { "file_path": "~/feed-unico.txt", "content": "{{ $json.title }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "top-titulares-por-fecha",
+    "title": "Los cinco titulares más recientes",
+    "description": "Ordena el feed por fecha y se queda solo con los cinco primeros",
+    "category": "scraping-parseo",
+    "tags": ["rss", "ordenar", "limitar", "top"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 30 } },
+      { "type": "sort", "data": { "fields": "-pub_date" } },
+      { "type": "limit", "data": { "skip": 0, "max_items": 5 } },
+      { "type": "write_file", "data": { "file_path": "~/top-titulares.txt", "content": "{{ $json.pub_date }} — {{ $json.title }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "extraer-precios-de-una-tienda",
+    "title": "Extraer los precios de una tienda",
+    "description": "Recoge los elementos de un listado y los deja en Excel para comparar",
+    "category": "scraping-parseo",
+    "tags": ["scraping", "precios", "excel", "competencia"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "http_request", "data": { "method": "GET", "url": "https://example.com", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "respuesta" } },
+      { "type": "html_extract", "data": { "source": "{{ respuesta }}", "selector": "li", "attr": "" } },
+      { "type": "excel_local", "data": { "file_path": "listado.xlsx", "header": "[\"Elemento\"]", "values": "[[\"{{ $json.text }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "html-a-markdown-limpio",
+    "title": "Quitar el HTML y quedarse con el texto",
+    "description": "Extrae los párrafos de una página y los convierte en markdown",
+    "category": "scraping-parseo",
+    "tags": ["scraping", "markdown", "texto"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "http_request", "data": { "method": "GET", "url": "https://example.com", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "respuesta" } },
+      { "type": "html_extract", "data": { "source": "{{ respuesta }}", "selector": "p", "attr": "" } },
+      { "type": "write_file", "data": { "file_path": "~/parrafos.txt", "content": "{{ $json.text }}\n\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "feed-a-json",
+    "title": "Feed RSS → archivo JSON",
+    "description": "Prepara la tabla del feed y exporta cada entrada a un archivo JSON",
+    "category": "scraping-parseo",
+    "tags": ["rss", "json", "histórico"],
+    "popularity": 66,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "feeds.db", "query": "CREATE TABLE IF NOT EXISTS entradas (id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT, enlace TEXT)", "params": "" } },
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 10 } },
+      { "type": "write_file", "data": { "file_path": "~/feed-export.json", "content": "{{ $json }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "sitemap-a-lista-de-urls",
+    "title": "Sitemap a lista de URLs",
+    "description": "Lee un sitemap XML guardado en disco y separa cada URL en una línea",
+    "category": "scraping-parseo",
+    "tags": ["sitemap", "xml", "urls", "split out"],
+    "popularity": 64,
+    "requires": [],
+    "steps": [
+      { "type": "read_file", "data": { "file_path": "~/sitemap.xml", "encoding": "utf8", "target_field": "data" } },
+      { "type": "xml_parse", "data": { "source": "{{ $json.data }}", "root": "url" } },
+      { "type": "write_file", "data": { "file_path": "~/urls.txt", "content": "{{ $json.loc }}\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "web-vigilada-a-excel",
+    "title": "Web vigilada → Excel",
+    "description": "Guarda los encabezados de una página en Excel para comparar más adelante",
+    "category": "scraping-parseo",
+    "tags": ["scraping", "excel", "vigilancia"],
+    "popularity": 64,
+    "requires": [],
+    "steps": [
+      { "type": "http_request", "data": { "method": "GET", "url": "https://example.com", "headers": "{\"User-Agent\":\"grapScreen\"}", "body": "", "output_var": "respuesta" } },
+      { "type": "html_extract", "data": { "source": "{{ respuesta }}", "selector": "title", "attr": "" } },
+      { "type": "excel_local", "data": { "file_path": "web-vigilada.xlsx", "header": "[\"Título\"]", "values": "[[\"{{ $json.text }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "feed-a-notion",
+    "title": "Titulares del feed a Notion",
+    "description": "Crea una página de Notion por cada titular que publique el feed",
+    "category": "scraping-parseo",
+    "tags": ["rss", "notion", "noticias", "archivo"],
+    "popularity": 64,
+    "requires": ["notion"],
+    "steps": [
+      { "type": "rss_read", "data": { "url": "https://news.ycombinator.com/rss", "limit": 5 } },
+      { "type": "notion", "data": { "operation": "create_page", "token": "", "database_id": "", "page_id": "", "title": "{{ $json.title }}", "properties_json": "{\"Enlace\":\"{{ $json.link }}\"}", "filter_json": "" } }
+    ]
+  }
+]

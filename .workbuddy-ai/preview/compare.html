@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>grapScreen — barra superior: antes / después</title>
+<style>
+  html, body { margin: 0; padding: 16px; background: #eef1f7;
+               font: 600 12px 'DM Mono', monospace; color: #1d2333; }
+  h1 { font: 800 15px 'Manrope', sans-serif; margin: 0 0 14px; }
+  .row { margin-bottom: 20px; }
+  .lbl { margin-bottom: 5px; font-size: 12px; }
+  .lbl .w { color: #b3001b; }
+  .pair { display: flex; gap: 14px; align-items: flex-start; }
+  .cell { }
+  .cap { font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase;
+         margin-bottom: 3px; }
+  .cap.before { color: #b3001b; }
+  .cap.after  { color: #0a7d45; }
+  iframe { display: block; border: 1px solid #c8cede; background: #f4f6fb; }
+</style>
+</head>
+<body>
+  <h1>Barra superior: el nombre del proyecto ya no pisa el readout</h1>
+
+  <div class="row">
+    <div class="lbl">ancho <span class="w">1100 px</span> — el ancho del pantallazo reportado</div>
+    <div class="pair">
+      <div class="cell">
+        <div class="cap before">Antes</div>
+        <iframe src="topbar-before.html" width="1100" height="100" scrolling="no"></iframe>
+      </div>
+    </div>
+    <div class="pair" style="margin-top:8px">
+      <div class="cell">
+        <div class="cap after">Después</div>
+        <iframe src="topbar.html" width="1100" height="100" scrolling="no"></iframe>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="lbl">ancho <span class="w">920 px</span> — el mínimo de ventana (900 px)</div>
+    <div class="pair">
+      <div class="cell">
+        <div class="cap before">Antes</div>
+        <iframe src="topbar-before.html" width="920" height="100" scrolling="no"></iframe>
+      </div>
+    </div>
+    <div class="pair" style="margin-top:8px">
+      <div class="cell">
+        <div class="cap after">Después</div>
+        <iframe src="topbar.html" width="920" height="100" scrolling="no"></iframe>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

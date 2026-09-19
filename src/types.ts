@@ -10,6 +10,8 @@ export type FlowNodeType =
   | "switch" | "merge" | "wait" | "code"
   | "error_handler" | "note" | "split_batches" | "sub_workflow"
   | "cron" | "startup" | "file_change" | "hotkey_trigger" | "polling"
+  // Additional triggers (n8n parity)
+  | "whatsapp_trigger" | "telegram_trigger" | "email_trigger" | "rss_trigger"
   // Data transformation (Phase 3)
   | "filter" | "sort" | "limit" | "aggregate" | "edit_fields" | "date_time"
   // AI (Phase 3)
@@ -25,13 +27,49 @@ export type FlowNodeType =
   | "stop_error" | "noop"
   // n8n Core nodes
   | "split_out" | "summarize" | "rename_keys" | "markdown" | "crypto"
-  | "read_file" | "write_file";
+  | "read_file" | "write_file"
+  // Declarative n8n catalogue.
+  //
+  // The full n8n catalogue (554 nodes) is data, not code: every entry shares
+  // these two engine kinds and names its specific node in `data.n8n_key`. That
+  // keeps 554 integrations out of this union and out of every per-kind switch
+  // in the editor. `n8n_trigger` is separate because a trigger has no input
+  // port and is a valid flow entry point, while an action is not.
+  | "n8n_node" | "n8n_trigger";
 
 export type RecordedEvent = {
   at_ms: number;
   kind: string;
   data: any;
 };
+
+/**
+ * Kind-specific extras the generic catalogue cannot express through `type`.
+ *
+ * All 554 declarative n8n nodes share the `n8n_node` / `n8n_trigger` engine
+ * kinds, so the specific catalogue entry travels here and is stored on the
+ * event as `data.n8n_key`. Defined once and imported by every hop of the
+ * add-node path: this object was silently dropped at one of those hops before,
+ * which produced declarative nodes with an empty key.
+ */
+export interface AddStepExtra {
+  n8nKey?: string;
+  n8nLabel?: string;
+  n8nBaseUrl?: string;
+  /** Trigger mechanism from the catalogue: `webhook`, `polling`, `schedule`, `event`. */
+  n8nMode?: string | null;
+  /**
+   * Fields merged over the type's default seed, for callers that add a node
+   * with a concrete configuration rather than a blank one.
+   *
+   * A template cannot be expressed by node types alone: `buildAddedEvents`
+   * seeds one fixed config per type, so "Formulario → Excel" and "Formulario →
+   * API" would produce byte-identical Excel nodes. Templates carry the values
+   * that make their chain coherent — a variable name the next node reads, a
+   * file path, a field list — and those arrive here.
+   */
+  data?: Record<string, unknown>;
+}
 
 /** Extended state for the add-node menu (canvas-wide or port-level) */
 export interface AddMenuState {
@@ -90,6 +128,9 @@ export interface FlowPort {
   id: string;
   label?: string;
   color?: string;
+  position?: "left" | "right" | "bottom" | "top";
+  shape?: "circle" | "diamond";
+  required?: boolean;
 }
 
 export interface FlowConnection {
@@ -166,6 +207,10 @@ export interface FlowNode {
     name?: string;
     rect: [number, number, number, number];
   };
+  /** For declarative n8n nodes: the catalogue key (e.g. "WhatsAppTrigger"). */
+  n8nKey?: string;
+  /** Whether the node is missing required configuration or credentials (n8n-style warning) */
+  hasWarning?: boolean;
 }
 
 export interface NodeRunStatus {

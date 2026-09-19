@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { FlowNode, FlowConnection, StickyNoteData, RecordedEvent, AddMenuState } from "../../../types";
+import type { FlowNode, FlowConnection, StickyNoteData, RecordedEvent } from "../../../types";
 import { buildNodes } from "../buildNodes";
 import { getNodeHeight } from "../utils/nodePorts";
 import { NODE_W } from "../../../Flowchart";
@@ -49,7 +49,6 @@ export function useFlowchartWorkspace({
   });
 
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [addMenu, setAddMenu] = useState<AddMenuState | null>(null);
   const [tempLine, setTempLine] = useState<{ x1: number; y1: number; x2: number; y2: number; color?: string } | null>(null);
   const [editEventsList, setEditEventsList] = useState<RecordedEvent[]>([]);
   const [isEditingGroup, setIsEditingGroup] = useState(false);
@@ -179,7 +178,6 @@ export function useFlowchartWorkspace({
     saveLayoutMetadata,
     setSelectedNodes,
     setSelectedWireId,
-    setAddMenu,
     setCtxMenu,
     setSelectionBox,
     expanded,
@@ -249,7 +247,6 @@ export function useFlowchartWorkspace({
     notes, setNotes,
     disabledNodes, setDisabledNodes,
     expanded, setExpanded,
-    addMenu, setAddMenu,
     tempLine, setTempLine,
     editEventsList, setEditEventsList,
     isEditingGroup, setIsEditingGroup,

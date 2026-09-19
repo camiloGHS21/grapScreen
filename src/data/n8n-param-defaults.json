@@ -1,0 +1,8 @@
+{
+  "WhatsAppTrigger": {
+    "updates": ["messages"]
+  },
+  "FormIoTrigger": {
+    "events": ["create"]
+  }
+}

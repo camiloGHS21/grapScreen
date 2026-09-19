@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>grapScreen — verificación visual de nodos</title>
+<!-- CSS REAL compilado (copia de dist/assets/index-*.css) -->
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { margin: 0; padding: 22px 26px 40px; background: var(--bg); color: var(--text);
+         font-family: Manrope, system-ui, sans-serif; }
+  h2 { font: 600 11px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .09em;
+       color: var(--dim); margin: 30px 0 12px; }
+  .canvas { position: relative; border: 1px dashed var(--line); border-radius: 12px; }
+  /* Simula :hover para poder ver los badges que en reposo están en opacity 0 */
+  .n8n-node.hovered .n8n-edit, .n8n-node.hovered .n8n-add { opacity: 1; }
+  .n8n-node.hovered { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .lightwrap { background: #f4f6fb; border-radius: 12px; padding: 18px; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<h2>1 · Barra superior — Publicar vs. sus vecinos</h2>
+<div class="flow-topbar">
+  <div class="ftb-left">
+    <button type="button" class="ftb-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="ftb-crumb">
+      <span class="ftb-crumb-scope">demo_formulario_excel</span>
+      <span class="ftb-crumb-sep">/</span>
+      <button type="button" class="ftb-crumb-name">w4t</button>
+    </div>
+    <div class="ftb-stats">
+      <span class="ftb-stat"><em>Duración</em><b>00:00</b></span>
+      <span class="ftb-stat"><em>Pasos</em><b>2</b></span>
+      <span class="ftb-stat"><em>Video</em><b>—</b></span>
+    </div>
+  </div>
+  <div class="ftb-right">
+    <button type="button" class="ftb-btn ghost">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Inactiva
+    </button>
+    <button type="button" class="ftb-btn ghost">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Historial
+    </button>
+    <span class="ftb-saved">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      Guardado
+    </span>
+    <button type="button" class="ftb-btn ghost">Guardar</button>
+    <button type="button" class="ftb-btn primary">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      Publicar
+    </button>
+    <button type="button" class="ftb-btn ghost ftb-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+    </button>
+  </div>
+</div>
+
+<h2>2 · Nodo DESPUÉS — 240px (el ancho que el CSS siempre declaró)</h2>
+<div class="canvas" style="height:140px">
+  <!-- Trigger WhatsApp, en reposo -->
+  <div class="n8n-node" style="position:absolute; left:26px; top:22px; width:240px; height:96px; --accent:#ff6d5a">
+    <span class="n8n-port n8n-port-in" style="top:48px; border-color:#ff6d5a"></span>
+    <span class="n8n-port n8n-port-out" style="top:48px; border-color:#ff6d5a">
+      <button class="n8n-add">+</button>
+    </span>
+    <div class="n8n-node-icon" style="color:#ff6d5a; border-color:#ff6d5a">
+      <img src="icons/whatsapp.svg" alt="" style="width:100%;height:100%;object-fit:contain;padding:6px;display:block">
+    </div>
+    <div class="n8n-node-body">
+      <div class="n8n-node-title">WhatsApp Trigger</div>
+      <div class="n8n-node-sub">Se dispara con un mensaje de WhatsApp</div>
+    </div>
+    <span class="n8n-count">1</span>
+    <button class="n8n-edit">✎</button>
+  </div>
+
+  <!-- Acción Google Sheets, con hover simulado (badges visibles) -->
+  <div class="n8n-node hovered" style="position:absolute; left:306px; top:22px; width:240px; height:96px; --accent:#0f9d58">
+    <span class="n8n-port n8n-port-in" style="top:48px; border-color:#0f9d58"></span>
+    <span class="n8n-port n8n-port-out" style="top:48px; border-color:#0f9d58">
+      <button class="n8n-add">+</button>
+    </span>
+    <div class="n8n-node-icon" style="color:#0f9d58; border-color:#0f9d58">
+      <img src="icons/googlesheets.svg" alt="" style="width:100%;height:100%;object-fit:contain;padding:6px;display:block">
+    </div>
+    <div class="n8n-node-body">
+      <div class="n8n-node-title">Google Sheets</div>
+      <div class="n8n-node-sub">Añade una fila a la hoja</div>
+    </div>
+    <span class="n8n-count">1</span>
+    <button class="n8n-edit">✎</button>
+  </div>
+</div>
+
+<h2>3 · Comparación directa — ANTES (104px) vs. DESPUÉS (240px)</h2>
+<div class="canvas" style="height:140px">
+  <div class="n8n-node" style="position:absolute; left:26px; top:22px; width:104px; height:96px; --accent:#ff6d5a; opacity:.75">
+    <span class="n8n-port n8n-port-in" style="top:48px; border-color:#ff6d5a"></span>
+    <span class="n8n-port n8n-port-out" style="top:48px; border-color:#ff6d5a"></span>
+    <div class="n8n-node-icon" style="color:#ff6d5a; border-color:#ff6d5a">
+      <img src="icons/whatsapp.svg" alt="" style="width:100%;height:100%;object-fit:contain;padding:6px;display:block">
+    </div>
+    <div class="n8n-node-body">
+      <div class="n8n-node-title">WhatsApp Trigger</div>
+      <div class="n8n-node-sub">Se dispara con un mensaje</div>
+    </div>
+  </div>
+  <div class="n8n-node" style="position:absolute; left:170px; top:22px; width:240px; height:96px; --accent:#ff6d5a">
+    <span class="n8n-port n8n-port-in" style="top:48px; border-color:#ff6d5a"></span>
+    <span class="n8n-port n8n-port-out" style="top:48px; border-color:#ff6d5a"></span>
+    <div class="n8n-node-icon" style="color:#ff6d5a; border-color:#ff6d5a">
+      <img src="icons/whatsapp.svg" alt="" style="width:100%;height:100%;object-fit:contain;padding:6px;display:block">
+    </div>
+    <div class="n8n-node-body">
+      <div class="n8n-node-title">WhatsApp Trigger</div>
+      <div class="n8n-node-sub">Se dispara con un mensaje de WhatsApp</div>
+    </div>
+  </div>
+</div>
+
+<h2>4 · Nodo multi-puerto (3 salidas) a 240px — altura dinámica 118px</h2>
+<div class="canvas" style="height:160px">
+  <div class="n8n-node" style="position:absolute; left:26px; top:20px; width:240px; height:118px; --accent:#ec4899">
+    <span class="n8n-port n8n-port-in" style="top:59px; border-color:#ec4899"></span>
+    <span class="n8n-port n8n-port-out" style="top:37px; border-color:#22c55e">
+      <span class="n8n-port-label n8n-port-label-out" style="color:#22c55e">true</span>
+      <button class="n8n-add">+</button>
+    </span>
+    <span class="n8n-port n8n-port-out" style="top:59px; border-color:#ef4444">
+      <span class="n8n-port-label n8n-port-label-out" style="color:#ef4444">false</span>
+      <button class="n8n-add">+</button>
+    </span>
+    <span class="n8n-port n8n-port-out" style="top:81px; border-color:#6d6682">
+      <span class="n8n-port-label n8n-port-label-out" style="color:#6d6682">error</span>
+      <button class="n8n-add">+</button>
+    </span>
+    <div class="n8n-node-icon" style="color:#ec4899; border-color:#ec4899">
+      <span style="font:700 14px Manrope">S</span>
+    </div>
+    <div class="n8n-node-body">
+      <div class="n8n-node-title">Switch</div>
+      <div class="n8n-node-sub">Enruta según una condición</div>
+    </div>
+    <span class="n8n-count">1</span>
+  </div>
+</div>
+
+<h2>5 · Tema claro — la tarjeta debe ser blanca con borde hairline</h2>
+<div class="lightwrap" data-theme="light">
+  <div class="canvas" style="height:140px; border-color:#d1d6e5">
+    <div class="n8n-node" style="position:absolute; left:26px; top:22px; width:240px; height:96px; --accent:#ff6d5a">
+      <span class="n8n-port n8n-port-in" style="top:48px; border-color:#ff6d5a"></span>
+      <span class="n8n-port n8n-port-out" style="top:48px; border-color:#ff6d5a"></span>
+      <div class="n8n-node-icon" style="color:#ff6d5a; border-color:#ff6d5a">
+        <img src="icons/whatsapp.svg" alt="" style="width:100%;height:100%;object-fit:contain;padding:6px;display:block">
+      </div>
+      <div class="n8n-node-body">
+        <div class="n8n-node-title">WhatsApp Trigger</div>
+        <div class="n8n-node-sub">Se dispara con un mensaje de WhatsApp</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

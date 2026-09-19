@@ -1,5 +1,6 @@
 import { RecordedEvent, FlowConnection, StickyNoteData } from "../../../types";
 import { buildNodes } from "../buildNodes";
+import { applyAgentParity } from "./agentParity";
 
 export function extractLayoutMetadata(events: RecordedEvent[]) {
   const metaEvent = events.find(e => e.kind === "layout_metadata");
@@ -112,11 +113,15 @@ export function buildGraphNodesPayload(events: RecordedEvent[], target_app: any)
  * the graph engine always sees ranges consistent with the saved events.
  */
 export function withGraphMetadata(events: RecordedEvent[], target_app: any): RecordedEvent[] {
-  const graphNodes = buildGraphNodesPayload(events, target_app);
-  const idx = events.findIndex(e => e.kind === "layout_metadata");
+  // The agent node is normalised here — the one place every save goes through —
+  // so a flow written against the old palette still executes with the agent
+  // runner instead of being attempted as an HTTP call. See `agentParity`.
+  const normalised = applyAgentParity(events);
+  const graphNodes = buildGraphNodesPayload(normalised, target_app);
+  const idx = normalised.findIndex(e => e.kind === "layout_metadata");
   if (idx < 0) {
     return [
-      ...events,
+      ...normalised,
       {
         kind: "layout_metadata",
         at_ms: 99999999,
@@ -124,7 +129,7 @@ export function withGraphMetadata(events: RecordedEvent[], target_app: any): Rec
       } as any,
     ];
   }
-  const copy = [...events];
+  const copy = [...normalised];
   copy[idx] = { ...copy[idx], data: { ...copy[idx].data, graphNodes } };
   return copy;
 }

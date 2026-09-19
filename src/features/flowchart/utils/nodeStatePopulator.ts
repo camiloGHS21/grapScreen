@@ -1,4 +1,4 @@
-import { FlowNode, AutomationDetail } from "../../../types";
+import { FlowNode, AutomationDetail, RecordedEvent } from "../../../types";
 
 export interface NodeStatePopulatorTarget {
   setEditX: (v: number) => void;
@@ -77,6 +77,16 @@ export interface NodeStatePopulatorTarget {
   setEditFileChangePath: (v: string) => void;
   setEditFileChangeEvent: (v: string) => void;
   setEditHotkeyTriggerShortcut: (v: string) => void;
+  setEditWhatsappTriggerPhoneId?: (v: string) => void;
+  setEditWhatsappTriggerToken?: (v: string) => void;
+  setEditTelegramTriggerBotToken?: (v: string) => void;
+  setEditEmailTriggerHost?: (v: string) => void;
+  setEditEmailTriggerPort?: (v: number) => void;
+  setEditEmailTriggerUser?: (v: string) => void;
+  setEditEmailTriggerPassword?: (v: string) => void;
+  setEditEmailTriggerFolder?: (v: string) => void;
+  setEditRssTriggerUrl?: (v: string) => void;
+  setEditRssTriggerInterval?: (v: number) => void;
   setEditNotes: (v: string) => void;
   setEditFormFields: (v: any[]) => void;
   setEditSubWorkflowId?: (v: string) => void;
@@ -220,10 +230,64 @@ export interface NodeStatePopulatorTarget {
   setEditReadFilePath?: (v: string) => void;
   setEditReadFileEncoding?: (v: string) => void;
   setEditReadFileTarget?: (v: string) => void;
+  // Declarative n8n nodes.
+  setEditN8nName?: (v: string) => void;
+  setEditN8nKey?: (v: string) => void;
+  setEditN8nBaseUrl?: (v: string) => void;
+  setEditN8nMethod?: (v: string) => void;
+  setEditN8nPath?: (v: string) => void;
+  setEditN8nQs?: (v: string) => void;
+  setEditN8nBody?: (v: string) => void;
+  setEditN8nPaginate?: (v: boolean) => void;
+  setEditN8nPageParam?: (v: string) => void;
+  setEditN8nMaxPages?: (v: number) => void;
+  /** Local port a declarative webhook trigger listens on. */
+  setEditN8nPort?: (v: number) => void;
+  /** Seconds between polls (polling triggers) or between fires (schedule). */
+  setEditN8nInterval?: (v: number) => void;
+  /** Trigger mechanism read from the node; shown, never written back. */
+  setEditN8nMode?: (v: string) => void;
+  setEditN8nConfig?: (v: Record<string, unknown>) => void;
   setEditWriteFilePath?: (v: string) => void;
   setEditWriteFileContent?: (v: string) => void;
   setEditWriteFileEncoding?: (v: string) => void;
   setEditWriteFileAppend?: (v: boolean) => void;
+}
+
+/**
+ * Loads the declarative n8n state of one event.
+ *
+ * Shared by the catalogue nodes and by the agent, which is an `n8n_node` in
+ * everything but its engine kind: same key, same request overrides, same
+ * parameters extracted from the node's source.
+ */
+function populateN8nState(ev: RecordedEvent, t: NodeStatePopulatorTarget) {
+  t.setEditN8nName?.(ev.data.n8n_name || ev.data.n8n_key || "");
+  t.setEditN8nKey?.(ev.data.n8n_key || "");
+  t.setEditN8nBaseUrl?.(ev.data.n8n_base_url || "");
+  t.setEditN8nMethod?.(ev.data.n8n_method || "GET");
+  t.setEditN8nPath?.(ev.data.n8n_path || "");
+  t.setEditN8nQs?.(ev.data.n8n_qs || "");
+  t.setEditN8nBody?.(ev.data.n8n_body || "");
+  t.setEditN8nPaginate?.(!!ev.data.n8n_paginate);
+  t.setEditN8nPageParam?.(ev.data.n8n_page_param || "page");
+  t.setEditN8nMaxPages?.(typeof ev.data.n8n_max_pages === "number" ? ev.data.n8n_max_pages : 10);
+  // Trigger reception config: the local port a webhook listens on, and how
+  // often the daemon polls or fires. Harmless on an action node, and the form
+  // only renders them for triggers.
+  t.setEditN8nPort?.(typeof ev.data.n8n_port === "number" ? ev.data.n8n_port : 8787);
+  t.setEditN8nInterval?.(typeof ev.data.n8n_interval === "number" ? ev.data.n8n_interval : 60);
+  // Read-only: the form shows the effective mechanism but never rewrites it,
+  // so an armed trigger cannot be repointed by opening the drawer.
+  t.setEditN8nMode?.(ev.data.n8n_trigger_mode || "");
+  // The node's real n8n parameters, as `{parameterName: value}`. The form
+  // seeds anything missing from the node's own defaults on first render.
+  t.setEditN8nConfig?.(
+    ev.data.n8n_config && typeof ev.data.n8n_config === "object"
+      ? (ev.data.n8n_config as Record<string, unknown>)
+      : {},
+  );
+  t.setEditCredentialId?.(ev.data.credential_id || "");
 }
 
 export function populateNodeState(
@@ -290,7 +354,12 @@ export function populateNodeState(
       else if (node.type === "excel_local") {
         t.setEditExcelPath(ev.data.file_path || "datos.xlsx"); t.setEditExcelHeader(ev.data.header || "");
         t.setEditExcelValues(ev.data.values || ""); t.setEditExcelDelimiter(ev.data.delimiter || ",");
-        t.setEditExcelOverwrite(ev.data.overwrite || false); t.setEditExcelFormat(ev.data.format || "csv");
+        // Mirrors the runner: a flow saved before the format selector existed
+        // states its intent through the path, so the editor has to show the same
+        // default the writer will use — otherwise saving it back would pin the
+        // node to CSV and undo the choice.
+        const pathFormat = /\.xlsx$/i.test(ev.data.file_path || "") ? "xlsx" : "csv";
+        t.setEditExcelOverwrite(ev.data.overwrite || false); t.setEditExcelFormat(ev.data.format || pathFormat);
       }
       else if (node.type === "google_docs") { t.setEditDocDocumentId(ev.data.document_id || ""); t.setEditDocText(ev.data.text || ""); }
       else if (node.type === "whatsapp") { t.setEditWhatsappTo(ev.data.to || ""); t.setEditWhatsappMessage(ev.data.message || ""); t.setEditWhatsappApiType(ev.data.api_type || "web"); }
@@ -303,6 +372,11 @@ export function populateNodeState(
         t.setEditAiAgentOutputVar(ev.data.output_var || "ai_response");
         t.setEditAiAgentEnableTools?.(ev.data.enable_tools || ["ocr_scan_text", "rpa_click", "rpa_type_text", "get_workflow_var", "set_workflow_var"]);
         t.setEditAiAgentMaxIterations?.(ev.data.max_iterations || 5);
+        // An agent that came from n8n's catalogue is edited with n8n's own
+        // parameter form, so the drawer needs the same state a declarative
+        // node gets. A flow's original `ai_agent` carries no key and keeps the
+        // provider form it has always had.
+        if (ev.data.n8n_key) populateN8nState(ev, t);
       }
       else if (node.type === "webhook") { t.setEditWebhookPath(ev.data.path || "/webhook"); t.setEditWebhookMethod(ev.data.method || "POST"); }
       else if (node.type === "polling") {
@@ -323,6 +397,19 @@ export function populateNodeState(
       else if (node.type === "cron") t.setEditCronSchedule(ev.data.schedule || "1h");
       else if (node.type === "file_change") { t.setEditFileChangePath(ev.data.path || ""); t.setEditFileChangeEvent(ev.data.event || "Modify"); }
       else if (node.type === "hotkey_trigger") t.setEditHotkeyTriggerShortcut(ev.data.shortcut || "Ctrl+Alt+A");
+      else if (node.type === "whatsapp_trigger") { t.setEditWhatsappTriggerPhoneId?.(ev.data.phone_number_id || ""); t.setEditWhatsappTriggerToken?.(ev.data.verify_token || ""); }
+      else if (node.type === "telegram_trigger") t.setEditTelegramTriggerBotToken?.(ev.data.bot_token || "");
+      else if (node.type === "email_trigger") {
+        t.setEditEmailTriggerHost?.(ev.data.host || "");
+        t.setEditEmailTriggerPort?.(ev.data.port ?? 993);
+        t.setEditEmailTriggerUser?.(ev.data.user || "");
+        t.setEditEmailTriggerPassword?.(ev.data.password || "");
+        t.setEditEmailTriggerFolder?.(ev.data.folder || "INBOX");
+      }
+      else if (node.type === "rss_trigger") {
+        t.setEditRssTriggerUrl?.(ev.data.url || "");
+        t.setEditRssTriggerInterval?.(ev.data.interval ?? 60);
+      }
       else if (node.type === "startup") { t.setEditStartupMode?.(ev.data.mode || "system"); t.setEditStartupAppExe?.(ev.data.exe || "chrome.exe"); t.setEditStartupDelay?.(ev.data.delay_seconds || 0); }
       else if (node.type === "sub_workflow") {
         t.setEditSubWorkflowId?.(ev.data.workflow_id || "");
@@ -522,6 +609,12 @@ export function populateNodeState(
         t.setEditWriteFileContent?.(ev.data.content || "");
         t.setEditWriteFileEncoding?.(ev.data.encoding || "utf8");
         t.setEditWriteFileAppend?.(!!ev.data.append);
+      }
+      // Declarative n8n nodes and triggers. The descriptor already carries the
+      // base URL and auth scheme, so only the per-node request shape and the
+      // optional override are loaded here.
+      else if (node.type === "n8n_node" || node.type === "n8n_trigger") {
+        populateN8nState(ev, t);
       }
 
       if (ev && ev.data) t.setEditNotes(ev.data.notes || "");

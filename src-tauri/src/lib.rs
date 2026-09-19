@@ -2,7 +2,6 @@ pub mod domain;
 pub mod application;
 pub mod infrastructure;
 pub mod presentation;
-
 pub mod isolated;
 
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
@@ -148,7 +147,6 @@ pub fn run() {
                 );
             }
 
-
             let _ = app.handle().emit("backend-ready", ());
 
             // Auto-run if in runner mode
@@ -252,6 +250,7 @@ pub fn run() {
             presentation::vault_commands::save_vault_credential,
             presentation::vault_commands::delete_vault_credential,
             presentation::vault_commands::get_vault_credential,
+            presentation::vault_commands::test_vault_credential,
             presentation::tauri_commands::create_empty_automation,
             presentation::tauri_commands::rename_automation,
             presentation::tauri_commands::duplicate_automation,
@@ -268,6 +267,8 @@ pub fn run() {
             presentation::execution_commands::execute_automation_background,
             presentation::execution_commands::stop_execution,
             presentation::execution_commands::execute_automation_until,
+            presentation::execution_commands::run_single_node,
+            presentation::execution_commands::test_chat_workflow,
             presentation::execution_commands::get_execution_history,
             presentation::execution_commands::clear_execution_history,
             presentation::trigger_commands::start_automation_trigger,
@@ -285,12 +286,12 @@ pub fn run() {
             presentation::tauri_commands::get_runner_flow,
             presentation::file_commands::export_automation_exe,
             presentation::tauri_commands::submit_form_response,
-            presentation::file_commands::select_save_file,
-            presentation::file_commands::pick_folder,
+            presentation::file_commands::select_save_file, presentation::file_commands::pick_folder,
             presentation::file_commands::select_excel_file,
             presentation::file_commands::get_host_os,
             presentation::file_commands::get_system_installed_apps,
-            presentation::file_commands::pick_executable_file
+            presentation::file_commands::pick_executable_file,
+            presentation::expression_commands::evaluate_expression_preview
         ])
         .run(tauri::generate_context!())
         .expect("error while running grapScreen");

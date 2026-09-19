@@ -1,16 +1,15 @@
 import React from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { Plus, Workflow, ArrowRight, LayoutTemplate } from "lucide-react";
-import { ADD_CATEGORIES, FLOW_TEMPLATES } from "../flowchart/addCategories";
-import { buildNodes, getNodeIcon } from "../flowchart/buildNodes";
+import { LayoutTemplate, Flame } from "lucide-react";
+import { buildNodes } from "../flowchart/buildNodes";
 import { computeAddStepChainEvents } from "../flowchart/utils/stepInsertion";
 import { withGraphMetadata } from "../flowchart/utils/layoutMetadata";
-import { NODE_COLORS } from "../../Flowchart";
-import type { FlowNodeType } from "../../types";
-
-const TYPE_LABELS: Record<string, string> = Object.fromEntries(
-  ADD_CATEGORIES.flatMap(c => c.items.map(it => [it.type, it.label]))
-);
+import type { FlowTemplate } from "./types";
+import { useTemplateBrowser } from "./hooks/useTemplateBrowser";
+import { TemplateCard } from "./components/TemplateCard";
+import { TemplateToolbar } from "./components/TemplateToolbar";
+import { categoryIcon } from "./components/templateIcons";
+import { CATEGORY_BY_ID } from "./categories";
 
 interface TemplatesViewProps {
   projs: any;
@@ -20,21 +19,28 @@ interface TemplatesViewProps {
   notify: (msg: string) => void;
 }
 
-type Template = (typeof FLOW_TEMPLATES)[number];
-
+/**
+ * The template marketplace.
+ *
+ * Grouped by category with a search box and a featured row, but the two actions
+ * are unchanged: append the chain to the flow that is open, or create a new
+ * automation from it. Both hand over `steps`, not bare node types, so the
+ * template's own configuration travels with it.
+ */
 export function TemplatesView({ projs, auts, flow, setView, notify }: TemplatesViewProps) {
   const hasOpenFlow = !!auts.selectedAutomation && !!auts.selectedProjectDetail;
+  const browser = useTemplateBrowser();
 
   /** Insert the chain after the last node of the currently open flow. */
-  const insertIntoCurrent = async (tmpl: Template) => {
+  const insertIntoCurrent = async (tmpl: FlowTemplate) => {
     const detail = auts.selectedProjectDetail;
     if (!detail) return;
     const nodes = buildNodes(detail.events, detail.target_app);
-    const withOut = nodes.filter(n => (n.ports?.outputs?.length ?? 0) > 0);
+    const withOut = nodes.filter((n) => (n.ports?.outputs?.length ?? 0) > 0);
     const last = withOut[withOut.length - 1];
     try {
-      await flow.addStepChain(tmpl.chain, last?.id ?? "start");
-      notify(`Plantilla "${tmpl.label}" añadida al flujo`);
+      await flow.addStepChain(tmpl.steps, last?.id ?? "start");
+      notify(`Plantilla "${tmpl.title}" añadida al flujo`);
       setView("project-details");
     } catch (e) {
       notify(String(e));
@@ -42,7 +48,7 @@ export function TemplatesView({ projs, auts, flow, setView, notify }: TemplatesV
   };
 
   /** Create a brand-new automation wired from the template. */
-  const createFromTemplate = async (tmpl: Template) => {
+  const createFromTemplate = async (tmpl: FlowTemplate) => {
     if (!projs.selectedProject) {
       notify("Selecciona primero un proyecto en la Biblioteca");
       return;
@@ -50,9 +56,9 @@ export function TemplatesView({ projs, auts, flow, setView, notify }: TemplatesV
     try {
       const newAut = await invoke<{ id: string }>("create_empty_automation", {
         projectName: projs.selectedProject.name,
-        name: tmpl.label,
+        name: tmpl.title,
       });
-      const events = await computeAddStepChainEvents({ events: [] } as any, tmpl.chain, "start", undefined);
+      const events = await computeAddStepChainEvents({ events: [] } as any, tmpl.steps, "start", undefined);
       await invoke("save_automation", {
         projectName: projs.selectedProject.name,
         id: newAut.id,
@@ -66,11 +72,19 @@ export function TemplatesView({ projs, auts, flow, setView, notify }: TemplatesV
         await auts.selectAutomation(found);
         setView("project-details");
       }
-      notify(`Automatización "${tmpl.label}" creada`);
+      notify(`Automatización "${tmpl.title}" creada`);
     } catch (e) {
       notify(String(e));
     }
   };
+
+  const cardProps = {
+    onCreate: createFromTemplate,
+    ...(hasOpenFlow ? { onInsert: insertIntoCurrent } : {}),
+  };
+
+  const countFor = (id: any) =>
+    id === "todas" ? browser.counts.total : browser.counts.perCategory.get(id) ?? 0;
 
   return (
     <div className="tpl-page">
@@ -78,56 +92,82 @@ export function TemplatesView({ projs, auts, flow, setView, notify }: TemplatesV
         <div className="tpl-header-icon">
           <LayoutTemplate size={22} />
         </div>
-        <div>
+        <div className="tpl-header-text">
           <h1>Plantillas de flujo</h1>
           <p>
-            Flujos listos para usar: insértalos en el canvas abierto o crea una automatización nueva
+            {browser.counts.total} flujos listos para usar, agrupados por categoría. Cada plantilla
+            viene con sus nodos ya configurados: insértala en el canvas abierto o crea una
+            automatización nueva
             {projs.selectedProject ? <> en <b>{projs.selectedProject.name}</b></> : ""}.
+          </p>
+          <p className="tpl-header-stats">
+            <span className="tpl-badge ready">{browser.counts.ready} sin configurar nada</span>
+            <span className="tpl-badge needs">
+              {browser.counts.withCredentials} piden credenciales de un servicio externo
+            </span>
           </p>
         </div>
       </header>
 
-      <div className="tpl-grid">
-        {FLOW_TEMPLATES.map((tmpl) => (
-          <article className="tpl-card" key={tmpl.id}>
-            <div className="tpl-card-head">
-              <span className="tpl-card-icon">{tmpl.icon}</span>
-              <div>
-                <h3>{tmpl.label}</h3>
-                <p>{tmpl.desc}</p>
-              </div>
-            </div>
+      <TemplateToolbar
+        query={browser.query}
+        setQuery={browser.setQuery}
+        category={browser.category}
+        setCategory={browser.setCategory}
+        onlyReady={browser.onlyReady}
+        setOnlyReady={browser.setOnlyReady}
+        countFor={countFor}
+        resultCount={browser.matches.length}
+      />
 
-            <div className="tpl-chain">
-              {tmpl.chain.map((step: FlowNodeType, i: number) => (
-                <React.Fragment key={`${tmpl.id}-${i}`}>
-                  {i > 0 && <ArrowRight size={12} className="tpl-chain-arrow" />}
-                  <span
-                    className="tpl-chip"
-                    style={{ borderColor: NODE_COLORS[step], color: NODE_COLORS[step] }}
-                    title={step}
-                  >
-                    {getNodeIcon(step, 12)}
-                    <span>{TYPE_LABELS[step] || step}</span>
-                  </span>
-                </React.Fragment>
-              ))}
-            </div>
+      {browser.isBrowsingAll && (
+        <section className="tpl-section">
+          <h2 className="tpl-section-title">
+            <Flame size={15} /> Las más usadas
+          </h2>
+          <p className="tpl-section-blurb">Las que más gente empieza usando, por popularidad.</p>
+          <div className="tpl-grid">
+            {browser.featured.map((tmpl) => (
+              <TemplateCard key={`top-${tmpl.id}`} template={tmpl} {...cardProps} />
+            ))}
+          </div>
+        </section>
+      )}
 
-            <div className="tpl-actions">
-              {hasOpenFlow && (
-                <button type="button" className="tpl-btn ghost" onClick={() => insertIntoCurrent(tmpl)}>
-                  <Workflow size={13} /> Añadir al flujo actual
-                </button>
-              )}
-              <button type="button" className="tpl-btn primary" onClick={() => createFromTemplate(tmpl)}>
-                <Plus size={13} /> Nueva automatización
-              </button>
-            </div>
-          </article>
-        ))}
-      </div>
+      {browser.groups.length === 0 && (
+        <p className="tpl-empty">
+          Ninguna plantilla coincide con «{browser.query}». Prueba otra palabra o quita el filtro.
+        </p>
+      )}
+
+      {browser.groups.map(({ category, templates }) => (
+        <section className="tpl-section" key={category.id}>
+          <h2 className="tpl-section-title">
+            {categoryIcon(category.icon, 15)} {category.label}
+            <span className="tpl-section-count">{templates.length}</span>
+          </h2>
+          <p className="tpl-section-blurb">{category.blurb}</p>
+          <div className="tpl-grid">
+            {templates.map((tmpl) => (
+              <TemplateCard
+                key={tmpl.id}
+                template={tmpl}
+                {...cardProps}
+                showCategory={browser.category !== tmpl.category}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
+
+      {browser.category !== "todas" && (
+        <p className="tpl-empty">
+          Categoría activa: <b>{CATEGORY_BY_ID[browser.category].label}</b>. Pulsa «Todas» para ver el
+          catálogo completo.
+        </p>
+      )}
     </div>
   );
 }
+
 export default TemplatesView;

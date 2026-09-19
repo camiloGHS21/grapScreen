@@ -21,16 +21,7 @@ export function ExecutionIndicator({
 }: ExecutionIndicatorProps) {
   if (!executing) return null;
 
-  if (!bgMode) {
-    return (
-      <div className="exec-indicator">
-        <span className="exec-dot" />
-        <Loader2 className="animate-spin" size={15} />
-        <span>Ejecutando automatización…</span>
-        <button className="exec-indicator-stop" onClick={stopExecute} title="Detener">Detener</button>
-      </div>
-    );
-  }
+
 
   if (bgMode && selectedAutomation) {
     return (

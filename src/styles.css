@@ -20,6 +20,12 @@
   --shadow: rgba(0, 0, 0, 0.35);
   --card-bg: var(--s1);
   --input-bg: var(--s2);
+  /* n8n's callout: a tinted, dismissible aside. Lavender in n8n's light theme,
+     so it keeps that hue (dimmed) on the dark ones instead of turning amber
+     and reading as a warning. */
+  --callout-bg: rgba(139, 122, 246, 0.10);
+  --callout-border: rgba(139, 122, 246, 0.28);
+  --callout-link: #b9aaff;
 }
 
 [data-theme="light"] {
@@ -37,6 +43,9 @@
   --shadow: rgba(0, 0, 0, 0.08);
   --card-bg: #ffffff;
   --input-bg: #f8fafc;
+  --callout-bg: #f4f3fd;
+  --callout-border: #dcdaf5;
+  --callout-link: #4a3fc4;
 }
 
 [data-theme="neon"] {
@@ -54,6 +63,9 @@
   --shadow: rgba(5, 255, 161, 0.15);
   --card-bg: var(--s1);
   --input-bg: var(--s2);
+  --callout-bg: rgba(160, 120, 255, 0.12);
+  --callout-border: rgba(160, 120, 255, 0.35);
+  --callout-link: #c9b3ff;
 }
 
 * {
@@ -237,7 +249,11 @@ header p,
   max-width: 58ch
 }
 
-.primary {
+/* Big primary CTA. Excludes `.ftb-btn` on purpose: the top bar's Publicar
+   shares the `primary` class for its fill but must keep the compact
+   `.ftb-btn` geometry (7px 14px, 9px radius, 11.5px/600) so it matches
+   Guardar/Historial sitting next to it. */
+.primary:not(.ftb-btn) {
   min-height: 52px;
   border: 0;
   border-radius: 14px;
@@ -254,7 +270,7 @@ header p,
   transition: transform .18s var(--ease)
 }
 
-.primary:hover {
+.primary:not(.ftb-btn):hover {
   transform: translateY(-3px)
 }
 
@@ -1019,11 +1035,10 @@ header p,
     grid-template-columns: 86px 1fr
   }
 
-  .brand span,
-  nav button:not(.active) {
-    font-size: 0
-  }
-
+  /* The icon-rail label rules live at the END of this file, not here: several of
+     the selectors involved (`.sidebar-section-title`, the settings buttons) are
+     redefined further down, and an equal-specificity rule that comes later wins.
+     Appending them last is what makes them take effect. */
   .brand {
     justify-content: center
   }
@@ -1302,6 +1317,1089 @@ body.is-controls {
 }
 
 /* â•â• n8n-style Node Detail View (NDV) â€” node config â•â• */
+/* ══ n8n Node Details View (NDV) — Panel Lateral Deslizable desde la Derecha ══ */
+.ndv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, 0.12); /* Scrim sutil no invasivo: deja ver el canvas del flujo */
+  display: flex;
+  justify-content: flex-end;
+  animation: ndvFadeIn 0.2s ease-out forwards;
+}
+
+.ndv-modal-overlay.closing {
+  animation: ndvFadeOut 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.ndv-modal-card {
+  width: min(1120px, 86vw);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border-left: 1px solid var(--line);
+  box-shadow: -12px 0 36px rgba(0, 0, 0, 0.12), -1px 0 0 rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  position: relative;
+  animation: ndvSlideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ndv-modal-card.closing {
+  animation: ndvSlideOutRight 0.22s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.ndv-modal-card.trigger-mode {
+  width: min(960px, 80vw);
+}
+
+@keyframes ndvSlideInRight {
+  from {
+    opacity: 0.8;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ndvSlideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0.8;
+    transform: translateX(100%);
+  }
+}
+
+.ndv-toast {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  background: var(--mint, #22c55e);
+  color: #fff;
+  font: 600 12px Inter, sans-serif;
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.ndv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  height: 52px;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.ndv-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+}
+
+.ndv-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.ndv-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.ndv-title-input {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--s1);
+  border: 1px solid #ff6d5a;
+  border-radius: 6px;
+  padding: 3px 8px;
+  outline: none;
+}
+
+.ndv-header-center {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ndv-top-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 52px;
+}
+
+.ndv-top-tab {
+  position: relative;
+  padding: 0 14px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.ndv-top-tab:hover {
+  color: var(--text);
+}
+
+.ndv-top-tab.active {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ndv-top-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ff6d5a;
+  border-radius: 2px 2px 0 0;
+}
+
+.ndv-top-exec-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: #ff6d5a;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 3px rgba(255, 109, 90, 0.25);
+}
+
+.ndv-top-exec-btn:hover:not(:disabled) {
+  background: #ff5741;
+  box-shadow: 0 2px 8px rgba(255, 109, 90, 0.35);
+}
+
+.ndv-top-exec-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.ndv-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ndv-docs-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dim);
+  text-decoration: none;
+  padding: 5px 8px;
+  border-radius: 5px;
+  transition: all 0.15s ease;
+}
+
+.ndv-docs-link:hover {
+  color: var(--text);
+  background: var(--s2);
+}
+
+.ndv-close {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ndv-close:hover {
+  background: var(--s2);
+  color: var(--text);
+}
+
+/* Form block & n8n fields.
+   Sizes follow n8n's parameter panel: a 12px label over a 32px control, one
+   hairline border, 14px between rows. The panel is narrow and long, so the
+   density is what makes a 20-field node readable. */
+.ndv-field-block {
+  margin-bottom: 14px;
+}
+
+/* A droppable input drawn inside a field block carries its own bottom margin,
+   which would double the space between rows — and the panel is long enough
+   without it. */
+.ndv-field-block > .ndv-droppable-field {
+  margin-bottom: 0;
+}
+
+.ndv-field-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  min-height: 18px;
+}
+
+.ndv-n8n-field-label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.ndv-required-asterisk {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.ndv-n8n-field-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.45;
+}
+
+/* n8n labels carry inline markup (`<a>`, `<strong>`); these are the few rules
+   the safe renderer in `n8nInlineHtml.tsx` needs to look like an n8n field. */
+.ndv-n8n-notice a,
+.ndv-callout-text a,
+.ndv-n8n-field-hint a {
+  color: var(--callout-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ndv-n8n-notice code,
+.ndv-callout-text code,
+.ndv-n8n-field-hint code {
+  font: 500 11px 'DM Mono', monospace;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--s3);
+}
+.ndv-n8n-notice strong,
+.ndv-callout-text strong {
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* An n8n label can point at the n8n app itself (`/workflows/templates/1954`);
+   the text stays, the anchor does not, so it must not look clickable. Written
+   with the container in the selector to outweigh the `a` rule above. */
+.ndv-callout-text a.ndv-inline-dead-link,
+.ndv-n8n-notice a.ndv-inline-dead-link,
+.ndv-n8n-field-hint a.ndv-inline-dead-link {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+/* A `notice` field is an aside, not a warning: same quiet surface as n8n's,
+   so it reads as part of the form instead of a coloured interruption. */
+.ndv-n8n-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-bottom: 14px;
+  padding: 9px 11px;
+  border-radius: 6px;
+  border: 1px solid var(--callout-border);
+  background: var(--callout-bg);
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.ndv-notice-icon {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--callout-link);
+}
+
+/* n8n's `callout` parameter type: the node's own tip box, dismissible. */
+.ndv-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--callout-border);
+  background: var(--callout-bg);
+}
+
+.ndv-callout-icon {
+  display: flex;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--callout-link);
+}
+
+.ndv-callout-text {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.ndv-callout-close {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.ndv-callout-close:hover {
+  background: var(--s3);
+  color: var(--text);
+}
+
+/* The `fx` chip: n8n marks an expression with it inside the field, and lets it
+   open the expression editor. Shown only when the value is one. */
+.ndv-fx-badge {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent, #6E58F2) 18%, transparent);
+  color: var(--accent, #6E58F2);
+  font: 700 10px 'DM Mono', monospace;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.ndv-fx-badge:hover {
+  background: color-mix(in srgb, var(--accent, #6E58F2) 30%, transparent);
+}
+
+/* The way *into* an expression from a plain value, kept as a single ghost chip
+   where the old Fixed/Expression pair used to sit. */
+.ndv-fx-toggle {
+  display: grid;
+  place-items: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  font: 700 10px 'DM Mono', monospace;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.ndv-fx-toggle:hover {
+  border-color: var(--line);
+  background: var(--s2);
+  color: var(--accent, #6E58F2);
+}
+
+/* n8n's reset action, at the right edge of the field. */
+.ndv-input-reset {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.ndv-input-reset:hover {
+  background: var(--s3);
+  color: var(--text);
+}
+
+.ndv-n8n-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--s1);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ndv-n8n-select-wrap:focus-within {
+  border-color: #ff6d5a !important;
+  box-shadow: 0 0 0 3px rgba(255, 109, 90, 0.15) !important;
+}
+
+.ndv-n8n-select-wrap.has-warning {
+  border-color: #f59e0b;
+}
+
+.ndv-n8n-select {
+  flex: 1;
+  width: 100%;
+  height: 32px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: 500 12.5px Manrope, sans-serif;
+  padding: 0 26px 0 9px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.ndv-select-chevron {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
+  color: var(--dim);
+}
+
+.ndv-field-warning-icon {
+  position: absolute;
+  right: 26px;
+  display: flex;
+  align-items: center;
+  color: #f59e0b;
+}
+
+/* Inputs the panel draws itself (date, colour, password) — same box as the
+   shared input so a form never shows two different field heights. */
+.ndv-plain-input {
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--s1);
+  color: var(--text);
+  font: 500 12.5px Manrope, sans-serif;
+  padding: 0 9px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ndv-plain-input:focus {
+  outline: none;
+  border-color: #ff6d5a !important;
+  box-shadow: 0 0 0 3px rgba(255, 109, 90, 0.15) !important;
+}
+
+.ndv-color-input {
+  width: 56px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--s1);
+  cursor: pointer;
+}
+
+/* n8n's boolean rows: label on the left, switch on the right. `row-reverse`
+   flips the pair without changing the DOM order the other forms already use, so
+   this stays a modifier rather than a rewrite of the shared `.ndv-toggle`. */
+.ndv-toggle-row {
+  margin-bottom: 12px;
+}
+
+.ndv-toggle.ndv-toggle-end {
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 22px;
+}
+
+.ndv-toggle.ndv-toggle-end label {
+  font: 600 12px Manrope, sans-serif;
+  cursor: pointer;
+}
+
+.ndv-collection-group {
+  margin-bottom: 16px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.ndv-collection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.ndv-collection-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.ndv-collection-toggle-btn {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.12s ease;
+}
+
+.ndv-collection-toggle-btn:hover {
+  background: var(--s2);
+  color: var(--text);
+}
+
+.ndv-add-option-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.ndv-add-option-btn:hover {
+  background: var(--s2);
+  border-color: var(--dim);
+}
+
+.ndv-collection-body {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--s1);
+}
+
+/* Droppable & Input overrides for all node forms */
+.ndv-col-params input[type="text"],
+.ndv-col-params input[type="number"],
+.ndv-col-params input[type="password"],
+.ndv-col-params input:not([type]),
+.ndv-droppable-input {
+  width: 100%;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--s1);
+  color: var(--text);
+  font: 500 12.5px Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  padding: 0 9px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* An expression field carries the `fx` chip on the left and the reset action on
+   the right, both inside the box, so the text has to clear them. */
+.ndv-input-wrapper.is-expression .ndv-droppable-input {
+  padding-left: 30px;
+  padding-right: 28px;
+}
+
+.ndv-input-wrapper.is-expression .ndv-live-eval-pill {
+  right: 30px;
+}
+
+.ndv-col-params input:focus,
+.ndv-droppable-input:focus {
+  outline: none;
+  border-color: #ff6d5a !important;
+  box-shadow: 0 0 0 3px rgba(255, 109, 90, 0.15) !important;
+}
+
+.ndv-droppable-input.textarea,
+.ndv-col-params textarea {
+  width: 100%;
+  height: auto;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--s1);
+  color: var(--text);
+  font: 400 12px 'DM Mono', monospace;
+  padding: 7px 9px;
+  box-sizing: border-box;
+  resize: vertical;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ndv-col-params textarea:focus,
+.ndv-droppable-input.textarea:focus {
+  outline: none;
+  border-color: #ff6d5a !important;
+  box-shadow: 0 0 0 3px rgba(255, 109, 90, 0.15) !important;
+}
+
+.ndv-modal-card.trigger-mode .ndv-modal-body.trigger-body {
+  display: flex;
+}
+
+.ndv-modal-card.trigger-mode .ndv-col-params {
+  flex: 1.15;
+  min-width: 440px;
+  border-right: 1px solid var(--line);
+}
+
+.ndv-modal-card.trigger-mode .ndv-col-output {
+  flex: 1;
+  width: auto;
+  min-width: 360px;
+}
+
+.ndv-btn-test-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: all 0.15s ease;
+}
+
+.ndv-btn-test-step:hover:not(:disabled) {
+  background: var(--s2);
+  border-color: var(--dim);
+}
+
+.ndv-toggle-col-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--s2);
+  color: var(--muted);
+  font: 600 11px Manrope;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ndv-toggle-col-btn:hover { background: var(--s3); color: var(--text); }
+.ndv-toggle-col-btn.active { border-color: var(--accent, #6E58F2); color: var(--accent, #6E58F2); }
+
+.ndv-subtitle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+.ndv-subtitle-type { font-size: 11px; color: var(--muted); }
+.ndv-pin-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* 3-Column Layout */
+.ndv-modal-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.ndv-col-input,
+.ndv-col-output {
+  width: 310px;
+  min-width: 250px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--s1);
+  overflow: hidden;
+}
+
+.ndv-col-input { border-right: 1px solid var(--line); }
+.ndv-col-output { border-left: 1px solid var(--line); }
+
+@media (max-width: 1100px) {
+  .ndv-col-input,
+  .ndv-col-output {
+    width: 260px;
+    min-width: 230px;
+  }
+}
+
+.ndv-col-params {
+  flex: 1;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.ndv-col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--line);
+}
+.ndv-col-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ndv-col-title {
+  font: 700 11px Manrope;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+.ndv-badge-count {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--s3);
+  color: var(--dim);
+}
+.ndv-duration-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 10.5px 'DM Mono', monospace;
+  color: var(--mint, #22c55e);
+}
+
+.ndv-source-select {
+  height: 24px;
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--s1);
+  color: var(--text);
+}
+
+.ndv-items-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--line);
+}
+.ndv-page-btn {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.ndv-page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.ndv-page-info { font-size: 10.5px; color: var(--dim); font-weight: 600; }
+
+.ndv-drag-hint-banner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(110, 88, 242, 0.08);
+  border-bottom: 1px solid rgba(110, 88, 242, 0.15);
+  color: var(--accent, #6E58F2);
+  font: 500 10.5px Manrope;
+}
+
+.ndv-col-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.ndv-tree-scroll {
+  padding: 10px 12px;
+}
+
+/* JSON Tree in NDV */
+.ndv-json-tree { font-family: 'DM Mono', monospace; font-size: 11px; }
+.ndv-json-row-wrapper { margin-bottom: 2px; }
+.ndv-json-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  cursor: grab;
+  transition: background 0.12s ease;
+}
+.ndv-json-row:hover { background: var(--s2); }
+.ndv-json-row[draggable="true"]:hover { background: rgba(110, 88, 242, 0.12); border: 1px dashed var(--accent, #6E58F2); padding: 2px 5px; }
+.ndv-json-toggle {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.ndv-json-grip { color: var(--dim); display: inline-flex; align-items: center; }
+.ndv-type-badge {
+  font-size: 8.5px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+.badge-str { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.badge-num { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.badge-bool { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+.badge-obj { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+.badge-arr { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.badge-null { background: rgba(100, 116, 139, 0.15); color: #94a3b8; }
+.ndv-json-key { color: var(--text); font-weight: 600; cursor: pointer; }
+.ndv-json-summary { color: var(--dim); font-size: 10px; cursor: pointer; }
+.ndv-json-value-cell { color: var(--muted); cursor: pointer; }
+.ndv-json-copy-btn {
+  margin-left: auto;
+  opacity: 0;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px;
+}
+.ndv-json-row:hover .ndv-json-copy-btn { opacity: 1; }
+
+/* Droppable Inputs & Rust Live Preview */
+.ndv-droppable-field {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.ndv-field-label {
+  font: 600 11.5px Manrope;
+  color: var(--dim);
+  margin-bottom: 5px;
+}
+.ndv-field-hint {
+  font-size: 10.5px;
+  color: var(--dim);
+  margin-top: 4px;
+}
+.ndv-input-wrapper {
+  position: relative;
+  display: flex;
+}
+.ndv-input,
+.ndv-textarea {
+  width: 100%;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--s1);
+  color: var(--text);
+  font: 12px 'DM Mono', monospace;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ndv-input { height: 36px; padding: 0 10px; }
+.ndv-textarea { padding: 8px 10px; resize: vertical; }
+
+.ndv-droppable-field.drag-over .ndv-input,
+.ndv-droppable-field.drag-over .ndv-textarea,
+.droppable-active {
+  border-color: #ff6d5a !important;
+  box-shadow: 0 0 0 3px rgba(255, 109, 90, 0.25) !important;
+  background: rgba(255, 109, 90, 0.04) !important;
+}
+
+.ndv-drop-badge {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ff6d5a;
+  color: #fff;
+  font: 700 10px Manrope;
+  padding: 2px 8px;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+/* Rust Live Evaluation Pill */
+.ndv-expr-eval-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px;
+  padding: 3px 8px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font: 10.5px 'DM Mono', monospace;
+}
+.ndv-eval-tag { font-weight: 700; color: #f97316; font-size: 9.5px; }
+.ndv-eval-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ndv-eval-status.loading { color: var(--dim); }
+.ndv-eval-status.error { color: var(--red, #ef4444); }
+.ndv-eval-status.success { color: var(--mint, #22c55e); }
+.ndv-eval-val { color: var(--text); }
+
+/* Empty States in NDV */
+.ndv-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  text-align: center;
+  margin: auto;
+}
+.ndv-empty-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  background: var(--s2);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.ndv-empty-title { font: 700 13px Manrope; color: var(--text); margin-bottom: 6px; }
+.ndv-empty-desc { font-size: 11px; color: var(--dim); line-height: 1.45; max-width: 240px; margin: 0 0 16px; }
+.ndv-empty-actions { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 220px; }
+.ndv-btn-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  font: 600 11.5px Manrope;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.ndv-btn-action.primary { border: 0; background: var(--accent, #6E58F2); color: #fff; }
+.ndv-btn-action.primary:hover { filter: brightness(1.1); }
+.ndv-btn-action.secondary { border: 1px solid var(--line); background: transparent; color: var(--muted); }
+.ndv-btn-action.secondary:hover { background: var(--s2); color: var(--text); }
+
+/* Output Success / Error */
+.ndv-status-strip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font: 700 11px Manrope;
+}
+.ndv-status-strip.success { background: rgba(34, 197, 94, 0.1); color: var(--mint, #22c55e); border-bottom: 1px solid rgba(34, 197, 94, 0.2); }
+.ndv-status-strip.error { background: rgba(239, 68, 68, 0.1); color: var(--red, #ef4444); border-bottom: 1px solid rgba(239, 68, 68, 0.2); }
+.ndv-error-box { padding: 12px; }
+.ndv-error-text { margin: 0; font: 11px 'DM Mono', monospace; color: var(--red, #ef4444); white-space: pre-wrap; word-break: break-word; }
+
+/* Pin Editor */
+.ndv-pin-editor { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.ndv-pin-textarea { width: 100%; font: 11px 'DM Mono', monospace; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--s2); color: var(--text); }
+.ndv-pin-actions { display: flex; gap: 6px; }
+.ndv-btn-sm { padding: 4px 10px; border-radius: 5px; font: 600 11px Manrope; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+.ndv-btn-sm.primary { border: 0; background: var(--accent, #6E58F2); color: #fff; }
+
 /* ══ Node Detail View (NDV) — Modern Right-Side Drawer Panel ══ */
 .ndv-drawer-backdrop {
   position: fixed;
@@ -1328,6 +2426,20 @@ body.is-controls {
 
 .ndv-drawer-backdrop.closing {
   animation: ndvFadeOut 0.24s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ─── Credential editor, stacked above the node drawer ───
+   The credential editor is opened from inside the node drawer, so it has to
+   out-rank it (z-index 9999) or the node form steals the clicks. A slightly
+   stronger scrim also reads correctly as "one level deeper". */
+.cred-editor-backdrop {
+  z-index: 10050;
+  background: rgba(0, 0, 0, 0.52);
+}
+
+/* Small spinner used by the save / test buttons. */
+.spin {
+  animation: spin 0.9s linear infinite;
 }
 
 .ndv-drawer.closing {
@@ -1439,6 +2551,41 @@ body.is-controls {
 .ndv-toggle { display: flex; align-items: center; gap: 9px; }
 .ndv-toggle input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--accent, #6E58F2); }
 .ndv-toggle label { font: 500 12.5px Manrope; color: var(--text); cursor: pointer; }
+
+/* n8n draws a boolean parameter as a switch, not a checklist box. Scoped to the
+   right-aligned variant the declarative panel uses, so the app's own forms keep
+   the checkbox they were designed around. Declared after `.ndv-toggle` so it
+   wins on source order at equal specificity. */
+.ndv-toggle-end input[type="checkbox"] {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 18px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--s3);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ndv-toggle-end input[type="checkbox"]::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+.ndv-toggle-end input[type="checkbox"]:checked {
+  border-color: var(--accent, #6E58F2);
+  background: color-mix(in srgb, var(--accent, #6E58F2) 60%, transparent);
+}
+.ndv-toggle-end input[type="checkbox"]:checked::after {
+  transform: translateX(12px);
+  background: #fff;
+}
 .ndv-footer {
   display: flex; align-items: center; justify-content: space-between;
   gap: 10px; padding: 14px 20px; border-top: 1px solid var(--line); background: var(--s1);
@@ -1471,6 +2618,585 @@ body.is-controls {
 @media (max-width: 720px) {
   .ndv-expr-rail { display: none; }
   .ndv-drawer { width: 100vw; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Node drawer INPUT / OUTPUT panes (n8n "Execute step")
+   ═══════════════════════════════════════════════════════════════ */
+.ndv-io {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.ndv-io-section {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--s1);
+  overflow: hidden;
+}
+.ndv-io-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--s2);
+  font: 700 10.5px Manrope;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--line);
+}
+.ndv-io-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mint);
+  display: inline-block;
+}
+.ndv-io-hint {
+  margin-left: auto;
+  font: 500 10px Manrope;
+  color: var(--dim);
+  letter-spacing: 0;
+}
+.ndv-io-pre {
+  margin: 0;
+  padding: 10px 12px;
+  font: 11px 'DM Mono', monospace;
+  color: var(--text);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.ndv-io-empty {
+  padding: 14px 12px;
+  font-size: 11.5px;
+  color: var(--dim);
+  font-style: italic;
+}
+.ndv-io-error {
+  padding: 10px 12px;
+  font-size: 11.5px;
+  color: var(--red);
+  line-height: 1.5;
+}
+
+/* ═══ NDV Advanced Views (Table, Schema, Toolbar & Expression Modal) ═══ */
+.ndv-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--s2);
+  border-bottom: 1px solid var(--line);
+  gap: 8px;
+}
+
+.ndv-view-switch {
+  display: flex;
+  background: var(--s1);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.ndv-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font: 600 11px Manrope;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.ndv-view-btn:hover {
+  color: var(--text);
+}
+
+.ndv-view-btn.active {
+  background: var(--s2);
+  color: var(--accent, #6E58F2);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ndv-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--s1);
+  border-bottom: 1px solid var(--line);
+}
+
+.ndv-search-icon {
+  color: var(--dim);
+  flex-shrink: 0;
+}
+
+.ndv-search-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: 11.5px Manrope;
+  outline: none;
+}
+
+/* Table View */
+.ndv-table-view-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.ndv-table-scroll-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+.ndv-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 11px 'DM Mono', monospace;
+  text-align: left;
+}
+
+.ndv-data-table th,
+.ndv-data-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
+}
+
+.ndv-data-table th {
+  position: sticky;
+  top: 0;
+  background: var(--s2);
+  color: var(--text);
+  font-weight: 700;
+  user-select: none;
+  z-index: 2;
+  cursor: grab;
+}
+
+.ndv-data-table th:hover {
+  background: color-mix(in srgb, var(--accent, #6E58F2) 15%, var(--s2));
+}
+
+.ndv-th-index,
+.ndv-td-index {
+  width: 38px;
+  text-align: center;
+  color: var(--dim);
+  background: var(--s1);
+}
+
+.ndv-th-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ndv-col-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ndv-drag-handle {
+  color: var(--dim);
+  opacity: 0.6;
+}
+
+.ndv-copy-icon {
+  color: var(--dim);
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.ndv-th-col:hover .ndv-copy-icon {
+  opacity: 1;
+}
+
+.ndv-tr-row:hover {
+  background: color-mix(in srgb, var(--accent, #6E58F2) 6%, transparent);
+}
+
+.ndv-td-cell.is-object {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.ndv-table-footer {
+  padding: 6px 12px;
+  font: 500 10.5px Manrope;
+  color: var(--dim);
+  border-top: 1px solid var(--line);
+  background: var(--s1);
+}
+
+/* Schema View */
+.ndv-schema-view-container {
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.ndv-schema-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ndv-schema-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: var(--s1);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: grab;
+  transition: all 0.12s ease;
+}
+
+.ndv-schema-row:hover {
+  background: var(--s2);
+  border-color: var(--accent, #6E58F2);
+}
+
+.ndv-schema-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ndv-schema-key {
+  font: 700 11.5px 'DM Mono', monospace;
+  color: var(--text);
+}
+
+.ndv-nullable-badge {
+  font: 500 9px Manrope;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--s2);
+  color: var(--dim);
+}
+
+.ndv-schema-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ndv-schema-sample {
+  font: 11px 'DM Mono', monospace;
+  color: var(--dim);
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Field label row with Expression toggle button */
+.ndv-field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.ndv-btn-expand-expr {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 10.5px Manrope;
+  color: var(--dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.12s;
+}
+
+.ndv-btn-expand-expr:hover {
+  background: var(--s2);
+  color: var(--accent, #6E58F2);
+}
+
+/* Real-time live evaluation pill in DroppableInput */
+.ndv-live-eval-pill {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--s2);
+  border: 1px solid var(--line);
+  font: 600 10.5px 'DM Mono', monospace;
+  pointer-events: none;
+  max-width: 70%;
+  overflow: hidden;
+}
+
+.ndv-eval-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--mint, #22c55e);
+  overflow: hidden;
+}
+
+.ndv-eval-text {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ndv-eval-evaluating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dim);
+}
+
+/* Expression Editor Modal */
+.ndv-expression-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.ndv-expression-modal-card {
+  width: min(880px, 94vw);
+  height: min(600px, 86vh);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ndv-expression-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  background: var(--s1);
+}
+
+.ndv-expr-head-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ndv-expr-title {
+  font: 700 14px Manrope;
+  color: var(--text);
+}
+
+.ndv-expr-sub {
+  font: 500 12px Manrope;
+  color: var(--dim);
+}
+
+.ndv-expression-modal-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.ndv-expr-explorer {
+  width: 260px;
+  border-right: 1px solid var(--line);
+  background: var(--s1);
+  display: flex;
+  flex-direction: column;
+}
+
+.ndv-expr-explorer-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  font: 700 11.5px Manrope;
+  color: var(--dim);
+}
+
+.ndv-expr-explorer-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ndv-expr-group-title {
+  font: 700 10.5px Manrope;
+  color: var(--dim);
+  padding: 6px 4px 2px;
+  text-transform: uppercase;
+}
+
+.ndv-expr-key-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s;
+  font: 11.5px 'DM Mono', monospace;
+}
+
+.ndv-expr-key-btn:hover {
+  background: var(--s2);
+}
+
+.ndv-key-name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.ndv-key-val {
+  margin-left: auto;
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.ndv-expr-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 14px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.ndv-expr-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 12px Manrope;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.ndv-expr-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--s1);
+  color: var(--text);
+  font: 13px 'DM Mono', monospace;
+  outline: none;
+  resize: vertical;
+}
+
+.ndv-expr-textarea:focus {
+  border-color: var(--accent, #6E58F2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent, #6E58F2) 25%, transparent);
+}
+
+.ndv-expr-preview-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ndv-preview-title {
+  font: 600 11.5px Manrope;
+  color: var(--dim);
+}
+
+.ndv-copy-result-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  font: 600 11px Manrope;
+}
+
+.ndv-copy-result-btn:hover {
+  color: var(--text);
+}
+
+.ndv-expr-result-box {
+  min-height: 90px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--s1);
+  display: flex;
+  align-items: center;
+}
+
+.ndv-result-content {
+  margin: 0;
+  font: 12.5px 'DM Mono', monospace;
+  color: var(--mint, #22c55e);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.ndv-empty-eval {
+  color: var(--dim);
+  font: italic 11.5px Manrope;
+}
+
+.ndv-evaluating-text {
+  color: var(--dim);
+  font: 11.5px Manrope;
+}
+
+.ndv-expression-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--line);
+  background: var(--s1);
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1765,6 +3491,90 @@ body.is-controls {
 .n8n-add:hover {
   background: var(--accent, oklch(45% .05 292));
   color: #fff;
+}
+
+/* ─── Bottom sub-node ports (AI Agent: Chat Model, Memory, Tool) ─── */
+.n8n-bottom-port-col {
+  position: absolute;
+  bottom: 0;
+  transform: translate(-50%, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.n8n-port-bottom {
+  position: absolute;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  background: var(--s1, #fff);
+  border: 2px solid var(--accent, #a855f7);
+  pointer-events: all;
+  cursor: crosshair;
+  z-index: 12;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.n8n-port-bottom.diamond-port {
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.n8n-port-bottom:hover {
+  background: var(--accent, #a855f7);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent, #a855f7) 50%, transparent);
+  transform: rotate(45deg) scale(1.3);
+}
+
+.n8n-bottom-port-label {
+  margin-top: 8px;
+  font: 500 10.5px 'Manrope', -apple-system, sans-serif;
+  color: #64748b;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.req-asterisk {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.n8n-bottom-port-stem {
+  width: 1.5px;
+  height: 10px;
+  background: #cbd5e1;
+  margin: 2px 0;
+  pointer-events: none;
+}
+
+.n8n-bottom-add-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  display: grid;
+  place-items: center;
+  color: #64748b;
+  cursor: pointer;
+  pointer-events: all;
+  transition: all 0.15s ease;
+  padding: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.n8n-bottom-add-btn:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: scale(1.15);
 }
 
 /* â”€â”€â”€ Event count badge â”€â”€â”€ */
@@ -2955,11 +4765,18 @@ html.rec-overlay-html #root { background: transparent !important; }
   text-align: center;
 }
 
-.n8n-canvas-add {
+.n8n-canvas-actions {
   position: absolute;
   top: 14px;
   right: 14px;
   z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.n8n-canvas-add,
+.n8n-canvas-ai {
   width: 32px;
   height: 32px;
   display: grid;
@@ -2970,13 +4787,51 @@ html.rec-overlay-html #root { background: transparent !important; }
   border: 1px solid var(--line);
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .n8n-canvas-add:hover {
   background: var(--s2);
   border-color: var(--red);
   transform: scale(1.05);
+}
+
+.n8n-canvas-ai {
+  color: #a855f7;
+}
+
+.n8n-canvas-ai:hover {
+  background: var(--s2);
+  border-color: #a855f7;
+  color: #c084fc;
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.25);
+}
+
+/* ─── n8n Node Warning Badge (Unconfigured Node) ─── */
+.n8n-node-warning {
+  position: absolute;
+  bottom: 7px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 6;
+  filter: drop-shadow(0 1px 2px rgba(239, 68, 68, 0.45));
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: n8n-warn-bounce 3s infinite ease-in-out;
+}
+
+.n8n-node-warning:hover {
+  transform: scale(1.22);
+}
+
+@keyframes n8n-warn-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
 }
 
 /* ——— Sticky Notes ——— */
@@ -4018,6 +5873,213 @@ main::-webkit-scrollbar-thumb:hover {
   background: var(--s2);
 }
 
+/* ─── Template marketplace: search, categories, featured ─── */
+.tpl-header-text { min-width: 0; }
+
+.tpl-header-stats {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.tpl-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.tpl-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--s1);
+  color: var(--muted);
+}
+
+.tpl-search input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font: 500 13px Manrope;
+}
+
+.tpl-search input::-webkit-search-cancel-button { display: none; }
+
+.tpl-search-clear {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: var(--s2);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tpl-search-clear:hover { color: var(--text); background: var(--s3); }
+
+.tpl-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 500 12.5px Manrope;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.tpl-toggle input { accent-color: var(--red); }
+
+.tpl-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tpl-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--s1);
+  color: var(--muted);
+  font: 600 11.5px Manrope;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease, border-color .12s ease;
+}
+
+.tpl-cat-chip:hover { background: var(--s2); color: var(--text); }
+
+.tpl-cat-chip.active {
+  background: color-mix(in srgb, var(--red) 14%, var(--s1));
+  border-color: var(--red);
+  color: var(--text);
+}
+
+.tpl-cat-chip span { font-size: 10.5px; opacity: .7; }
+
+.tpl-result-count {
+  font: 500 11.5px Manrope;
+  color: var(--muted);
+}
+
+.tpl-section { margin-bottom: 30px; }
+
+.tpl-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font: 800 14px Manrope;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+
+.tpl-section-count {
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--s2);
+  color: var(--muted);
+  font: 600 10.5px Manrope;
+}
+
+.tpl-section-blurb {
+  font: 500 11.5px Manrope;
+  color: var(--muted);
+  margin: 3px 0 12px;
+}
+
+.tpl-card-title { min-width: 0; }
+
+.tpl-card-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 10.5px Manrope;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.tpl-top {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--red) 16%, var(--s1));
+  color: var(--red);
+  font-weight: 700;
+}
+
+.tpl-card-desc {
+  font: 500 12px Manrope;
+  color: var(--muted);
+  margin: 9px 0 0;
+  line-height: 1.45;
+}
+
+.tpl-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.tpl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font: 600 10.5px Manrope;
+  border: 1px solid transparent;
+}
+
+.tpl-badge.ready {
+  background: color-mix(in srgb, #22c55e 14%, var(--s1));
+  border-color: color-mix(in srgb, #22c55e 40%, var(--line));
+  color: #22c55e;
+}
+
+.tpl-badge.needs {
+  background: color-mix(in srgb, #f59e0b 14%, var(--s1));
+  border-color: color-mix(in srgb, #f59e0b 40%, var(--line));
+  color: #f59e0b;
+}
+
+.tpl-badge.env {
+  background: var(--s2);
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.tpl-tag-pop {
+  margin-left: auto;
+  font: 700 10.5px Manrope;
+  color: var(--muted);
+}
+
+.tpl-empty {
+  padding: 22px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  color: var(--muted);
+  font: 500 12.5px Manrope;
+  text-align: center;
+  margin-top: 10px;
+}
+
 
 /* ─── Execution history panel (n8n Executions) ─── */
 .exec-history {
@@ -4478,6 +6540,11 @@ nav button:hover:not(.active) {
 }
 
 /* ─── Primary button: subtle glow ─── */
+/* NOTE: this is the BIG call-to-action styling (empty stages, modals,
+   library). The top bar's "Publicar" is a compact `.ftb-btn.primary` that
+   only shares the red fill — it must NOT inherit min-height/border-radius/
+   font-weight from here, or it renders visibly taller than its neighbours.
+   That leak is why the publish button looked oversized. */
 .primary {
   box-shadow: 0 2px 12px color-mix(in srgb, var(--red) 25%, transparent);
   transition: box-shadow .15s ease, transform .1s ease, filter .15s ease;
@@ -5372,6 +7439,17 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   scrollbar-color: var(--line) transparent;
 }
 
+.fsp-banner-callout {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 6px 2px 12px;
+  font: 400 11.5px/1.45 'Manrope', sans-serif;
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
 .fsp-section { margin-bottom: 10px; padding: 0 2px; }
 
 .fsp-section-title {
@@ -5383,6 +7461,19 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   letter-spacing: .07em;
   color: var(--dim);
   padding: 8px 4px 6px;
+}
+
+/* Entry count per section. The catalogue splits a group into n8n's own app
+   categories, and the count is what tells the user a category is worth opening
+   before they scroll into it. */
+.fsp-section-count {
+  margin-left: auto;
+  font: 600 10px 'Manrope', sans-serif;
+  letter-spacing: 0;
+  color: var(--muted);
+  background: var(--s2);
+  border-radius: 999px;
+  padding: 1px 7px;
 }
 
 .fsp-section-hint {
@@ -5560,6 +7651,14 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   border-radius: 8px;
   background: var(--s2);
 }
+/* Real app logo from the n8n source. `object-fit: contain` keeps the very wide
+   and very tall marks (there are both) inside the 20px box without cropping. */
+.fsp-item-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+}
 .fsp-item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .fsp-item-title {
   display: flex;
@@ -5573,6 +7672,20 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* n8n's app category, shown on search results. Search returns a flat list, and
+   two entries can share a name ("Google Sheets" exists both as an integrated
+   node and as a catalogue entry) — the category is what tells them apart. */
+.fsp-item-cat {
+  font: 500 9.5px 'Manrope', sans-serif;
+  font-style: normal;
+  color: var(--muted);
+  background: var(--s2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 0 5px;
+  white-space: nowrap;
 }
 
 .fsp-soon {
@@ -5829,6 +7942,162 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
 .flog-msg { color: var(--text); font-family: 'Manrope', sans-serif; font-size: 12px; }
 .flog-error .flog-msg { color: var(--red); }
 
+/* ═══ Bottom Dock & Chat Panel ═══ */
+.flow-bottom-dock:not(.collapsed) { max-height: 290px; }
+.flogs-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font: 700 11.5px 'Manrope', sans-serif;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.flogs-tab-btn:hover { color: var(--text); background: var(--s2); }
+.flogs-tab-btn.active {
+  color: var(--text);
+  background: var(--s2);
+  border-color: var(--line);
+}
+.flogs-tab-btn.chat-tab.active {
+  color: #ff6d5a;
+  border-color: rgba(255, 109, 90, 0.3);
+}
+.flogs-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ff6d5a;
+  box-shadow: 0 0 6px #ff6d5a;
+  animation: n8n-pulse 1.2s infinite ease-in-out;
+}
+.flogs-toggle-chevron {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px;
+}
+.flogs-toggle-chevron:hover { color: var(--text); }
+
+.flow-chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 240px;
+  background: var(--s1);
+}
+.flow-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.flow-chat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 18px;
+}
+.flow-chat-bubble-wrap {
+  display: flex;
+  width: 100%;
+}
+.flow-chat-bubble-wrap.user { justify-content: flex-end; }
+.flow-chat-bubble-wrap.bot { justify-content: flex-start; }
+
+.flow-chat-bubble {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.flow-chat-bubble.user {
+  background: #ff6d5a;
+  color: #ffffff;
+  border-bottom-right-radius: 2px;
+}
+.flow-chat-bubble.bot {
+  background: var(--s2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 2px;
+}
+.chat-bubble-text { word-break: break-word; white-space: pre-wrap; }
+.chat-bubble-time {
+  font-size: 9px;
+  opacity: 0.65;
+  margin-top: 4px;
+  text-align: right;
+}
+.flow-chat-bubble.thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+}
+.typing-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--muted);
+  border-radius: 50%;
+  animation: typingBounce 1s infinite ease-in-out;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes typingBounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-4px); }
+}
+
+.flow-chat-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+  background: var(--s1);
+}
+.flow-chat-input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color .15s ease;
+}
+.flow-chat-input:focus { border-color: #ff6d5a; }
+.flow-chat-send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #ff6d5a;
+  color: #fff;
+  border: 0;
+  cursor: pointer;
+  transition: opacity .15s ease;
+}
+.flow-chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+
 /* ═══ Editor top bar ═══ */
 .flow-topbar {
   flex-shrink: 0;
@@ -5864,10 +8133,26 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   align-items: center;
   gap: 7px;
   min-width: 0;
+  flex: 0 1 auto;
+  /* Clip children so nothing can paint outside the crumb and land on top of
+     the stats readout (that is exactly what used to happen). */
+  overflow: hidden;
   font: 500 12.5px 'Manrope', sans-serif;
 }
-.ftb-crumb-scope { color: var(--dim); white-space: nowrap; }
-.ftb-crumb-sep { color: var(--dim); }
+
+/* The project name is the long one ("demo_formulario_excel"). A flex item
+   defaults to `min-width: auto`, which refuses to shrink below its content, so
+   with `white-space: nowrap` it overflowed the crumb and overlapped the
+   DURACIÓN / PASOS / VIDEO readout. `min-width: 0` + ellipsis is the fix. */
+.ftb-crumb-scope {
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.ftb-crumb-sep { color: var(--dim); flex-shrink: 0; }
 .ftb-crumb-name {
   border: 0;
   background: transparent;
@@ -5880,6 +8165,8 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 260px;
+  min-width: 0;
+  flex: 0 1 auto;
   transition: background .12s ease;
 }
 .ftb-crumb-name:hover { background: var(--s2); }
@@ -6029,6 +8316,13 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   border: 1px solid var(--red);
   background: var(--red);
   color: #fff;
+  /* Pin the compact geometry: the generic `.primary` big-CTA rule would
+     otherwise make Publicar taller/taller-radiused than Guardar. */
+  min-height: 0;
+  padding: 7px 14px;
+  border-radius: 9px;
+  font: 600 11.5px 'Manrope', sans-serif;
+  box-shadow: none;
 }
 .ftb-btn.primary:hover:not(:disabled) { filter: brightness(1.07); }
 .ftb-btn.primary.on { background: var(--mint); border-color: var(--mint); }
@@ -6383,4 +8677,278 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   font: 500 11.5px 'Manrope', sans-serif;
   line-height: 1.5;
   color: var(--muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   n8n canvas-node parity (final authority)
+
+   Earlier in this file the node has been restyled several times, the last
+   time with a heavy `translateY(-3px) scale(1.01)` hover and a 1.5px accent
+   ring. n8n's real canvas node is calmer than that:
+
+     · a ~1px hairline border that goes neutral→accent on selection, NOT a
+       thick 2px accent border sitting on every node all the time
+     · a small 8px radius (n8n's cards are noticeably squarer than our 16px)
+     · a soft, short shadow; no coloured glow at rest
+     · hover = a *lift of the border colour only*, no scaling, no bounce
+     · the icon sits in a plain rounded square with the app colour as tint
+
+   These rules are appended last on purpose so they win against the earlier
+   blocks without needing !important everywhere.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.n8n-node {
+  border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+  border-radius: 8px;
+  padding: 10px 38px 10px 12px;
+  gap: 10px;
+  background: var(--s1);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .06),
+    0 2px 8px rgba(0, 0, 0, .07);
+  backdrop-filter: none;
+  transition:
+    border-color .12s ease,
+    box-shadow .12s ease,
+    background .12s ease;
+}
+
+/* Left colour rail: n8n marks the node's category with a slim stroke down
+   the leading edge rather than tinting the whole card. */
+.n8n-node::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent, transparent);
+  opacity: .85;
+  pointer-events: none;
+}
+
+.n8n-node.is-trigger {
+  border-top-left-radius: 26px;
+  border-bottom-left-radius: 26px;
+}
+.n8n-node.is-trigger::before {
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 4px;
+  border-top-left-radius: 26px;
+  border-bottom-left-radius: 26px;
+}
+
+/* No scaling, no coloured glow, no lifted gradient on hover. */
+.n8n-node:hover {
+  border-color: color-mix(in srgb, var(--accent, var(--line)) 55%, var(--line));
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, .07),
+    0 4px 14px rgba(0, 0, 0, .11);
+  transform: none;
+}
+
+.n8n-node::after { background: none; }
+
+/* Selection is the accent border + a restrained ring — not a 22px bloom. */
+.n8n-node.selected,
+.n8n-node.selected:hover {
+  border-color: var(--accent, #5b8def) !important;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--accent, #5b8def) 38%, transparent),
+    0 3px 12px rgba(0, 0, 0, .12) !important;
+}
+
+/* Icon: flat tinted square, hairline inner edge, square-ish like n8n. */
+.n8n-node-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--accent, var(--s2)) 12%, var(--s2));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, var(--line)) 16%, transparent);
+}
+
+.n8n-node:hover .n8n-node-icon {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent, var(--line)) 30%, transparent);
+}
+
+/* Typography: n8n uses a 13px/600 title and a 11px dim subtitle. */
+.n8n-node-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -.005em;
+  line-height: 1.25;
+}
+
+.n8n-node-sub {
+  font-size: 11px;
+  line-height: 1.3;
+  margin-top: 1px;
+}
+
+/* Ports: smaller, flat, hairline — closer to n8n's 12px dots. */
+.n8n-port {
+  width: 11px;
+  height: 11px;
+  border-width: 1.5px;
+  box-shadow: none;
+}
+
+.n8n-port:hover {
+  transform: scale(1.25) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #6E58F2) 22%, transparent) !important;
+}
+
+/* Keep the pulse for the actively-running node — that cue is genuinely useful. */
+.n8n-node.active {
+  border-color: var(--red) !important;
+}
+
+/* Light theme: n8n's canvas cards are white with a grey hairline. */
+[data-theme="light"] .n8n-node {
+  background: #ffffff;
+  border-color: #e3e6ea;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, .06),
+    0 1px 3px rgba(16, 24, 40, .10);
+}
+
+[data-theme="light"] .n8n-node:hover {
+  border-color: color-mix(in srgb, var(--accent, #98a2b3) 50%, #e3e6ea);
+  box-shadow:
+    0 2px 4px rgba(16, 24, 40, .07),
+    0 6px 16px rgba(16, 24, 40, .12);
+}
+
+/* ═══ Required-field indicator on the Parámetros tab ═══
+   n8n opens many triggers with required-but-empty multiOptions (its own
+   `default: []`), so the node really is incomplete on insert. This dot is the
+   honest signal: something still needs choosing. */
+.ndv-tabs button { position: relative; }
+
+.ndv-tab-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 22%, transparent);
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Editor top bar — responsive
+
+   The bar packs four things into one row: breadcrumb, stats readout, view tabs
+   and five actions. On a narrow window they fought for the space and the
+   breadcrumb won by painting over the readout (`.ftb-crumb-scope` could not
+   shrink — see its rule above). Now the least important element is dropped
+   first, and then the tabs move to their own row, so nothing overlaps and no
+   label is ever clipped mid-word.
+
+   Breakpoints are measured, not guessed: they are the widths at which the row
+   actually stops fitting.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Measured, not guessed: the bar needs ~1450px to hold the breadcrumb, the
+   readout, the four tabs and the five actions on ONE row. Below that something
+   has to give, and crushing the project name to a letter or two is the worst
+   option — so the bar wraps and the tabs take a full-width second row. That
+   keeps every label readable and keeps the readout on screen, at the cost of
+   ~38px of bar height. */
+@media (max-width: 1450px) {
+  .flow-topbar {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .ftb-left,
+  .ftb-right { flex: 1 1 auto; }
+  .ftb-tabs {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Tightest supported window (`minWidth` is 900). The readout yields here — it
+   is informational, and the breadcrumb needs the room — and the padding
+   tightens so the action labels keep their text. */
+@media (max-width: 980px) {
+  .ftb-stats { display: none; }
+  .flow-topbar { padding: 8px 10px; gap: 10px; }
+  .ftb-btn { padding: 7px 11px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Icon rail (sidebar ≤ 900px) — final authority
+
+   The rule that collapses the sidebar lives ~5700 lines above this one, but the
+   selectors it needs to neutralise (`.sidebar-section-title`, `.sidebar-project-item`,
+   `.sidebar-settings-btn`) are redefined after it, and with equal specificity the
+   later rule wins — so the rail only ever hid the plain nav labels. Everything
+   below is therefore appended last on purpose.
+
+   Two traps are in play here and both need `!important`:
+
+     1. Most of these labels carry an INLINE `font-size` (the brand name, the
+        project rows, both settings buttons, the user block). An inline style
+        beats any stylesheet rule, `!important` included — so the labels are
+        hidden with `display: none` rather than `font-size: 0` wherever possible.
+     2. Where only `font-size` is overridden, `!important` is required to beat
+        the inline value.
+
+   Without this the labels stayed visible, spilled out of the 86px column and
+   clipped the logo against the window edge (`.brand` measured wider than its
+   own box at every width ≤ 900px).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 900px) {
+  /* 18px of side padding leaves too little room inside an 86px rail. */
+  aside { padding: 20px 10px; }
+
+  /* ── labels off ── */
+  .brand span,
+  .sidebar-section-title,
+  .sidebar-project-list > div,
+  .sidebar-project-item span,
+  .sidebar-user > div > div,
+  .sidebar-settings-btn > span {
+    display: none;
+  }
+
+  /* The badge spans ("DPAPI", "Inicio") are direct children; the label spans sit
+     inside a wrapper div, so they are covered by `font-size: 0` below. */
+  nav button,
+  nav button span,
+  .sidebar-settings-btn,
+  .sidebar-settings-btn span,
+  .sidebar-user span {
+    font-size: 0 !important;
+  }
+
+  /* ── icons on, and centred ── */
+  nav button,
+  .sidebar-project-item,
+  .sidebar-settings-btn,
+  .sidebar-user {
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+
+  .sidebar-settings-btn > div,
+  .sidebar-user > div { gap: 0 !important; }
+
+  nav button svg,
+  .sidebar-project-item svg,
+  .sidebar-settings-btn svg { flex: none; }
+
+  .sidebar-user {
+    padding: 8px !important;
+    flex-direction: column;
+    gap: 6px !important;
+  }
 }

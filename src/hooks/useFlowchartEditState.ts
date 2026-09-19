@@ -95,6 +95,17 @@ export function useFlowchartEditState(
   const [editFileChangePath, setEditFileChangePath] = useState("");
   const [editFileChangeEvent, setEditFileChangeEvent] = useState("Modify");
   const [editHotkeyTriggerShortcut, setEditHotkeyTriggerShortcut] = useState("Ctrl+Alt+A");
+  // Extra triggers (WhatsApp, Telegram, Email, RSS)
+  const [editWhatsappTriggerPhoneId, setEditWhatsappTriggerPhoneId] = useState("");
+  const [editWhatsappTriggerToken, setEditWhatsappTriggerToken] = useState("");
+  const [editTelegramTriggerBotToken, setEditTelegramTriggerBotToken] = useState("");
+  const [editEmailTriggerHost, setEditEmailTriggerHost] = useState("");
+  const [editEmailTriggerPort, setEditEmailTriggerPort] = useState(993);
+  const [editEmailTriggerUser, setEditEmailTriggerUser] = useState("");
+  const [editEmailTriggerPassword, setEditEmailTriggerPassword] = useState("");
+  const [editEmailTriggerFolder, setEditEmailTriggerFolder] = useState("INBOX");
+  const [editRssTriggerUrl, setEditRssTriggerUrl] = useState("");
+  const [editRssTriggerInterval, setEditRssTriggerInterval] = useState(60);
   const [editScrollY, setEditScrollY] = useState(-120);
   const [editNotes, setEditNotes] = useState("");
   const [editSubWorkflowId, setEditSubWorkflowId] = useState("");
@@ -248,6 +259,27 @@ export function useFlowchartEditState(
   const [editWriteFileContent, setEditWriteFileContent] = useState("{{ $json.text }}");
   const [editWriteFileEncoding, setEditWriteFileEncoding] = useState("utf8");
   const [editWriteFileAppend, setEditWriteFileAppend] = useState(false);
+  // Declarative n8n nodes. `n8n_key` is intentionally absent: it identifies the
+  // node in the descriptor registry and is never edited from the drawer.
+  const [editN8nName, setEditN8nName] = useState("");
+  const [editN8nKey, setEditN8nKey] = useState("");
+  const [editN8nBaseUrl, setEditN8nBaseUrl] = useState("");
+  const [editN8nMethod, setEditN8nMethod] = useState("GET");
+  const [editN8nPath, setEditN8nPath] = useState("");
+  const [editN8nQs, setEditN8nQs] = useState("");
+  const [editN8nBody, setEditN8nBody] = useState("");
+  const [editN8nPaginate, setEditN8nPaginate] = useState(false);
+  const [editN8nPageParam, setEditN8nPageParam] = useState("page");
+  const [editN8nMaxPages, setEditN8nMaxPages] = useState(10);
+  // Trigger reception config. Kept alongside the action fields so the drawer
+  // has one source of truth regardless of which engine kind it is editing.
+  const [editN8nPort, setEditN8nPort] = useState(8787);
+  const [editN8nInterval, setEditN8nInterval] = useState(60);
+  const [editN8nMode, setEditN8nMode] = useState("");
+  // The node's real n8n parameters (the form extracted from its source), as a
+  // plain `{parameterName: value}` object. It is stored on the event as
+  // `n8n_config` and merged into the request by the Rust runner.
+  const [editN8nConfig, setEditN8nConfig] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
     populateNodeState(editingNode, selectedProjectDetail, {
@@ -268,6 +300,9 @@ export function useFlowchartEditState(
       setEditWaitSeconds, setEditWaitResumeOn, setEditCodeLanguage, setEditCodeContent, setEditCodeOutputVar,
       setEditErrorHandlerAction, setEditErrorHandlerMaxRetries, setEditTriggerSchedule,
       setEditCronSchedule, setEditFileChangePath, setEditFileChangeEvent, setEditHotkeyTriggerShortcut,
+      setEditWhatsappTriggerPhoneId, setEditWhatsappTriggerToken, setEditTelegramTriggerBotToken,
+      setEditEmailTriggerHost, setEditEmailTriggerPort, setEditEmailTriggerUser, setEditEmailTriggerPassword, setEditEmailTriggerFolder,
+      setEditRssTriggerUrl, setEditRssTriggerInterval,
       setEditNotes, setEditFormFields,
       setEditSubWorkflowId, setEditSubWorkflowName, setEditSubWorkflowProject,
       setEditStartupMode, setEditStartupAppExe, setEditStartupDelay,
@@ -317,7 +352,12 @@ export function useFlowchartEditState(
       setEditCryptoAction, setEditCryptoAlgorithm, setEditCryptoEncoding, setEditCryptoValue,
       setEditCryptoSecret, setEditCryptoLength, setEditCryptoTarget,
       setEditReadFilePath, setEditReadFileEncoding, setEditReadFileTarget,
-      setEditWriteFilePath, setEditWriteFileContent, setEditWriteFileEncoding, setEditWriteFileAppend
+      setEditWriteFilePath, setEditWriteFileContent, setEditWriteFileEncoding, setEditWriteFileAppend,
+      // Declarative n8n nodes.
+      setEditN8nName, setEditN8nBaseUrl, setEditN8nMethod, setEditN8nPath, setEditN8nQs,
+      setEditN8nBody, setEditN8nPaginate, setEditN8nPageParam, setEditN8nMaxPages,
+      setEditN8nPort, setEditN8nInterval, setEditN8nMode,
+      setEditN8nKey, setEditN8nConfig
     });
   }, [editingNode, selectedProjectDetail]);
 
@@ -400,6 +440,16 @@ export function useFlowchartEditState(
     editFileChangePath, setEditFileChangePath,
     editFileChangeEvent, setEditFileChangeEvent,
     editHotkeyTriggerShortcut, setEditHotkeyTriggerShortcut,
+    editWhatsappTriggerPhoneId, setEditWhatsappTriggerPhoneId,
+    editWhatsappTriggerToken, setEditWhatsappTriggerToken,
+    editTelegramTriggerBotToken, setEditTelegramTriggerBotToken,
+    editEmailTriggerHost, setEditEmailTriggerHost,
+    editEmailTriggerPort, setEditEmailTriggerPort,
+    editEmailTriggerUser, setEditEmailTriggerUser,
+    editEmailTriggerPassword, setEditEmailTriggerPassword,
+    editEmailTriggerFolder, setEditEmailTriggerFolder,
+    editRssTriggerUrl, setEditRssTriggerUrl,
+    editRssTriggerInterval, setEditRssTriggerInterval,
     editScrollY, setEditScrollY,
     editNotes, setEditNotes,
     editSubWorkflowId, setEditSubWorkflowId,
@@ -547,7 +597,21 @@ export function useFlowchartEditState(
     editWriteFilePath, setEditWriteFilePath,
     editWriteFileContent, setEditWriteFileContent,
     editWriteFileEncoding, setEditWriteFileEncoding,
-    editWriteFileAppend, setEditWriteFileAppend
+    editWriteFileAppend, setEditWriteFileAppend,
+    editN8nName, setEditN8nName,
+    editN8nKey, setEditN8nKey,
+    editN8nBaseUrl, setEditN8nBaseUrl,
+    editN8nMethod, setEditN8nMethod,
+    editN8nPath, setEditN8nPath,
+    editN8nQs, setEditN8nQs,
+    editN8nBody, setEditN8nBody,
+    editN8nPaginate, setEditN8nPaginate,
+    editN8nPageParam, setEditN8nPageParam,
+    editN8nMaxPages, setEditN8nMaxPages,
+    editN8nPort, setEditN8nPort,
+    editN8nInterval, setEditN8nInterval,
+    editN8nMode, setEditN8nMode,
+    editN8nConfig, setEditN8nConfig
   };
 }
 export default useFlowchartEditState;

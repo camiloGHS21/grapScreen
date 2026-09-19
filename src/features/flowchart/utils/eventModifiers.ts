@@ -1,6 +1,45 @@
-import { FlowNode, RecordedEvent } from "../../../types";
+import { FlowNode, RecordedEvent, AddStepExtra } from "../../../types";
+import { n8nAgentRunnerFields } from "./agentParity";
 
-export function buildAddedEvents(type: FlowNode["type"], baseTime: number, evs: RecordedEvent[], insertAt: number): RecordedEvent[] {
+export function buildAddedEvents(
+  type: FlowNode["type"],
+  baseTime: number,
+  evs: RecordedEvent[],
+  insertAt: number,
+  /**
+   * Kind-specific extras the generic catalogue cannot express through `type`
+   * alone. Declarative n8n nodes use it to record which of the 554 catalogue
+   * entries was picked, since they all share the `n8n_node` engine kind.
+   */
+  extra?: AddStepExtra,
+): RecordedEvent[] {
+  return applySeedPatch(seedDefaultEvents(type, baseTime, evs, insertAt, extra), extra?.data);
+}
+
+/**
+ * Merges a caller-supplied config over the seeded one.
+ *
+ * The patch lands on *every* event the type emits. That is the right scope for
+ * what it describes — the node's configuration — and it is what makes a
+ * multi-event node (`type` emits one press/release pair per character) behave
+ * as a single configured step. An empty or absent patch returns the seed
+ * untouched, so every existing add-node path is unaffected.
+ */
+function applySeedPatch(
+  seeded: RecordedEvent[],
+  patch?: Record<string, unknown>,
+): RecordedEvent[] {
+  if (!patch || Object.keys(patch).length === 0) return seeded;
+  return seeded.map((ev) => ({ ...ev, data: { ...ev.data, ...patch } }));
+}
+
+function seedDefaultEvents(
+  type: FlowNode["type"],
+  baseTime: number,
+  evs: RecordedEvent[],
+  insertAt: number,
+  extra?: AddStepExtra,
+): RecordedEvent[] {
   const markManual = (ev: RecordedEvent): RecordedEvent => ({
     ...ev,
     data: { ...ev.data, __manual: true },
@@ -33,18 +72,49 @@ export function buildAddedEvents(type: FlowNode["type"], baseTime: number, evs: 
   if (type === "open_app") return [markManual({ at_ms: baseTime + 200, kind: "open_app", data: { exe: "notepad.exe" } })];
   if (type === "close_app") return [markManual({ at_ms: baseTime + 200, kind: "close_app", data: { name: "Notepad" } })];
   if (type === "wait_image") return [markManual({ at_ms: baseTime + 200, kind: "wait_image", data: { description: "Esperar botón", timeout: 10 } })];
-  if (type === "set_var") return [markManual({ at_ms: baseTime + 200, kind: "set_var", data: { name: "variable", value: "valor" } })];
+  // Seeded nodes must agree on names: whatever a node writes into the
+  // workspace variables has to be what the node after it interpolates. Every
+  // template below pairs these defaults, so changing one means changing the
+  // consumer too.
+  if (type === "set_var") return [markManual({ at_ms: baseTime + 200, kind: "set_var", data: { name: "entrada", value: "Escribe aquí tu texto" } })];
   if (type === "screenshot") return [markManual({ at_ms: baseTime + 200, kind: "screenshot", data: { filename: "captura.png" } })];
   if (type === "run_cmd") return [markManual({ at_ms: baseTime + 200, kind: "run_cmd", data: { command: "ping google.com", args: "" } })];
   if (type === "condition") return [markManual({ at_ms: baseTime + 200, kind: "condition", data: { description: "", condition_type: "expression", expression: '{{ variable }} == "valor"' } })];
   if (type === "loop") return [markManual({ at_ms: baseTime + 200, kind: "loop_start", data: { iterations: 3 } })];
   if (type === "split_batches") return [markManual({ at_ms: baseTime + 200, kind: "split_batches", data: { array_var: "items", batch_size: 1 } })];
-  if (type === "google_sheets") return [markManual({ at_ms: baseTime + 200, kind: "google_sheets", data: { spreadsheet_id: "", range: "Sheet1!A:Z", values: "" } })];
-  if (type === "excel_local") return [markManual({ at_ms: baseTime + 200, kind: "excel_local", data: { file_path: "datos.xlsx", header: "[\"Nombre\",\"Email\",\"Telefono\"]", values: "[[\"{{ nombre }}\",\"{{ email }}\",\"{{ telefono }}\"]]", delimiter: ",", overwrite: false } })];
-  if (type === "google_docs") return [markManual({ at_ms: baseTime + 200, kind: "google_docs", data: { document_id: "", text: "" } })];
+  if (type === "google_sheets") return [markManual({ at_ms: baseTime + 200, kind: "google_sheets", data: { spreadsheet_id: "", range: "Sheet1!A:Z", values: "[[\"{{ nombre }}\",\"{{ email }}\",\"{{ telefono }}\"]]" } })];
+  // `format` is stated explicitly and matches the `.xlsx` path: without it the
+  // writer falls back to the extension, and a `.csv` path would silently answer
+  // a node the user dropped expecting a spreadsheet.
+  if (type === "excel_local") return [markManual({ at_ms: baseTime + 200, kind: "excel_local", data: { file_path: "datos.xlsx", header: "[\"Nombre\",\"Email\",\"Telefono\"]", values: "[[\"{{ nombre }}\",\"{{ email }}\",\"{{ telefono }}\"]]", delimiter: ",", overwrite: false, format: "xlsx" } })];
+  if (type === "google_docs") return [markManual({ at_ms: baseTime + 200, kind: "google_docs", data: { document_id: "", text: "{{ ai_response }}" } })];
   if (type === "whatsapp") return [markManual({ at_ms: baseTime + 200, kind: "whatsapp", data: { to: "", message: "", api_type: "web" } })];
-  if (type === "telegram") return [markManual({ at_ms: baseTime + 200, kind: "telegram", data: { message: "", chat_id: "" } })];
-  if (type === "ai_agent") return [markManual({ at_ms: baseTime + 200, kind: "ai_agent", data: { prompt: "", system_prompt: "Eres un asistente inteligente.", provider: "openai", model: "gpt-4o-mini", output_var: "ai_response", enable_tools: ["ocr_scan_text", "rpa_click", "rpa_type_text", "get_workflow_var", "set_workflow_var"], max_iterations: 5 } })];
+  // The runner rejects an empty message, so the seeded alert has to carry the
+  // variable the pairing `set_var` step fills in.
+  if (type === "telegram") return [markManual({ at_ms: baseTime + 200, kind: "telegram", data: { message: "{{ entrada }}", chat_id: "" } })];
+  if (type === "ai_agent") {
+    // One agent. The palette's entry is n8n's Agent, so it keeps the catalogue
+    // key — name, logo and the parameter form generated from n8n's descriptor
+    // — while the engine kind stays `ai_agent`, the runner that actually
+    // executes an agent here.
+    const agentKey = extra?.n8nKey ?? "";
+    return [markManual({
+      at_ms: baseTime + 200,
+      kind: "ai_agent",
+      data: {
+        prompt: "{{ entrada }}",
+        system_prompt: "Eres un asistente inteligente.",
+        provider: "openai",
+        model: "gpt-4o-mini",
+        output_var: "ai_response",
+        enable_tools: ["ocr_scan_text", "rpa_click", "rpa_type_text", "get_workflow_var", "set_workflow_var"],
+        max_iterations: 5,
+        ...(agentKey
+          ? { n8n_key: agentKey, n8n_name: extra?.n8nLabel ?? agentKey, n8n_config: {} }
+          : {}),
+      },
+    })];
+  }
   // New n8n-level node types
   if (type === "trigger" || type === "start") return [markManual({ at_ms: baseTime + 200, kind: "trigger", data: { schedule: "manual", description: "Inicio" } })];
   if (type === "startup") return [markManual({ at_ms: baseTime + 200, kind: "startup", data: { mode: "system", delay_seconds: 0 } })];
@@ -60,7 +130,15 @@ export function buildAddedEvents(type: FlowNode["type"], baseTime: number, evs: 
   if (type === "cron") return [markManual({ at_ms: baseTime + 200, kind: "cron", data: { schedule: "1h" } })];
   if (type === "file_change") return [markManual({ at_ms: baseTime + 200, kind: "file_change", data: { path: "", event: "Modify" } })];
   if (type === "hotkey_trigger") return [markManual({ at_ms: baseTime + 200, kind: "hotkey_trigger", data: { shortcut: "Ctrl+Alt+A" } })];
-  if (type === "form") return [markManual({ at_ms: baseTime + 200, kind: "form", data: { fields: [{ id: "input1", label: "Campo 1", type: "text", required: true }] } })];
+  if (type === "form") return [markManual({ at_ms: baseTime + 200, kind: "form", data: { fields: [
+    { id: "nombre", label: "Nombre", type: "text", required: true },
+    { id: "email", label: "Email", type: "email", required: false },
+    { id: "telefono", label: "Teléfono", type: "phone", required: false },
+  ] } })];
+  if (type === "whatsapp_trigger") return [markManual({ at_ms: baseTime + 200, kind: "whatsapp_trigger", data: { phone_number_id: "", verify_token: "" } })];
+  if (type === "telegram_trigger") return [markManual({ at_ms: baseTime + 200, kind: "telegram_trigger", data: { bot_token: "" } })];
+  if (type === "email_trigger") return [markManual({ at_ms: baseTime + 200, kind: "email_trigger", data: { host: "", port: 993, user: "", password: "", folder: "INBOX" } })];
+  if (type === "rss_trigger") return [markManual({ at_ms: baseTime + 200, kind: "rss_trigger", data: { url: "", interval: 60 } })];
   if (type === "sub_workflow") return [markManual({ at_ms: baseTime + 200, kind: "sub_workflow", data: { project_name: "Default", workflow_id: "", workflow_name: "Sub-Flujo" } })];
   // Data transformation (Phase 3). Defaults are valid, runnable examples so a
   // freshly dropped node does something sensible instead of erroring.
@@ -85,6 +163,10 @@ export function buildAddedEvents(type: FlowNode["type"], baseTime: number, evs: 
   // Phase 6 — SQLite nodes.
   if (type === "sqlite_query") return [markManual({ at_ms: baseTime + 200, kind: "sqlite_query", data: { db_path: "datos.db", query: "SELECT * FROM tabla", params: "" } })];
   if (type === "sqlite_execute") return [markManual({ at_ms: baseTime + 200, kind: "sqlite_execute", data: { db_path: "datos.db", query: "INSERT INTO tabla (nombre) VALUES (?)", params: "[\"nuevo\"]" } })];
+  // The terminal node. It carries no configuration — the engine treats it as a
+  // passthrough that simply has no output port — but it still needs an event,
+  // or `buildNodes` never creates the node and it cannot be placed at all.
+  if (type === "end") return [markManual({ at_ms: baseTime + 200, kind: "end", data: {} })];
   // Phase 11 — parsing nodes. `source` is left as an expression so the node
   // reads from the incoming item instead of a hardcoded document.
   if (type === "xml_parse") return [markManual({ at_ms: baseTime + 200, kind: "xml_parse", data: { source: "{{ $json.xml }}", root: "" } })];
@@ -110,6 +192,54 @@ export function buildAddedEvents(type: FlowNode["type"], baseTime: number, evs: 
   if (type === "crypto") return [markManual({ at_ms: baseTime + 200, kind: "crypto", data: { action: "hash", algorithm: "SHA256", encoding: "hex", value: "{{ $json.text }}", secret: "", length: 32, target_field: "data" } })];
   if (type === "read_file") return [markManual({ at_ms: baseTime + 200, kind: "read_file", data: { file_path: "~/datos.txt", encoding: "utf8", target_field: "data" } })];
   if (type === "write_file") return [markManual({ at_ms: baseTime + 200, kind: "write_file", data: { file_path: "~/salida.txt", content: "{{ $json.text }}", encoding: "utf8", append: false } })];
+  // Declarative n8n catalogue. The defaults are deliberately runnable: the
+  // descriptor already supplies the base URL and the auth scheme, so the node
+  // works as soon as the user fills in the path and attaches a credential.
+  // `n8n_name` is stored so the canvas shows the real node name ("Slack",
+  // "Google Sheets") instead of the shared engine kind.
+  if (type === "n8n_node") {
+    return [markManual({
+      at_ms: baseTime + 200,
+      kind: "n8n_node",
+      data: {
+        n8n_key: extra?.n8nKey ?? "",
+        n8n_name: extra?.n8nLabel ?? extra?.n8nKey ?? "Nodo n8n",
+        n8n_base_url: extra?.n8nBaseUrl ?? "",
+        n8n_method: "GET",
+        n8n_path: "",
+        n8n_qs: "",
+        n8n_body: "",
+        n8n_paginate: false,
+        n8n_page_param: "page",
+        n8n_max_pages: 10,
+        credential_id: "",
+      },
+    })];
+  }
+  if (type === "n8n_trigger") {
+    // How this trigger receives its event, carried from the catalogue entry.
+    // The daemon re-reads it from the descriptor when it is blank, so an
+    // automation saved before this field existed still arms correctly.
+    const mode = extra?.n8nMode ?? "";
+    return [markManual({
+      at_ms: baseTime + 200,
+      kind: "n8n_trigger",
+      data: {
+        n8n_key: extra?.n8nKey ?? "",
+        n8n_name: extra?.n8nLabel ?? extra?.n8nKey ?? "Disparador n8n",
+        n8n_base_url: extra?.n8nBaseUrl ?? "",
+        n8n_trigger_mode: mode,
+        n8n_path: "",
+        // A webhook trigger *serves* a route, so it expects a POST; a polling
+        // trigger *fetches* from the API, so it expects a GET.
+        n8n_method: mode === "webhook" ? "POST" : "GET",
+        n8n_port: 8787,
+        n8n_interval: 60,
+        n8n_qs: "",
+        credential_id: "",
+      },
+    })];
+  }
   return [];
 }
 
@@ -190,7 +320,27 @@ export function updateEventFromState(
     else if (node.type === "google_docs") ev.data = { ...ev.data, document_id: state.editDocDocumentId, text: state.editDocText };
     else if (node.type === "whatsapp") ev.data = { ...ev.data, to: state.editWhatsappTo, message: state.editWhatsappMessage, api_type: state.editWhatsappApiType };
     else if (node.type === "telegram") ev.data = { ...ev.data, message: state.editTelegramMessage, chat_id: state.editTelegramChatId };
-    else if (node.type === "ai_agent") ev.data = { ...ev.data, prompt: state.editAiAgentPrompt, system_prompt: state.editAiAgentSystemPrompt, provider: state.editAiAgentProvider, model: state.editAiAgentModel, output_var: state.editAiAgentOutputVar, enable_tools: state.editAiAgentEnableTools, max_iterations: state.editAiAgentMaxIterations };
+    else if (node.type === "ai_agent") {
+      // An agent added from the catalogue is configured with n8n's own
+      // parameters (`promptType`, `text`, `options.systemMessage`…), so those
+      // are what gets persisted; `n8nAgentRunnerFields` mirrors them onto the
+      // fields the Rust runner reads, and the wired chat model decides the
+      // provider on save (see `agentParity`).
+      if (node.n8nKey) {
+        const n8nConfig =
+          state.editN8nConfig && Object.keys(state.editN8nConfig).length
+            ? state.editN8nConfig
+            : ev.data.n8n_config;
+        ev.data = {
+          ...ev.data,
+          n8n_config: n8nConfig,
+          credential_id: state.editCredentialId ?? ev.data.credential_id,
+          ...n8nAgentRunnerFields(n8nConfig),
+        };
+      } else {
+        ev.data = { ...ev.data, prompt: state.editAiAgentPrompt, system_prompt: state.editAiAgentSystemPrompt, provider: state.editAiAgentProvider, model: state.editAiAgentModel, output_var: state.editAiAgentOutputVar, enable_tools: state.editAiAgentEnableTools, max_iterations: state.editAiAgentMaxIterations };
+      }
+    }
     else if (node.type === "form") ev.data = { ...ev.data, fields: state.editFormFields };
     else if (node.type === "webhook") ev.data = { ...ev.data, path: state.editWebhookPath, method: state.editWebhookMethod };
     else if (node.type === "polling") ev.data = { ...ev.data, url: state.editPollingUrl, method: state.editPollingMethod, headers: state.editPollingHeaders, body: state.editPollingBody, interval: state.editPollingInterval };
@@ -214,6 +364,10 @@ export function updateEventFromState(
     else if (node.type === "cron") ev.data = { ...ev.data, schedule: state.editCronSchedule };
     else if (node.type === "file_change") ev.data = { ...ev.data, path: state.editFileChangePath, event: state.editFileChangeEvent };
     else if (node.type === "hotkey_trigger") ev.data = { ...ev.data, shortcut: state.editHotkeyTriggerShortcut };
+    else if (node.type === "whatsapp_trigger") ev.data = { ...ev.data, phone_number_id: state.editWhatsappTriggerPhoneId, verify_token: state.editWhatsappTriggerToken };
+    else if (node.type === "telegram_trigger") ev.data = { ...ev.data, bot_token: state.editTelegramTriggerBotToken };
+    else if (node.type === "email_trigger") ev.data = { ...ev.data, host: state.editEmailTriggerHost, port: state.editEmailTriggerPort, user: state.editEmailTriggerUser, password: state.editEmailTriggerPassword, folder: state.editEmailTriggerFolder };
+    else if (node.type === "rss_trigger") ev.data = { ...ev.data, url: state.editRssTriggerUrl, interval: state.editRssTriggerInterval };
     else if (node.type === "startup") ev.data = { ...ev.data, mode: state.editStartupMode || "system", exe: state.editStartupAppExe || "chrome.exe", delay_seconds: state.editStartupDelay || 0 };
     // Data transformation (Phase 3).
     else if (node.type === "filter") ev.data = { ...ev.data, condition: state.editFilterCondition, mode: state.editFilterMode };
@@ -254,6 +408,42 @@ export function updateEventFromState(
     else if (node.type === "crypto") ev.data = { ...ev.data, action: state.editCryptoAction, algorithm: state.editCryptoAlgorithm, encoding: state.editCryptoEncoding, value: state.editCryptoValue, secret: state.editCryptoSecret, length: state.editCryptoLength, target_field: state.editCryptoTarget };
     else if (node.type === "read_file") ev.data = { ...ev.data, file_path: state.editReadFilePath, encoding: state.editReadFileEncoding, target_field: state.editReadFileTarget };
     else if (node.type === "write_file") ev.data = { ...ev.data, file_path: state.editWriteFilePath, content: state.editWriteFileContent, encoding: state.editWriteFileEncoding, append: state.editWriteFileAppend };
+    // Declarative n8n nodes. `n8n_key` is not editable here: it is what makes
+    // the node resolvable in the descriptor registry, and changing it would
+    // silently point the node at a different integration.
+    else if (node.type === "n8n_node") ev.data = {
+      ...ev.data,
+      n8n_name: state.editN8nName,
+      n8n_base_url: state.editN8nBaseUrl,
+      n8n_method: state.editN8nMethod,
+      n8n_path: state.editN8nPath,
+      n8n_qs: state.editN8nQs,
+      n8n_body: state.editN8nBody,
+      n8n_paginate: state.editN8nPaginate,
+      n8n_page_param: state.editN8nPageParam,
+      n8n_max_pages: state.editN8nMaxPages,
+      // The node's real n8n parameters, straight from the extracted form.
+      n8n_config: state.editN8nConfig && Object.keys(state.editN8nConfig).length ? state.editN8nConfig : ev.data.n8n_config,
+      credential_id: state.editCredentialId,
+    };
+    else if (node.type === "n8n_trigger") ev.data = {
+      ...ev.data,
+      n8n_name: state.editN8nName,
+      // The trigger's own reception config: a webhook route + port, or the
+      // resource and interval the daemon polls. `n8n_key` and
+      // `n8n_trigger_mode` are deliberately not editable — changing either
+      // would repoint an armed trigger at a different integration.
+      n8n_base_url: state.editN8nBaseUrl,
+      n8n_path: state.editN8nPath,
+      n8n_method: state.editN8nMethod,
+      n8n_port: state.editN8nPort,
+      n8n_interval: state.editN8nInterval,
+      n8n_qs: state.editN8nQs,
+      // Some polling endpoints are POST searches rather than GET listings.
+      n8n_body: state.editN8nBody,
+      n8n_config: state.editN8nConfig && Object.keys(state.editN8nConfig).length ? state.editN8nConfig : ev.data.n8n_config,
+      credential_id: state.editCredentialId,
+    };
     if (ev && typeof ev.data === "object") ev.data = { ...ev.data, notes: state.editNotes };
   }
   return updatedEvents;

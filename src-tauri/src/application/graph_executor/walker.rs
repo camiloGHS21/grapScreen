@@ -226,12 +226,19 @@ impl<'a> GraphEngine<'a> {
                 out_map.insert("items".to_string(), serde_json::to_value(&curr_items).unwrap_or(serde_json::Value::Null));
                 out_map.insert("items_count".to_string(), serde_json::Value::Number(curr_items.len().into()));
             }
-            if let Some(val) = curr_vars.get("http_response") {
-                if let Ok(j) = serde_json::from_str::<serde_json::Value>(val) {
-                    out_map.insert("http_response".to_string(), j);
-                } else {
-                    out_map.insert("http_response".to_string(), serde_json::Value::String(val.clone()));
+            if let Some(ev) = self.node_event(&node) {
+                if let Some(custom_var) = ev.data.get("output_var").and_then(|v| v.as_str()) {
+                    if let Some(val) = curr_vars.get(custom_var) {
+                        let j = serde_json::from_str::<serde_json::Value>(val)
+                            .unwrap_or_else(|_| serde_json::Value::String(val.clone()));
+                        out_map.insert(custom_var.to_string(), j);
+                    }
                 }
+            }
+            if let Some(val) = curr_vars.get("http_response") {
+                let j = serde_json::from_str::<serde_json::Value>(val)
+                    .unwrap_or_else(|_| serde_json::Value::String(val.clone()));
+                out_map.insert("http_response".to_string(), j);
             }
             if let Some(val) = curr_vars.get("code_output") {
                 out_map.insert("code_output".to_string(), serde_json::Value::String(val.clone()));

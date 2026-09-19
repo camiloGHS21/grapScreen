@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>grapScreen — panel con triggers por categoría real</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  .demo { display: flex; gap: 20px; padding: 20px; }
+  .col { }
+  .col h3 { font: 700 13px Manrope; margin: 0 0 10px; color: var(--text); }
+  .flow-side-panel { width: 320px; height: 90vh; display: flex; flex-direction: column; min-height: 0; background: var(--s1); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+  .fsp-head { display: flex; align-items: flex-start; gap: 8px; padding: 14px 14px 10px; border-bottom: 1px solid var(--line); }
+  .fsp-head-text { flex: 1; min-width: 0; }
+  .fsp-eyebrow { font: 600 10px Manrope; color: var(--dim); text-transform: uppercase; letter-spacing: 0.08em; }
+  .fsp-title { font: 700 14px Manrope; color: var(--text); letter-spacing: -0.01em; margin: 2px 0; }
+  .fsp-sub { font: 400 11.5px Manrope; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+  .fsp-close { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; flex-shrink: 0; }
+  .fsp-search { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .fsp-search input { flex: 1; border: 0; background: transparent; color: var(--text); font: 500 12px Manrope; outline: none; }
+  .fsp-scroll { flex: 1; overflow-y: auto; padding: 12px 14px; }
+  .fsp-section { margin-bottom: 10px; }
+  .fsp-section-title { font: 600 11.5px Manrope; color: var(--dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .fsp-section-count { font-size: 10px; color: var(--muted); background: var(--s2); padding: 1px 6px; border-radius: 4px; text-transform: none; letter-spacing: 0; }
+  .fsp-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--s1); cursor: pointer; width: 100%; text-align: left; margin-bottom: 6px; transition: border-color .12s ease, background .12s ease; }
+  .fsp-item:hover { border-color: color-mix(in srgb, var(--accent, var(--red)) 50%, var(--line)); background: var(--s2); }
+  .fsp-item-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 7px; background: rgba(110,88,242,.12); color: #6E58F2; flex-shrink: 0; }
+  .fsp-item-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .fsp-item-title { font: 600 12.5px Manrope; color: var(--text); }
+  .fsp-item-desc { font: 400 11px Manrope; color: var(--muted); margin-top: 1px; }
+  .fsp-plus { color: var(--muted); flex-shrink: 0; }
+  .fsp-divider { height: 1px; background: var(--line); margin: 10px 0; }
+  .fsp-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--s1); cursor: pointer; width: 100%; text-align: left; margin-bottom: 6px; }
+  .fsp-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .fsp-row-title { font: 600 12.5px Manrope; color: var(--text); }
+  .fsp-row-desc { font: 400 11px Manrope; color: var(--muted); margin-top: 1px; }
+  .fsp-row-chevron { color: var(--dim); flex-shrink: 0; }
+  .fsp-footer { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--line); font: 500 11px Manrope; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="demo">
+
+  <!-- EMPTY CANVAS: triggers organized by REAL app category -->
+  <div class="col">
+    <h3>Lienzo vacío — disparadores por categoría real (fix)</h3>
+    <div class="flow-side-panel">
+      <div class="fsp-head">
+        <div class="fsp-head-text">
+          <div class="fsp-eyebrow">CONSTRUIR EL FLUJO</div>
+          <h2 class="fsp-title">Añadir disparador</h2>
+          <div class="fsp-sub">Elige un disparador para iniciar el flujo.</div>
+        </div>
+        <button class="fsp-close">X</button>
+      </div>
+      <div class="fsp-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="search" placeholder="Buscar un disparador…" />
+      </div>
+      <div class="fsp-scroll">
+        <!-- Hand-written triggers (Integrados) -->
+        <div class="fsp-section">
+          <div class="fsp-section-title">Integrados <span class="fsp-section-count">12</span></div>
+          <div class="fsp-item" style="--accent:#ff6d5a">
+            <span class="fsp-item-icon" style="background:rgba(255,109,90,.12);color:#ff6d5a"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Manual</span><span class="fsp-item-desc">Ejecutar a mano</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#ff6d5a">
+            <span class="fsp-item-icon" style="background:rgba(255,109,90,.12);color:#ff6d5a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Programado</span><span class="fsp-item-desc">Cada día, hora o intervalo</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#ff6d5a">
+            <span class="fsp-item-icon" style="background:rgba(255,109,90,.12);color:#ff6d5a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Webhook</span><span class="fsp-item-desc">Al recibir una petición HTTP</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#ff6d5a">
+            <span class="fsp-item-icon" style="background:rgba(255,109,90,.12);color:#ff6d5a"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Al iniciar</span><span class="fsp-item-desc">Al arrancar la aplicación</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+        </div>
+
+        <!-- Comunicación -->
+        <div class="fsp-section">
+          <div class="fsp-section-title">Comunicación <span class="fsp-section-count">6</span></div>
+          <div class="fsp-item" style="--accent:#25d366">
+            <span class="fsp-item-icon" style="background:rgba(37,211,102,.12);color:#25d366"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">WhatsApp Trigger</span><span class="fsp-item-desc">Handle WhatsApp events via webhooks</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#0088cc">
+            <span class="fsp-item-icon" style="background:rgba(0,136,204,.12);color:#0088cc"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Telegram Trigger</span><span class="fsp-item-desc">Triggers when a Telegram message is received</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#0f9d58">
+            <span class="fsp-item-icon" style="background:rgba(15,157,88,.12);color:#0f9d58"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Email Trigger (IMAP)</span><span class="fsp-item-desc">Triggers when a new email arrives</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#25d366">
+            <span class="fsp-item-icon" style="background:rgba(37,211,102,.12);color:#25d366"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Slack Trigger</span><span class="fsp-item-desc">Triggers when a Slack event occurs</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#0f9d58">
+            <span class="fsp-item-icon" style="background:rgba(15,157,88,.12);color:#0f9d58"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Google Sheets Trigger</span><span class="fsp-item-desc">Triggers when a row is added or updated</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#0f9d58">
+            <span class="fsp-item-icon" style="background:rgba(15,157,88,.12);color:#0f9d58"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Notion Trigger</span><span class="fsp-item-desc">Triggers when a Notion page is updated</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+        </div>
+
+        <!-- Desarrollo -->
+        <div class="fsp-section">
+          <div class="fsp-section-title">Desarrollo <span class="fsp-section-count">6</span></div>
+          <div class="fsp-item" style="--accent:#64748b">
+            <span class="fsp-item-icon" style="background:rgba(100,116,139,.12);color:#64748b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">GitHub Trigger</span><span class="fsp-item-desc">Triggers on GitHub events</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#64748b">
+            <span class="fsp-item-icon" style="background:rgba(100,116,139,.12);color:#64748b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">GitLab Trigger</span><span class="fsp-item-desc">Triggers on GitLab events</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#64748b">
+            <span class="fsp-item-icon" style="background:rgba(100,116,139,.12);color:#64748b"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 0118 0"/><path d="M1 11h3m16 0h3"/><circle cx="12" cy="11" r="3"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Postgres Trigger</span><span class="fsp-item-desc">Triggers on database changes</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+        </div>
+
+        <!-- Productividad -->
+        <div class="fsp-section">
+          <div class="fsp-section-title">Productividad <span class="fsp-section-count">6</span></div>
+          <div class="fsp-item" style="--accent:#0f9d58">
+            <span class="fsp-item-icon" style="background:rgba(15,157,88,.12);color:#0f9d58"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Google Drive Trigger</span><span class="fsp-item-desc">Triggers when a file is added</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+          <div class="fsp-item" style="--accent:#0f9d58">
+            <span class="fsp-item-icon" style="background:rgba(15,157,88,.12);color:#0f9d58"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></span>
+            <span class="fsp-item-text"><span class="fsp-item-title">Airtable Trigger</span><span class="fsp-item-desc">Triggers when a record is created</span></span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-plus"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+        </div>
+
+        <!-- Ver más -->
+        <div class="fsp-section" style="paddingTop: 0">
+          <button class="fsp-row">
+            <span class="fsp-row-text"><span class="fsp-row-title" style="color:var(--dim);font-size:11.5px">Ver todos los disparadores</span></span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="fsp-row-chevron"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="fsp-footer">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+        <span>Haz clic en un nodo para añadirlo. Conecta los puertos para definir el orden.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1 @@
+{"key":"SseTrigger","displayName":"SSE Trigger","description":"Triggers the workflow when Server-Sent Events occur","version":1,"defaults":{"name":"SSE Trigger"},"properties":[{"displayName":"URL","name":"url","type":"string","default":"","placeholder":"http://example.com","description":"The URL to receive the SSE from","required":true}]}

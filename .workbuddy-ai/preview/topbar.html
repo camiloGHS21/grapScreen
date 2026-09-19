@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>grapScreen — barra superior responsive</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  /* Sólo para la captura: la barra va pegada arriba y sin márgenes raros. */
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); padding: 10px; }
+  .flow-topbar { border-radius: 14px; }
+</style>
+</head>
+<body>
+
+<div class="flow-topbar">
+  <div class="ftb-left">
+    <button type="button" class="ftb-back"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <div class="ftb-crumb">
+      <span class="ftb-crumb-scope">demo_formulario_excel</span>
+      <span class="ftb-crumb-sep">/</span>
+      <button type="button" class="ftb-crumb-name">w4t</button>
+    </div>
+    <div class="ftb-stats">
+      <span class="ftb-stat"><em>Duración</em><b>00:00</b></span>
+      <span class="ftb-stat"><em>Pasos</em><b>2</b></span>
+      <span class="ftb-stat"><em>Video</em><b>—</b></span>
+    </div>
+  </div>
+
+  <div class="ftb-tabs" role="tablist">
+    <button type="button" class="ftb-tab active">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>
+      Editor
+    </button>
+    <button type="button" class="ftb-tab">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Ejecuciones
+    </button>
+    <button type="button" class="ftb-tab">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 7-7"/></svg>
+      Evaluaciones
+    </button>
+    <button type="button" class="ftb-tab">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Triggers
+    </button>
+  </div>
+
+  <div class="ftb-right">
+    <button type="button" class="ftb-btn ghost">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Inactiva
+    </button>
+    <button type="button" class="ftb-btn ghost">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Historial
+    </button>
+    <span class="ftb-saved">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+      Guardado
+    </span>
+    <button type="button" class="ftb-btn ghost">Guardar</button>
+    <button type="button" class="ftb-btn primary">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      Publicar
+    </button>
+    <button type="button" class="ftb-btn ghost ftb-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Measurement probe: writes exact geometry into a hidden <pre> so it can be
+     read with `chrome --dump-dom` instead of judged by eye. -->
+<pre id="measure" style="display:none"></pre>
+<script>
+  function rect(sel) {
+    const e = document.querySelector(sel);
+    if (!e) return null;
+    const r = e.getBoundingClientRect();
+    return {
+      w: Math.round(r.width),
+      h: Math.round(r.height),
+      l: Math.round(r.left),
+      r: Math.round(r.right),
+      trunc: e.scrollWidth > e.clientWidth + 1,
+    };
+  }
+  const statsEl = document.querySelector('.ftb-stats');
+  const statsVisible = statsEl ? getComputedStyle(statsEl).display !== 'none' : false;
+  const bar = rect('.flow-topbar');
+  const left = rect('.ftb-left');
+  const crumb = rect('.ftb-crumb');
+  const stats = rect('.ftb-stats');
+  const right = rect('.ftb-right');
+  const tabs = rect('.ftb-tabs');
+  // Rows are counted geometrically: the tab strip has wrapped onto its own row
+  // exactly when its top edge starts at/below the bottom of the left group.
+  // (Counting distinct tops fails — the three groups have different heights even
+  // when they share a row.)
+  const leftEl = document.querySelector('.ftb-left');
+  const leftR = leftEl ? leftEl.getBoundingClientRect() : null;
+  const tabsR = document.querySelector('.ftb-tabs')?.getBoundingClientRect() || null;
+  const tabsWrapped = !!(leftR && tabsR && tabsR.top >= leftR.bottom - 4);
+
+  const out = {
+    vw: window.innerWidth,
+    barH: bar ? bar.h : null,
+    rows: tabsWrapped ? 2 : 1,
+    tabsWrapped: tabsWrapped,
+    statsVisible: statsVisible,
+    statsW: stats ? stats.w : null,
+    crumbW: crumb ? crumb.w : null,
+    crumbTrunc: crumb ? crumb.trunc : null,
+    scopeW: (rect('.ftb-crumb-scope') || {}).w,
+    scopeTrunc: (rect('.ftb-crumb-scope') || {}).trunc,
+    nameW: (rect('.ftb-crumb-name') || {}).w,
+    tabsW: tabs ? tabs.w : null,
+    rightW: right ? right.w : null,
+    // The bug: the crumb painting over the readout.
+    crumbOverlapsStats: !!(crumb && stats && statsVisible && crumb.r > stats.l + 1),
+    // The right-hand actions spilling past the bar's edge.
+    rightOverflowsBar: !!(right && bar && right.r > bar.r + 1),
+    // The ACTUAL failure mode, measured: `.ftb-left` shrinking below its content
+    // so the crumb/readout spill out and the tab strip is laid on top of them.
+    leftOverflow: !!(left && (crumb.r > left.r + 1 || (stats && statsVisible && stats.r > left.r + 1))),
+    // Only a real overlap when the two groups share a row.
+    groupsOverlap: !!(left && tabs && !tabsWrapped && tabs.l < left.r - 1),
+    leftW: left ? left.w : null,
+    leftR: left ? left.r : null,
+    tabsL: tabs ? tabs.l : null,
+  };
+  document.getElementById('measure').textContent = 'MEASURE ' + JSON.stringify(out);
+</script>
+
+</body>
+</html>

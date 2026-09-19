@@ -1,13 +1,15 @@
-import { FlowNode, RecordedEvent, AutomationDetail } from "../../../types";
+import { FlowNode, RecordedEvent, AutomationDetail, AddStepExtra } from "../../../types";
 import { buildNodes, getNodePorts } from "../buildNodes";
 import { buildAddedEvents } from "./eventModifiers";
+import { AI_PORT_IDS, AI_PORT_OFFSETS } from "./aiPortCatalog";
 
 export async function computeAddStepEvents(
   selectedProjectDetail: AutomationDetail,
   type: FlowNode["type"],
   afterNodeId: string,
   sourcePortId?: string,
-  position?: { x: number; y: number }
+  position?: { x: number; y: number },
+  extra?: AddStepExtra,
 ): Promise<{ events: RecordedEvent[]; newNodeId?: string }> {
   const oldNodes = buildNodes(selectedProjectDetail.events);
   
@@ -39,7 +41,7 @@ export async function computeAddStepEvents(
   // using the id returned below. An earlier version forced one shared
   // `data.id` onto every event in the flow (not just the new ones), which made
   // unrelated steps collapse into duplicate nodes.
-  const added = buildAddedEvents(type, baseTime, activeEvs, insertAt);
+  const added = buildAddedEvents(type, baseTime, activeEvs, insertAt, extra);
   if (added.length > 0) {
     activeEvs.splice(insertAt, 0, ...added);
   }
@@ -52,7 +54,14 @@ export async function computeAddStepEvents(
   } else if (newNode && afterNodeId) {
     const srcPos = layoutData.positions[afterNodeId];
     if (srcPos) {
-      layoutData.positions[newNode.id] = { x: srcPos.x + 300, y: srcPos.y };
+      if (sourcePortId && AI_PORT_IDS.includes(sourcePortId)) {
+        layoutData.positions[newNode.id] = {
+          x: srcPos.x + (AI_PORT_OFFSETS[sourcePortId] ?? 0),
+          y: srcPos.y + 160,
+        };
+      } else {
+        layoutData.positions[newNode.id] = { x: srcPos.x + 300, y: srcPos.y };
+      }
     } else {
       const xs = Object.values(layoutData.positions).map((p: any) => p.x);
       const maxX = xs.length > 0 ? Math.max(...xs) : 40;
@@ -65,17 +74,29 @@ export async function computeAddStepEvents(
     const srcPorts = srcNode?.ports || (srcNode ? getNodePorts(srcNode.type) : null);
     const tgtPorts = newNode.ports || getNodePorts(newNode.type);
 
-    const fromPort = sourcePortId || (srcPorts && srcPorts.outputs.length > 0 ? srcPorts.outputs[0].id : null);
-    const toPort = tgtPorts && tgtPorts.inputs.length > 0 ? tgtPorts.inputs[0].id : null;
-
-    if (fromPort && toPort) {
+    const isBottomInput = srcPorts?.inputs.some(p => p.id === sourcePortId && p.position === "bottom");
+    if (isBottomInput) {
+      const fromPort = tgtPorts && tgtPorts.outputs.length > 0 ? tgtPorts.outputs[0].id : "out";
       layoutData.connections.push({
         id: `conn-${Date.now()}`,
-        sourceNodeId: afterNodeId,
+        sourceNodeId: newNode.id,
         sourcePortId: fromPort,
-        targetNodeId: newNode.id,
-        targetPortId: toPort,
+        targetNodeId: afterNodeId,
+        targetPortId: sourcePortId!,
       });
+    } else {
+      const fromPort = sourcePortId || (srcPorts && srcPorts.outputs.length > 0 ? srcPorts.outputs[0].id : null);
+      const toPort = tgtPorts && tgtPorts.inputs.length > 0 ? tgtPorts.inputs[0].id : null;
+
+      if (fromPort && toPort) {
+        layoutData.connections.push({
+          id: `conn-${Date.now()}`,
+          sourceNodeId: afterNodeId,
+          sourcePortId: fromPort,
+          targetNodeId: newNode.id,
+          targetPortId: toPort,
+        });
+      }
     }
   }
 
@@ -90,9 +111,24 @@ export async function computeAddStepEvents(
   return { events: finalEvs, newNodeId: newNode?.id };
 }
 
+/**
+ * One step of a chain: a node type, plus the config that makes it coherent with
+ * the rest of the chain.
+ *
+ * A bare type string is still accepted everywhere a spec is, so the existing
+ * add-node call sites are unaffected. `data` is merged over the type's default
+ * seed (see `buildAddedEvents`), which is what lets two templates that share a
+ * node type seed different, working configurations.
+ */
+export type ChainStep = FlowNode["type"] | { type: FlowNode["type"]; data?: Record<string, unknown> };
+
+function normalizeStep(step: ChainStep): { type: FlowNode["type"]; data?: Record<string, unknown> } {
+  return typeof step === "string" ? { type: step } : step;
+}
+
 export async function computeAddStepChainEvents(
   selectedProjectDetail: AutomationDetail,
-  types: FlowNode["type"][],
+  steps: ChainStep[],
   initialAfterNodeId: string,
   sourcePortId?: string
 ): Promise<RecordedEvent[]> {
@@ -100,8 +136,8 @@ export async function computeAddStepChainEvents(
   let currentAfterId = initialAfterNodeId;
   let currentPortId = sourcePortId;
 
-  for (let i = 0; i < types.length; i++) {
-    const type = types[i];
+  for (let i = 0; i < steps.length; i++) {
+    const { type, data } = normalizeStep(steps[i]);
     const oldNodes = buildNodes(currentEvs);
     const idx = oldNodes.findIndex(n => n.id === currentAfterId);
     const after = idx >= 0 ? oldNodes[idx] : null;
@@ -118,7 +154,7 @@ export async function computeAddStepChainEvents(
     const activeEvs = currentEvs.filter(e => e.kind !== "layout_metadata");
     const baseTime = insertAt > 0 && insertAt - 1 < activeEvs.length ? activeEvs[insertAt - 1].at_ms : 0;
 
-    const added = buildAddedEvents(type, baseTime, activeEvs, insertAt);
+    const added = buildAddedEvents(type, baseTime, activeEvs, insertAt, data ? { data } : undefined);
     if (added.length > 0) {
       activeEvs.splice(insertAt, 0, ...added);
     }

@@ -114,6 +114,49 @@ pub(crate) fn sleep_check(ms: u64, stop: &AtomicBool) -> bool {
     true
 }
 
+/// Digest of a poll response, used to tell "new data" from "same as last time".
+pub(crate) fn sha256_hex(body: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(body.as_bytes());
+    format!("{:x}", hasher.finalize())
+}
+
+/// Turns a descriptor key into a URL-safe path segment.
+///
+/// `SlackTrigger` becomes `slacktrigger`, so a webhook trigger with no
+/// configured path still gets a predictable, collision-free endpoint instead of
+/// a blank one the server would reject.
+pub(crate) fn slug(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    for ch in raw.chars() {
+        if ch.is_ascii_alphanumeric() {
+            out.push(ch.to_ascii_lowercase());
+        } else if !out.ends_with('-') && !out.is_empty() {
+            out.push('-');
+        }
+    }
+    let trimmed = out.trim_matches('-').to_string();
+    if trimmed.is_empty() {
+        "trigger".to_string()
+    } else {
+        trimmed
+    }
+}
+
+/// Normalises a user-supplied webhook path: always leading slash, never blank.
+pub(crate) fn normalize_webhook_path(raw: &str, fallback_key: &str) -> String {
+    let p = raw.trim();
+    if p.is_empty() {
+        return format!("/webhook/{}", slug(fallback_key));
+    }
+    if p.starts_with('/') {
+        p.to_string()
+    } else {
+        format!("/{}", p)
+    }
+}
+
 pub(crate) fn run_webhook_server(
     stop: Arc<AtomicBool>,
     app: tauri::AppHandle,
@@ -123,6 +166,11 @@ pub(crate) fn run_webhook_server(
     port: u16,
     cfg_path: String,
     cfg_method: String,
+    // What to call this trigger in the notification. The declarative n8n
+    // triggers pass the node's own name ("Slack Trigger"); the built-in webhook
+    // kind passes a generic label. `trigger.kind` stays `webhook` either way,
+    // because that is what a flow's `{{ trigger.kind }}` expects.
+    origin: String,
 ) {
     use tauri::Emitter;
 
@@ -186,7 +234,10 @@ pub(crate) fn run_webhook_server(
                     vars.insert("webhook.query".into(), query);
                     vars.insert("webhook.body".into(), body.clone());
                     seed_pending_vars(&auto_id, vars);
-                    let _ = app.emit("trigger-fired", serde_json::json!({ "id": auto_id, "kind": "webhook" }));
+                    let _ = app.emit(
+                        "trigger-fired",
+                        serde_json::json!({ "id": auto_id, "kind": "webhook", "origin": origin }),
+                    );
                     let _ = replay.execute_replay(&project, &auto_id, false);
                     ("200 OK", "{\"status\":\"ok\",\"message\":\"grapScreen webhook recibido\"}".to_string())
                 };

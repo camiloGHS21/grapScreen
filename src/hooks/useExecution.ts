@@ -34,20 +34,27 @@ export function useExecution(
       notify("⚠ " + event.payload.detail);
     });
 
-    const unlistenTrigger = listen<{ id: string; kind: string }>("trigger-fired", (event) => {
+    const unlistenTrigger = listen<{ id: string; kind: string; n8nKey?: string; origin?: string }>("trigger-fired", (event) => {
       const kinds: Record<string, string> = {
         cron: "⏱ Intervalo",
         hotkey: "⌨ Atajo",
         file_change: "📁 Cambio de archivo",
         webhook: "🌐 Webhook",
+        // The declarative catalogue shares one kind; `n8nKey` names the node.
+        n8n_trigger: "🔌 " + (event.payload.n8nKey || "n8n"),
       };
-      notify(`⚡ Trigger disparado: ${kinds[event.payload.kind] || event.payload.kind}`);
+      const base = kinds[event.payload.kind] || event.payload.kind;
+      // `origin` is the node's own name, so a Slack trigger reads as
+      // "🌐 Webhook · Slack Trigger" instead of an anonymous webhook.
+      const label = event.payload.origin ? `${base} · ${event.payload.origin}` : base;
+      notify(`⚡ Trigger disparado: ${label}`);
     });
 
     const unlistenExecFinished = listen<{ id: string }>("automation-finished", () => {
       setExecuting(false);
       setProgressIndex(null);
       setProgressNodeId(null);
+      setNodeStatuses({});
       setPreviewData(null);
       setBusy(false);
       refresh();
@@ -86,9 +93,13 @@ export function useExecution(
   };
 
   const stopExecute = async () => {
+    setExecuting(false);
+    setProgressIndex(null);
+    setProgressNodeId(null);
+    setNodeStatuses({});
     try {
       await invoke("stop_execution");
-      notify("Deteniendo automatización…");
+      notify("Automatización detenida");
     } catch (e) {
       notify(String(e));
     }

@@ -1,0 +1,1 @@
+{"key":"TogglTrigger","displayName":"Toggl Trigger","description":"Starts the workflow when Toggl events occur","version":1,"defaults":{"name":"Toggl Trigger"},"properties":[{"displayName":"Event","name":"event","type":"options","options":[{"name":"New Time Entry","value":"newTimeEntry"}],"required":true,"default":"newTimeEntry"}]}

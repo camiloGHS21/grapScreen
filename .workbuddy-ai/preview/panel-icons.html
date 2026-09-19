@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<title>grapScreen — todos los items con icono (verificación)</title>
+<!-- The REAL compiled stylesheet: no local re-declaration of .fsp-item, so what
+     is measured here is what the app paints. -->
+<link rel="stylesheet" href="styles.css">
+<style>
+  html, body { margin: 0; background: var(--bg); font: 400 13px Manrope, sans-serif; }
+  .demo { display: flex; gap: 24px; padding: 20px; align-items: flex-start; }
+  .col > h3 { font: 700 12px Manrope, sans-serif; margin: 0 0 8px; color: var(--text); }
+  .col > p  { font: 400 11px Manrope, sans-serif; margin: 0 0 12px; color: var(--muted); max-width: 340px; line-height: 1.5; }
+  /* Only scaffolding the app's own panel container provides. */
+  .panel { width: 340px; background: var(--s1); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; }
+  #measure { font: 400 10px monospace; color: var(--dim); white-space: pre-wrap; max-width: 420px; margin: 0; }
+  .verdict { font: 700 12px Manrope, sans-serif; padding: 6px 10px; border-radius: 8px; display: inline-block; margin-bottom: 10px; }
+  .verdict.ok { background: rgba(34,197,94,.14); color: #16a34a; }
+  .verdict.bad { background: rgba(239,68,68,.14); color: #dc2626; }
+</style>
+</head>
+<body>
+<div class="demo">
+  <div class="col">
+    <h3>ANTES — <code>onError → display:none</code></h3>
+    <p>El handler antiguo escondía el <code>&lt;img&gt;</code> roto y no pintaba nada en su lugar:
+       quedaba un hueco. Los tres primeros casos son los que fallaban.</p>
+    <div class="panel"><div id="rows-before"></div></div>
+  </div>
+  <div class="col">
+    <h3>AHORA — cadena de reserva completa</h3>
+    <p>Cada fila usa el marcado real de <code>PanelItem</code> y la hoja de estilos real.
+       Si alguna fila quedara en blanco, la cadena de reserva estaría rota.</p>
+    <div class="verdict" id="verdict">midiendo…</div>
+    <div class="panel">
+      <div id="rows"></div>
+    </div>
+  </div>
+  <div class="col">
+    <h3>Medición</h3>
+    <pre id="measure"></pre>
+  </div>
+</div>
+
+<script>
+/* ---- Lucide glyphs exactly as the component imports them (size 21) ---- */
+const GLYPH = {
+  blocks:  '<rect width="7" height="7" x="14" y="3" rx="1"/><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"/>',
+  webhook: '<path d="M18 16.98h-5.99c-1.1 0-1.95.94-2.48 1.9A4 4 0 0 1 2 17c.01-.7.2-1.4.57-2"/><path d="m6 17 3.13-5.78c.53-.97.1-2.18-.5-3.1a4 4 0 1 1 6.89-4.06"/><path d="m12 6 3.13 5.73C15.66 12.7 16.9 13 18 13a4 4 0 0 1 0 8"/>',
+  clock:   '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+};
+const ICONS = { blocks: GLYPH.blocks, webhook: GLYPH.webhook, clock: GLYPH.clock };
+function lucide(name) {
+  return '<svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24"'
+       + ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+       + ' stroke-linejoin="round">' + ICONS[name] + '</svg>';
+}
+const PLUS = '<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>';
+
+/* ---- Faithful replica of PanelItem's render + its fallback chain ----
+   Real chain:  logo && !imgFailed ? <img> : initial ? <span.fsp-initial> : <item.icon>
+   `initial` (n8nInitial) only exists when the catalogue entry declares NO icon,
+   so a declared-but-404 logo lands on the Lucide family glyph.               */
+const BASE = '../../public/'; // this page is served from the repo root in previews
+function renderItem({ label, desc, iconFile, initial, accent, lucide: glyph }) {
+  const logo = iconFile ? BASE + 'n8n-icons/' + iconFile : null;
+  const wrap = document.createElement('button');
+  wrap.type = 'button';
+  wrap.className = 'fsp-item';
+  wrap.style.setProperty('--accent', accent);
+  wrap.title = desc;
+  wrap.innerHTML =
+    '<span class="fsp-item-icon"></span>' +
+    '<span class="fsp-item-text">' +
+      '<span class="fsp-item-title">' + label + '</span>' +
+      '<span class="fsp-item-desc">' + desc + '</span>' +
+    '</span>' +
+    '<span class="fsp-plus" style="color:var(--muted)">' + PLUS + '</span>';
+
+  const slot = wrap.querySelector('.fsp-item-icon');
+  function paintFallback() {
+    if (initial) {
+      const span = document.createElement('span');
+      span.className = 'fsp-initial';
+      span.textContent = initial;
+      span.style.cssText = 'width:21px;height:21px;border-radius:6px;background:' + accent
+        + ';color:#fff;font:700 11px Manrope;display:flex;align-items:center;justify-content:center;line-height:1';
+      slot.replaceChildren(span);
+    } else {
+      slot.innerHTML = lucide(glyph || 'blocks');
+    }
+  }
+  if (logo) {
+    const img = new Image(21, 21);
+    img.alt = ''; img.loading = 'lazy';
+    img.onerror = paintFallback;          // the fixed handler: swap, don't hide
+    img.src = logo;
+    slot.replaceChildren(img);
+  } else {
+    paintFallback();
+  }
+  return wrap;
+}
+
+/* ---- The cases ---- */
+const CASES = [
+  { label: 'Gmail',              desc: 'Envía un correo · Comunicación',    iconFile: 'gmail.svg',        accent: '#EA4335', lucide: 'blocks' },
+  { label: 'Airtable',           desc: 'Crea un registro · Datos',          iconFile: 'airtable.svg',     accent: '#18BFFF', lucide: 'blocks' },
+  { label: 'Discord',            desc: 'Publica un mensaje · Comunicación', iconFile: 'discord.svg',      accent: '#5865F2', lucide: 'blocks' },
+  { label: 'Slack (logo roto)',  desc: 'icono declarado pero 404 → Lucide', iconFile: 'no-existe.svg',    accent: '#611f69', lucide: 'blocks' },
+  { label: 'AlibabaCloud',       desc: 'Sin icono en el catálogo → inicial', accent: '#FF6A00', initial: 'A' },
+  { label: 'BambooHR',           desc: 'Sin icono en el catálogo → inicial', accent: '#73C41D', initial: 'B' },
+  { label: 'Confluence',         desc: 'Sin icono en el catálogo → inicial', accent: '#1868DB', initial: 'C' },
+  { label: 'Cron (integrado)',   desc: 'Disparador integrado → Lucide',      accent: '#6E58F2', lucide: 'clock' },
+  { label: 'Webhook (integrado)',desc: 'Disparador integrado → Lucide',      accent: '#6E58F2', lucide: 'webhook' },
+];
+
+const host = document.getElementById('rows');
+const nodes = CASES.map((c) => { const el = renderItem(c); host.appendChild(el); return el; });
+
+/* ---- The three rows that used to fail, rendered with the OLD handler ----
+   Old code was `onError={(e) => { e.currentTarget.style.display = "none"; }}`:
+   the broken image was hidden and nothing replaced it.                        */
+(function renderBefore() {
+  const hostB = document.getElementById('rows-before');
+  CASES.slice(0, 3).forEach((c, i) => {
+    const el = renderItem(c);
+    if (i < 2) { // force the two working logos to fail, as in the reported screenshots
+      const img = el.querySelector('img');
+      img.onerror = (e) => { e.currentTarget.style.display = 'none'; };
+      img.src = BASE + 'n8n-icons/roto-' + i + '.svg';
+    } else {     // the icon-less node: old code had no `n8nInitial` fallback at all
+      const slot = el.querySelector('.fsp-item-icon');
+      const img = new Image(21, 21);
+      img.onerror = (e) => { e.currentTarget.style.display = 'none'; };
+      img.src = BASE + 'n8n-icons/roto-' + i + '.svg';
+      slot.replaceChildren(img);
+    }
+    hostB.appendChild(el);
+  });
+})();
+
+/* ---- Probe: every row must paint something measurable in the icon slot ---- */
+window.addEventListener('load', () => setTimeout(() => {
+  const probe = nodes.map((el, i) => {
+    const slot = el.querySelector('.fsp-item-icon');
+    const kid  = slot.firstElementChild;
+    const r    = kid ? kid.getBoundingClientRect() : { width: 0, height: 0 };
+    const tag  = kid ? kid.tagName.toLowerCase() : 'none';
+    return {
+      row: i + 1,
+      label: CASES[i].label,
+      slot: Math.round(slot.getBoundingClientRect().width) + 'x' + Math.round(slot.getBoundingClientRect().height),
+      child: tag,
+      kind: tag === 'img' ? 'logo' : tag === 'span' ? 'inicial' : tag === 'svg' ? 'lucide' : 'VACÍO',
+      painted: r.width > 4 && r.height > 4,
+      src: tag === 'img' ? kid.getAttribute('src').split('/').pop() : '',
+    };
+  });
+  const bad = probe.filter((p) => !p.painted);
+  const out = {
+    rows: probe.length,
+    conIcono: probe.filter((p) => p.painted).length,
+    vacios: bad.length,
+    porTipo: {
+      logo:   probe.filter((p) => p.kind === 'logo').length,
+      inicial:probe.filter((p) => p.kind === 'inicial').length,
+      lucide: probe.filter((p) => p.kind === 'lucide').length,
+    },
+    detalle: probe,
+  };
+  document.getElementById('measure').textContent =
+    JSON.stringify(out, null, 2) + '\n\n' + (bad.length ? 'FAILURES' : 'ALL-OK');
+  const v = document.getElementById('verdict');
+  v.textContent = bad.length
+    ? '✗ ' + bad.length + ' fila(s) sin icono: ' + bad.map((b) => b.label).join(', ')
+    : '✓ ' + out.conIcono + '/' + out.rows + ' filas con icono (' + out.porTipo.logo + ' logo, '
+      + out.porTipo.inicial + ' inicial, ' + out.porTipo.lucide + ' lucide)';
+  v.className = 'verdict ' + (bad.length ? 'bad' : 'ok');
+  document.title = (bad.length ? 'HAS-FAILURES' : 'ALL-OK') + ' — panel-icons';
+}, 700));
+</script>
+</body>
+</html>

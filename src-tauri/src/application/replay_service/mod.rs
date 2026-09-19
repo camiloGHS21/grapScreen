@@ -193,6 +193,121 @@ impl ReplayUseCase for ReplayServiceImpl {
         Ok(())
     }
 
+    /// n8n "Execute step": run a single node and return its real input/output.
+    ///
+    /// Always backgrounded, because a step test must not seize the user's mouse
+    /// and keyboard — and it runs only the requested node, never the chain that
+    /// leads to it, so pressing it twice re-tests the node instead of re-firing
+    /// every side effect upstream.
+    fn run_single_node(
+        &self,
+        project_name: &str,
+        file_id: &str,
+        node_id: &str,
+    ) -> Result<Vec<crate::application::execution_history::NodeRunStatus>> {
+        let file = self.inner.storage_port.load_automation(project_name, file_id)?;
+
+        let (nodes, connections, disabled) =
+            crate::application::graph_executor::extract_graph(&file.events).ok_or_else(|| {
+                crate::domain::entities::DomainError::Other(
+                    "Esta automatización no es un flujo de nodos, así que no se puede ejecutar un \
+                     paso suelto."
+                        .to_string(),
+                )
+            })?;
+
+        let stop_flag = Arc::new(AtomicBool::new(true));
+        crate::application::graph_executor::run_single_node_with_options(
+            self,
+            file_id,
+            &file.events,
+            &file.target_app,
+            true,
+            &stop_flag,
+            nodes,
+            connections,
+            disabled,
+            node_id,
+        )
+        .map_err(crate::domain::entities::DomainError::Other)
+    }
+
+    fn test_chat_workflow(
+        &self,
+        project_name: &str,
+        file_id: &str,
+        message: &str,
+    ) -> Result<String> {
+        let file = self.inner.storage_port.load_automation(project_name, file_id)?;
+        let (nodes, connections, disabled) =
+            crate::application::graph_executor::extract_graph(&file.events).ok_or_else(|| {
+                crate::domain::entities::DomainError::Other(
+                    "Esta automatización no es un flujo de nodos válido.".to_string(),
+                )
+            })?;
+
+        let stop_flag = Arc::new(AtomicBool::new(true));
+        {
+            let mut replays = self.inner.active_replays.lock().unwrap();
+            replays.insert(file_id.to_string(), stop_flag.clone());
+        }
+        self.inner.observer.on_status(file_id, "started");
+
+        crate::application::replay_helpers::set_var("chatInput", message);
+        crate::application::replay_helpers::set_var("message", message);
+        crate::application::replay_helpers::set_var("sessionId", "test_session");
+        crate::application::replay_helpers::set_items(vec![serde_json::json!({
+            "chatInput": message,
+            "message": message,
+            "sessionId": "test_session"
+        })]);
+
+        let res = crate::application::graph_executor::run_graph_with_options(
+            self,
+            file_id,
+            &file.events,
+            &file.target_app,
+            true,
+            &stop_flag,
+            nodes,
+            connections,
+            disabled,
+            None,
+        );
+
+        {
+            let mut replays = self.inner.active_replays.lock().unwrap();
+            replays.remove(file_id);
+        }
+        self.inner.observer.on_status(file_id, "finished");
+
+        let _ = res.map_err(crate::domain::entities::DomainError::Other)?;
+
+        let reply = crate::application::replay_helpers::get_var("chatResponse")
+            .or_else(|| crate::application::replay_helpers::get_var("ai_response"))
+            .or_else(|| crate::application::replay_helpers::get_var("output"))
+            .unwrap_or_else(|| {
+                let items = crate::application::replay_helpers::get_items();
+                if let Some(first) = items.first() {
+                    first.get("output")
+                        .or_else(|| first.get("chatResponse"))
+                        .or_else(|| first.get("text"))
+                        .or_else(|| first.get("response"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .unwrap_or_default()
+                } else {
+                    String::new()
+                }
+            });
+
+        if reply.trim().is_empty() {
+            Ok("Mensaje procesado por el flujo.".to_string())
+        } else {
+            Ok(reply)
+        }
+    }
+
     fn stop_all_replays(&self) -> Result<()> {
         let mut replays = self.inner.active_replays.lock().unwrap();
         for (id, flag) in replays.iter() {

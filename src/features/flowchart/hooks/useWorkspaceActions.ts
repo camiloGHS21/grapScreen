@@ -2,8 +2,7 @@ import React from "react";
 import type { FlowNode, FlowConnection, StickyNoteData, RecordedEvent } from "../../../types";
 import { NODE_COLORS, NODE_W } from "../../../Flowchart";
 import { getNodePorts } from "../buildNodes";
-import { getNodeHeight } from "../utils/nodePorts";
-import { resolvePortIndex, portY } from "../utils/nodePorts";
+import { getNodeHeight, resolvePortIndex, portY, portBottomX } from "../utils/nodePorts";
 
 interface UseWorkspaceActionsProps {
   events: RecordedEvent[];
@@ -18,7 +17,6 @@ interface UseWorkspaceActionsProps {
   saveLayoutMetadata: (pos: any, conns: any, noteList: any, disabled: Set<string>) => void;
   setSelectedNodes: React.Dispatch<React.SetStateAction<Set<string>>>;
   setSelectedWireId: React.Dispatch<React.SetStateAction<string | null>>;
-  setAddMenu: React.Dispatch<React.SetStateAction<any>>;
   setCtxMenu: React.Dispatch<React.SetStateAction<any>>;
   setSelectionBox: React.Dispatch<React.SetStateAction<any>>;
   expanded: string | null;
@@ -45,7 +43,6 @@ export function useWorkspaceActions({
   saveLayoutMetadata,
   setSelectedNodes,
   setSelectedWireId,
-  setAddMenu,
   setCtxMenu,
   setSelectionBox,
   expanded,
@@ -113,7 +110,6 @@ export function useWorkspaceActions({
       // Paneo: ningún recuadro debe quedar vivo mientras se mueve el lienzo.
       setSelectionBox(null);
     }
-    setAddMenu(null);
     setCtxMenu(null);
   };
 
@@ -141,10 +137,29 @@ export function useWorkspaceActions({
     const srcH = getNodeHeight(srcNode);
     const tgtH = getNodeHeight(tgtNode);
 
-    const x1 = srcPos.x + NODE_W;
-    const y1 = srcPos.y + portY(srcIdx, srcCount, srcH);
-    const x2 = tgtPos.x;
-    const y2 = tgtPos.y + portY(tgtIdx, tgtCount, tgtH);
+    const tgtPort = tgtPorts.inputs[tgtIdx];
+    const isBottom = tgtPort?.position === "bottom";
+
+    let x1 = srcPos.x + NODE_W;
+    let y1 = srcPos.y + portY(srcIdx, srcCount, srcH);
+    if (isBottom && srcPos.y > tgtPos.y) {
+      x1 = srcPos.x + NODE_W / 2;
+      y1 = srcPos.y;
+    }
+
+    let x2 = tgtPos.x;
+    let y2 = tgtPos.y;
+    if (isBottom) {
+      const bottomInputs = tgtPorts.inputs.filter((p) => p.position === "bottom");
+      const bIdx = bottomInputs.findIndex((p) => p.id === tgtPort.id);
+      x2 = tgtPos.x + portBottomX(bIdx >= 0 ? bIdx : 0, bottomInputs.length, NODE_W);
+      y2 = tgtPos.y + tgtH;
+    } else {
+      const sideInputs = tgtPorts.inputs.filter((p) => p.position !== "bottom");
+      const sIdx = sideInputs.findIndex((p) => p.id === tgtPort.id);
+      x2 = tgtPos.x;
+      y2 = tgtPos.y + portY(sIdx >= 0 ? sIdx : tgtIdx, sideInputs.length, tgtH);
+    }
 
     const w = toWorld(e.clientX, e.clientY);
     const dSrc = Math.hypot(w.x - x1, w.y - y1);

@@ -113,7 +113,7 @@ export function VaultManagerModal({ open, onClose }: VaultManagerModalProps) {
                         <div>
                           <div style={{ font: "700 13px Manrope", color: "var(--text)" }}>{c.name}</div>
                           <div style={{ font: "500 11px DM Mono", color: "var(--muted)", marginTop: "2px" }}>
-                            ID: {c.id} · {CREDENTIAL_TYPE_LABELS[c.cred_type] || c.cred_type}
+                            ID: {c.id} · {(CREDENTIAL_TYPE_LABELS as Record<string, string>)[c.cred_type] || c.cred_type}
                           </div>
                         </div>
                       </div>

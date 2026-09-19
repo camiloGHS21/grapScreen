@@ -2,6 +2,7 @@
 
 pub mod engine;
 pub mod extract;
+pub mod flow_control;
 pub mod node_runners;
 pub mod walker;
 pub mod transform;
@@ -9,8 +10,18 @@ pub mod ai_nodes;
 pub mod core_nodes;
 pub mod credentials;
 pub mod db_nodes;
+pub mod declarative;
 pub mod integration_nodes;
 pub mod parse_nodes;
+pub mod postgres_builder;
+pub mod postgres_node;
+pub mod runmap;
+pub mod ai_agent_runner;
+
+#[cfg(test)]
+pub mod testkit;
+#[cfg(test)]
+mod engine_tests;
 
 pub use engine::GraphEngine;
 pub use extract::{extract_graph, GraphConnection, GraphNode};
@@ -24,22 +35,37 @@ use std::sync::atomic::AtomicBool;
 /// Turns the raw body a trigger received into the item list the flow starts
 /// with.
 ///
-/// A JSON array fans out into one item per element, which is what n8n does and
-/// what the transform nodes (`filter`, `sort`, `limit`, `aggregate`) expect —
-/// they operate on the whole list. A JSON object becomes a single item. A body
-/// that is not JSON at all (plain text, form-encoded) is wrapped under `body`
-/// so `{{ $json.body }}` still resolves. An empty or whitespace-only body
-/// yields no items, which is the normal case for `cron`/`startup`/`hotkey`.
+/// Triggers write their incoming payload to `webhook.body`, `polling.body`,
+/// etc. A JSON object becomes a single-item array `[{"x": 1}]`. A JSON array
+/// becomes `[{"x": 1}, {"x": 2}]`. Anything else (form-encoded string, plain
+/// text, empty payload) is wrapped into `[{"data": ...}]` so downstream nodes
+/// always receive an array and never crash on unexpected root shapes.
 pub(crate) fn trigger_payload_items(body: &str) -> Vec<serde_json::Value> {
-    if body.trim().is_empty() {
+    let trimmed = body.trim();
+    if trimmed.is_empty() || trimmed == "null" {
         return Vec::new();
     }
-    match serde_json::from_str::<serde_json::Value>(body) {
-        Ok(serde_json::Value::Array(arr)) => arr,
-        Ok(serde_json::Value::Null) => Vec::new(),
-        Ok(other) => vec![other],
-        Err(_) => vec![serde_json::json!({ "body": body })],
+    if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
+        return match val {
+            serde_json::Value::Array(items) => items,
+            serde_json::Value::Object(_) => vec![val],
+            other => vec![serde_json::json!({ "data": other })],
+        };
     }
+    // Form-encoded: "a=1&b=2" becomes {"a":"1","b":"2"}.
+    if trimmed.contains('=') && !trimmed.contains('\n') {
+        let mut map = serde_json::Map::new();
+        for pair in trimmed.split('&') {
+            let mut parts = pair.splitn(2, '=');
+            if let (Some(k), Some(v)) = (parts.next(), parts.next()) {
+                map.insert(k.to_string(), serde_json::Value::String(v.to_string()));
+            }
+        }
+        if !map.is_empty() {
+            return vec![serde_json::Value::Object(map)];
+        }
+    }
+    vec![serde_json::json!({ "data": trimmed })]
 }
 
 /// Entry point used by the replay service: executes the whole graph.
@@ -75,9 +101,8 @@ pub fn run_graph_with_options(
     // previous run.
     //
     // Caveat: the trigger daemon seeds the incoming payload as variables
-    // (`webhook.body`, `polling.body`, …) immediately *before* calling into the
-    // graph, so a blind reset would silently discard exactly the data the flow
-    // was triggered by. Carry the trigger-scoped keys across the reset.
+    // (`webhook.body`, `polling.body`, `chatInput`, …) immediately *before*
+    // calling into the graph. Carry trigger-scoped keys across the reset.
     let trigger_vars: Vec<(String, String)> =
         crate::application::replay_helpers::get_all_vars()
             .into_iter()
@@ -85,6 +110,9 @@ pub fn run_graph_with_options(
                 k.starts_with("webhook.")
                     || k.starts_with("polling.")
                     || k.starts_with("trigger.")
+                    || k.starts_with("chat.")
+                    || k == "chatInput"
+                    || k == "sessionId"
             })
             .collect();
     crate::application::replay_helpers::reset_execution_state();
@@ -93,15 +121,26 @@ pub fn run_graph_with_options(
     }
     // Expose the payload as items so downstream nodes can read it as
     // `{{ $json.x }}` instead of having to know the `$vars.polling.body` key.
-    // Triggers with no payload (cron, startup, hotkey) leave the list empty.
     if let Some((_, body)) = trigger_vars
         .iter()
-        .find(|(k, _)| k == "webhook.body" || k == "polling.body")
+        .find(|(k, _)| k == "webhook.body" || k == "polling.body" || k == "chat.body")
     {
         let items = trigger_payload_items(body);
         if !items.is_empty() {
             crate::application::replay_helpers::set_items(items);
         }
+    } else if let Some((_, input)) = trigger_vars.iter().find(|(k, _)| k == "chatInput") {
+        let session = trigger_vars
+            .iter()
+            .find(|(k, _)| k == "sessionId")
+            .map(|(_, s)| s.as_str())
+            .unwrap_or("test_session");
+        crate::application::replay_helpers::set_items(vec![serde_json::json!({
+            "chatInput": input,
+            "message": input,
+            "text": input,
+            "sessionId": session
+        })]);
     }
     let mut engine = GraphEngine::new(
         service,
@@ -115,6 +154,39 @@ pub fn run_graph_with_options(
         disabled,
     );
     engine.set_stop_after(stop_after);
+    engine.run()?;
+    Ok(engine.status_log)
+}
+
+/// Runs a single node and returns its status log.
+///
+/// This is n8n's "Execute step": only the requested node runs, with no upstream
+/// walk, so the user can inspect a node's real input and output without
+/// replaying (and side-effecting) everything before it.
+pub fn run_single_node_with_options(
+    service: &ReplayServiceImpl,
+    file_id: &str,
+    events: &[RecordedEvent],
+    target: &Option<TargetApp>,
+    is_background: bool,
+    stop_flag: &AtomicBool,
+    nodes: Vec<GraphNode>,
+    connections: Vec<GraphConnection>,
+    disabled: HashSet<String>,
+    node_id: &str,
+) -> Result<Vec<NodeRunStatus>, String> {
+    let mut engine = GraphEngine::new(
+        service,
+        file_id,
+        events,
+        target,
+        is_background,
+        stop_flag,
+        nodes,
+        connections,
+        disabled,
+    );
+    engine.set_only_node(Some(node_id.to_string()));
     engine.run()?;
     Ok(engine.status_log)
 }
@@ -149,11 +221,24 @@ mod trigger_payload_tests {
     }
 
     #[test]
-    fn non_json_body_is_wrapped_under_body() {
-        // A form-encoded or plain-text webhook payload must not lose its data.
+    fn form_encoded_body_is_decoded_into_fields() {
+        // A form-encoded webhook payload becomes one item whose fields are
+        // addressable as `{{ $json.a }}`, instead of one opaque string. HTML
+        // form posts and Slack-style urlencoded callbacks rely on this shape.
         let items = trigger_payload_items("a=1&b=2");
         assert_eq!(items.len(), 1);
-        assert_eq!(items[0]["body"], json!("a=1&b=2"));
+        assert_eq!(items[0]["a"], json!("1"));
+        assert_eq!(items[0]["b"], json!("2"));
+    }
+
+    #[test]
+    fn plain_text_body_is_wrapped_under_data() {
+        // Text that is neither JSON nor form-encoded (the newline rules out the
+        // form branch) is wrapped so downstream nodes always receive an object.
+        // `{{ $json.data }}` is the documented contract for that case.
+        let items = trigger_payload_items("hola\nmundo");
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0]["data"], json!("hola\nmundo"));
     }
 
     #[test]

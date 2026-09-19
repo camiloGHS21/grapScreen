@@ -1,0 +1,328 @@
+[
+  {
+    "id": "parte-de-trabajo-diario",
+    "title": "Parte de trabajo diario",
+    "description": "Anota cada vez que terminas una tarea en un libro de partes de trabajo",
+    "category": "productividad",
+    "tags": ["parte", "trabajo", "excel", "seguimiento"],
+    "popularity": 82,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "cliente", "label": "Cliente", "type": "text", "required": true }, { "id": "horas", "label": "Horas dedicadas", "type": "text", "required": true }, { "id": "detalle", "label": "Detalle del trabajo", "type": "textarea", "required": true }] } },
+      { "type": "excel_local", "data": { "file_path": "partes.xlsx", "header": "[\"Cliente\",\"Horas\",\"Detalle\"]", "values": "[[\"{{ cliente }}\",\"{{ horas }}\",\"{{ detalle }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "seguimiento-de-tareas-del-equipo",
+    "title": "Seguimiento de tareas del equipo",
+    "description": "Registra tareas con responsable y fecha límite en una hoja compartida",
+    "category": "productividad",
+    "tags": ["tareas", "equipo", "google sheets", "plazos"],
+    "popularity": 80,
+    "requires": ["google"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "tarea", "label": "Tarea", "type": "text", "required": true }, { "id": "responsable", "label": "Responsable", "type": "text", "required": true }, { "id": "limite", "label": "Fecha límite", "type": "text", "required": true }] } },
+      { "type": "google_sheets", "data": { "spreadsheet_id": "", "range": "Tareas!A:D", "values": "[[\"{{ tarea }}\",\"{{ responsable }}\",\"{{ limite }}\"]]" } }
+    ]
+  },
+  {
+    "id": "acta-de-reunion",
+    "title": "Acta de reunión",
+    "description": "Guarda en un documento de Google las notas y los acuerdos de la reunión",
+    "category": "productividad",
+    "tags": ["reunión", "acta", "google docs", "notas"],
+    "popularity": 78,
+    "requires": ["google"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "titulo", "label": "Título de la reunión", "type": "text", "required": true }, { "id": "asistentes", "label": "Asistentes", "type": "text", "required": true }, { "id": "acuerdos", "label": "Acuerdos", "type": "textarea", "required": true }] } },
+      { "type": "google_docs", "data": { "document_id": "", "text": "# {{ titulo }}\n\nAsistentes: {{ asistentes }}\n\n## Acuerdos\n{{ acuerdos }}" } }
+    ]
+  },
+  {
+    "id": "control-de-horas-semanales",
+    "title": "Control de horas semanales",
+    "description": "Apunta las horas de cada día y deja el total acumulado en la base",
+    "category": "productividad",
+    "tags": ["horas", "sqlite", "informe", "tiempos"],
+    "popularity": 76,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "dia", "label": "Día", "type": "text", "required": true }, { "id": "horas", "label": "Horas", "type": "text", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "horas.db", "query": "CREATE TABLE IF NOT EXISTS horas (id INTEGER PRIMARY KEY AUTOINCREMENT, dia TEXT, horas REAL)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "horas.db", "query": "INSERT INTO horas (dia, horas) VALUES (?, ?)", "params": "[\"{{ dia }}\",\"{{ horas }}\"]" } },
+      { "type": "sqlite_query", "data": { "db_path": "horas.db", "query": "SELECT SUM(horas) AS total FROM horas", "params": "" } }
+    ]
+  },
+  {
+    "id": "checklist-de-apertura",
+    "title": "Checklist de apertura",
+    "description": "Repasa con un formulario los puntos del día y guarda la confirmación",
+    "category": "productividad",
+    "tags": ["checklist", "apertura", "turno", "control"],
+    "popularity": 74,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "responsable", "label": "Responsable del turno", "type": "text", "required": true }, { "id": "incidencias", "label": "Incidencias detectadas", "type": "textarea", "required": true }] } },
+      { "type": "excel_local", "data": { "file_path": "aperturas.xlsx", "header": "[\"Responsable\",\"Incidencias\"]", "values": "[[\"{{ responsable }}\",\"{{ incidencias }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "aviso-de-plazo-cumplido",
+    "title": "Aviso de tarea completada",
+    "description": "Cuando el responsable marca una tarea como hecha, avisa al equipo",
+    "category": "productividad",
+    "tags": ["tareas", "slack", "aviso", "equipo"],
+    "popularity": 72,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "tarea", "label": "Tarea completada", "type": "text", "required": true }, { "id": "responsable", "label": "Quién la ha hecho", "type": "text", "required": true }] } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "*{{ responsable }}* ha completado: {{ tarea }}", "channel": "#equipo", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "informe-de-gastos-mensual",
+    "title": "Informe de gastos del mes",
+    "description": "Suma los gastos registrados y publica el total en el canal del equipo",
+    "category": "productividad",
+    "tags": ["gastos", "informe", "slack", "mensual"],
+    "popularity": 72,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "gastos.db", "query": "CREATE TABLE IF NOT EXISTS gastos (id INTEGER PRIMARY KEY AUTOINCREMENT, concepto TEXT, importe REAL)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "gastos.db", "query": "SELECT COUNT(*) AS apuntes, SUM(importe) AS total FROM gastos", "params": "" } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "Gastos registrados: {{ $json.apuntes }} apuntes por un total de {{ $json.total }}.", "channel": "#finanzas", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "agenda-de-visitas",
+    "title": "Agenda de visitas",
+    "description": "Anota las visitas concertadas con cliente, dirección y fecha",
+    "category": "productividad",
+    "tags": ["agenda", "visitas", "excel", "comercial"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "cliente", "label": "Cliente", "type": "text", "required": true }, { "id": "direccion", "label": "Dirección", "type": "text", "required": true }, { "id": "fecha", "label": "Fecha de la visita", "type": "text", "required": true }] } },
+      { "type": "excel_local", "data": { "file_path": "visitas.xlsx", "header": "[\"Cliente\",\"Dirección\",\"Fecha\"]", "values": "[[\"{{ cliente }}\",\"{{ direccion }}\",\"{{ fecha }}\"]]", "delimiter": ",", "overwrite": false, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "registro-de-llamadas",
+    "title": "Registro de llamadas",
+    "description": "Deja constancia de cada llamada con cliente, motivo y resultado",
+    "category": "productividad",
+    "tags": ["llamadas", "registro", "sqlite", "comercial"],
+    "popularity": 70,
+    "requires": [],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "cliente", "label": "Cliente", "type": "text", "required": true }, { "id": "motivo", "label": "Motivo", "type": "text", "required": true }, { "id": "resultado", "label": "Resultado", "type": "textarea", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "llamadas.db", "query": "CREATE TABLE IF NOT EXISTS llamadas (id INTEGER PRIMARY KEY AUTOINCREMENT, cliente TEXT, motivo TEXT, resultado TEXT)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "llamadas.db", "query": "INSERT INTO llamadas (cliente, motivo, resultado) VALUES (?, ?, ?)", "params": "[\"{{ cliente }}\",\"{{ motivo }}\",\"{{ resultado }}\"]" } }
+    ]
+  },
+  {
+    "id": "tablero-de-incidencias-en-google-sheets",
+    "title": "Tablero de incidencias en Google Sheets",
+    "description": "Centraliza las incidencias del equipo en una hoja compartida en vivo",
+    "category": "productividad",
+    "tags": ["incidencias", "google sheets", "soporte", "equipo"],
+    "popularity": 70,
+    "requires": ["google"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "titulo", "label": "Título de la incidencia", "type": "text", "required": true }, { "id": "prioridad", "label": "Prioridad", "type": "text", "required": true }] } },
+      { "type": "google_sheets", "data": { "spreadsheet_id": "", "range": "Incidencias!A:D", "values": "[[\"{{ titulo }}\",\"{{ prioridad }}\",\"abierta\"]]" } }
+    ]
+  },
+  {
+    "id": "resumen-semanal-del-equipo",
+    "title": "Resumen semanal del equipo",
+    "description": "Cuenta las tareas registradas y manda el resumen al canal del equipo",
+    "category": "productividad",
+    "tags": ["resumen", "semanal", "slack", "equipo"],
+    "popularity": 68,
+    "requires": ["slack"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "7d" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "resumen", "code": "console.log(JSON.stringify({ resumen: 'Resumen semanal: revisad las tareas abiertas y cerrad las que ya estén.' }));" } },
+      { "type": "slack_webhook", "data": { "webhook_url": "", "text": "{{ $json.resumen }}", "channel": "#equipo", "bot_name": "grapScreen" } }
+    ]
+  },
+  {
+    "id": "control-de-stock-bajo",
+    "title": "Aviso de stock bajo",
+    "description": "Registra el stock y avisa al equipo cuando el producto se queda corto",
+    "category": "productividad",
+    "tags": ["stock", "inventario", "aviso", "telegram"],
+    "popularity": 68,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "producto", "label": "Producto", "type": "text", "required": true }, { "id": "cantidad", "label": "Cantidad actual", "type": "text", "required": true }] } },
+      { "type": "sqlite_execute", "data": { "db_path": "stock.db", "query": "CREATE TABLE IF NOT EXISTS stock (id INTEGER PRIMARY KEY AUTOINCREMENT, producto TEXT, cantidad REAL)", "params": "" } },
+      { "type": "sqlite_execute", "data": { "db_path": "stock.db", "query": "INSERT INTO stock (producto, cantidad) VALUES (?, ?)", "params": "[\"{{ producto }}\",\"{{ cantidad }}\"]" } },
+      { "type": "telegram", "data": { "message": "Stock actualizado: {{ producto }} = {{ cantidad }} unidades.", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "listado-de-clientes-activos",
+    "title": "Listado de clientes activos",
+    "description": "Exporta los clientes dados de alta a un CSV para el equipo comercial",
+    "category": "productividad",
+    "tags": ["clientes", "csv", "exportar", "comercial"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "clientes.db", "query": "CREATE TABLE IF NOT EXISTS clientes (id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT, email TEXT, activo INTEGER DEFAULT 1)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "clientes.db", "query": "SELECT nombre, email FROM clientes WHERE activo = 1 ORDER BY nombre", "params": "" } },
+      { "type": "excel_local", "data": { "file_path": "clientes-activos.csv", "header": "", "values": "[[\"{{ $json.nombre }}\",\"{{ $json.email }}\"]]", "delimiter": ",", "overwrite": false, "format": "csv" } }
+    ]
+  },
+  {
+    "id": "nota-rapida-con-atajo",
+    "title": "Nota rápida con un atajo",
+    "description": "Abre un formulario con Ctrl+Alt+N para apuntar algo sin perder el hilo",
+    "category": "productividad",
+    "tags": ["notas", "atajo", "formulario", "hotkey"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "hotkey_trigger", "data": { "shortcut": "Ctrl+Alt+N" } },
+      { "type": "form", "data": { "fields": [{ "id": "nota", "label": "Nota rápida", "type": "textarea", "required": true }] } },
+      { "type": "write_file", "data": { "file_path": "~/notas-rapidas.txt", "content": "{{ nota }}\n---\n", "encoding": "utf8", "append": true } }
+    ]
+  },
+  {
+    "id": "informe-de-ventas-del-dia",
+    "title": "Informe de ventas del día",
+    "description": "Suma las ventas apuntadas y deja el total del día en un libro de Excel",
+    "category": "productividad",
+    "tags": ["ventas", "informe", "excel", "diario"],
+    "popularity": 68,
+    "requires": [],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "ventas.db", "query": "CREATE TABLE IF NOT EXISTS ventas (id INTEGER PRIMARY KEY AUTOINCREMENT, producto TEXT, importe REAL)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "ventas.db", "query": "SELECT COUNT(*) AS operaciones, SUM(importe) AS total FROM ventas", "params": "" } },
+      { "type": "excel_local", "data": { "file_path": "ventas-dia.xlsx", "header": "[\"Operaciones\",\"Total\"]", "values": "[[\"{{ $json.operaciones }}\",\"{{ $json.total }}\"]]", "delimiter": ",", "overwrite": true, "format": "xlsx" } }
+    ]
+  },
+  {
+    "id": "documento-de-procedimiento",
+    "title": "Documento de procedimiento",
+    "description": "Publica en Google Docs el procedimiento que escriba el responsable",
+    "category": "productividad",
+    "tags": ["documentación", "google docs", "procedimiento"],
+    "popularity": 66,
+    "requires": ["google"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "titulo", "label": "Título del procedimiento", "type": "text", "required": true }, { "id": "pasos", "label": "Pasos", "type": "textarea", "required": true }] } },
+      { "type": "google_docs", "data": { "document_id": "", "text": "# {{ titulo }}\n\n## Pasos\n{{ pasos }}" } }
+    ]
+  },
+  {
+    "id": "pendientes-en-notch",
+    "title": "Pendientes en Notion",
+    "description": "Crea una tarea en la base de Notion del equipo con su prioridad",
+    "category": "productividad",
+    "tags": ["notion", "tareas", "equipo"],
+    "popularity": 66,
+    "requires": ["notion"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "tarea", "label": "Tarea", "type": "text", "required": true }, { "id": "prioridad", "label": "Prioridad", "type": "text", "required": true }] } },
+      { "type": "notion", "data": { "operation": "create_page", "token": "", "database_id": "", "page_id": "", "title": "{{ tarea }}", "properties_json": "{\"Prioridad\":\"{{ prioridad }}\"}", "filter_json": "" } }
+    ]
+  },
+  {
+    "id": "leads-en-airtable",
+    "title": "Leads del formulario en Airtable",
+    "description": "Registra los contactos comerciales directamente en una tabla de Airtable",
+    "category": "productividad",
+    "tags": ["airtable", "leads", "comercial", "formulario"],
+    "popularity": 66,
+    "requires": ["airtable"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "nombre", "label": "Nombre", "type": "text", "required": true }, { "id": "empresa", "label": "Empresa", "type": "text", "required": true }, { "id": "email", "label": "Email", "type": "email", "required": true }] } },
+      { "type": "airtable", "data": { "operation": "create", "api_key": "", "base_id": "", "table": "Leads", "record_id": "", "fields_json": "{\"Nombre\":\"{{ nombre }}\",\"Empresa\":\"{{ empresa }}\",\"Email\":\"{{ email }}\"}" } }
+    ]
+  },
+  {
+    "id": "resumen-de-la-semana-por-correo",
+    "title": "Resumen de la semana por correo",
+    "description": "Manda cada viernes un correo con el resumen de la actividad registrada",
+    "category": "productividad",
+    "tags": ["email", "resumen", "semanal", "smtp"],
+    "popularity": 66,
+    "requires": ["smtp"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "7d" } },
+      { "type": "sqlite_execute", "data": { "db_path": "tareas.db", "query": "CREATE TABLE IF NOT EXISTS tareas (id INTEGER PRIMARY KEY AUTOINCREMENT, tarea TEXT, hecha INTEGER DEFAULT 0)", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "tareas.db", "query": "SELECT COUNT(*) AS pendientes FROM tareas WHERE hecha = 0", "params": "" } },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "avisos@ejemplo.com",
+          "to_email": "equipo@ejemplo.com",
+          "subject": "Resumen semanal de tareas",
+          "body": "Quedan {{ $json.pendientes }} tareas pendientes esta semana.",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "contador-de-incidencias-del-mes",
+    "title": "Contador de incidencias del mes",
+    "description": "Crea la tabla, cuenta las incidencias abiertas y avisa por Telegram",
+    "category": "productividad",
+    "tags": ["incidencias", "telegram", "recuento", "soporte"],
+    "popularity": 64,
+    "requires": ["telegram"],
+    "steps": [
+      { "type": "sqlite_execute", "data": { "db_path": "soporte.db", "query": "CREATE TABLE IF NOT EXISTS incidencias (id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT, estado TEXT DEFAULT 'abierta')", "params": "" } },
+      { "type": "sqlite_query", "data": { "db_path": "soporte.db", "query": "SELECT COUNT(*) AS abiertas FROM incidencias WHERE estado = 'abierta'", "params": "" } },
+      { "type": "telegram", "data": { "message": "Incidencias abiertas ahora mismo: {{ $json.abiertas }}", "chat_id": "", "token": "" } }
+    ]
+  },
+  {
+    "id": "plantilla-de-correo-comercial",
+    "title": "Plantilla de correo comercial",
+    "description": "Rellena una plantilla de correo con los datos del cliente y la envía",
+    "category": "productividad",
+    "tags": ["email", "comercial", "plantilla", "smtp"],
+    "popularity": 64,
+    "requires": ["smtp"],
+    "steps": [
+      { "type": "form", "data": { "fields": [{ "id": "nombre", "label": "Nombre del cliente", "type": "text", "required": true }, { "id": "email", "label": "Email", "type": "email", "required": true }, { "id": "producto", "label": "Producto de interés", "type": "text", "required": true }] } },
+      {
+        "type": "send_email",
+        "data": {
+          "smtp_host": "smtp.gmail.com",
+          "smtp_port": 587,
+          "username": "",
+          "password": "",
+          "from_email": "comercial@ejemplo.com",
+          "to_email": "{{ email }}",
+          "subject": "Información sobre {{ producto }}",
+          "body": "Hola {{ nombre }}:\n\nGracias por tu interés en {{ producto }}. Te enviamos la información que pediste.\n\nUn saludo.",
+          "is_html": false
+        }
+      }
+    ]
+  },
+  {
+    "id": "inventario-mensual-en-google-sheets",
+    "title": "Inventario mensual en Google Sheets",
+    "description": "Repasa el inventario una vez al mes y lo deja apuntado en la hoja del equipo",
+    "category": "productividad",
+    "tags": ["inventario", "google sheets", "mensual", "revisión"],
+    "popularity": 64,
+    "requires": ["google"],
+    "steps": [
+      { "type": "cron", "data": { "schedule": "30d" } },
+      { "type": "code", "data": { "language": "javascript", "output_var": "revision", "code": "const hoy = new Date().toISOString().slice(0, 10);\nconsole.log(JSON.stringify({ revision: 'Revisión de inventario del ' + hoy }));" } },
+      { "type": "google_sheets", "data": { "spreadsheet_id": "", "range": "Inventario!A:C", "values": "[[\"{{ $json.revision }}\",\"ok\"]]" } }
+    ]
+  }
+]

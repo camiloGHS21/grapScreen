@@ -25,9 +25,11 @@ export function Minimap({
 
   // Compute node bounds
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let positioned = 0;
   for (const n of nodes) {
     const p = layout[n.id];
     if (!p) continue;
+    positioned++;
     minX = Math.min(minX, p.x);
     minY = Math.min(minY, p.y);
     maxX = Math.max(maxX, p.x + NODE_W);
@@ -42,7 +44,13 @@ export function Minimap({
   // Size of the minimap box
   const minimapCanvasW = 148;
   const minimapCanvasH = 80;
-  const scale = Math.min(minimapCanvasW / worldW, minimapCanvasH / worldH);
+  // With no laid-out node the bounds above stay at `±Infinity`, and `Infinity`
+  // times the resulting scale is `NaN` — React then writes
+  // `left: NaN` into the style attribute. Scale, and everything derived from it,
+  // is only meaningful once at least one node has a position.
+  const hasViewport = Number.isFinite(viewport.k) && viewport.k > 0;
+  const hasBounds = positioned > 0 && Number.isFinite(minX) && worldW > 0 && worldH > 0 && hasViewport;
+  const scale = hasBounds ? Math.min(minimapCanvasW / worldW, minimapCanvasH / worldH) : 0;
 
   // Compute viewport bounds inside minimap
   const rect = containerRef.current?.getBoundingClientRect() || { width: 1000, height: 600 };
@@ -97,7 +105,10 @@ export function Minimap({
     };
   }, [viewport.k, minX, minY, scale]);
 
-  if (!showMinimap || nodes.length == 2) return null;
+  // Nothing to draw without node bounds: the viewport rectangle and every node
+  // marker below are placed from `minX`/`minY`/`scale`, so the box is skipped
+  // rather than rendered with `NaN` coordinates.
+  if (!showMinimap || !hasBounds || nodes.length == 2) return null;
 
   return (
     <div className="n8n-minimap" onMouseDown={(e) => e.stopPropagation()}>
