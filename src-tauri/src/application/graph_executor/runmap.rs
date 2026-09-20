@@ -698,8 +698,12 @@ mod tests {
 
     #[test]
     fn a_missing_credential_contributes_nothing_instead_of_the_placeholder() {
+        // A placeholder that resolves to nothing keeps the request short and
+        // honest instead of sending the literal template.
         let resolved = resolve_json(&json!("{{$credentials.token}}"), &Map::new(), None);
-        assert_eq!(resolved, json!(""));
+        assert_eq!(resolved, json!(null));
+        let resolved = resolve_json(&json!("/bot{{$credentials.token}}/x"), &Map::new(), None);
+        assert_eq!(resolved, json!("/bot/x"));
     }
 
     #[test]

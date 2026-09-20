@@ -304,7 +304,6 @@ function makeExecuteContext({ description, index, sentinels, forced, requests })
     }),
     getInputData: () => [magic("item")],
     getInputConnectionData: async () => magic("connection"),
-    getCredentials: async () => magic("credentials"),
     getWorkflow: () => ({ id: "capture", name: "capture" }),
     getWorkflowStaticData: () => ({}),
     getMode: () => "manual",
@@ -448,6 +447,8 @@ async function captureNode(loader, entry) {
   const status = ok ? "ok" : cases.some((c) => c.status === "partial") ? "partial" : "none";
   return { status, cases };
 }
+
+export { captureNode };
 
 /** True when a captured value still carries a sentinel the templater missed. */
 function hasSentinel(value) {
@@ -601,8 +602,13 @@ async function main() {
   console.log(`salida               : ${args.out}`);
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// Only run when invoked directly: importing this module (the probe does, to
+// reuse `captureNode`) must not start a full capture pass.
+import { fileURLToPath } from "node:url";
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}
 
