@@ -17,11 +17,19 @@ pub mod postgres_builder;
 pub mod postgres_node;
 pub mod runmap;
 pub mod ai_agent_runner;
+pub mod aws;
+pub mod utility_nodes;
+pub mod google_sdks;
+pub mod database_nodes;
 
 #[cfg(test)]
 pub mod testkit;
 #[cfg(test)]
 mod engine_tests;
+#[cfg(test)]
+mod utility_nodes_tests;
+#[cfg(test)]
+mod database_nodes_tests;
 
 pub use engine::GraphEngine;
 pub use extract::{extract_graph, GraphConnection, GraphNode};

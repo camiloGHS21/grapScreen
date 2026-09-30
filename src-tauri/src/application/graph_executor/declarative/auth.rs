@@ -132,7 +132,34 @@ fn credential_field_value(token: &str, cred: Option<&Value>) -> String {
     if name.is_empty() {
         return String::new();
     }
-    field(cred, &[name.as_str()]).unwrap_or_default()
+    // A credential path can be nested (`oauthTokenData.instance_url`), so walk
+    // the segments instead of looking the dotted name up as one flat key.
+    let obj = match credential_object(cred).and_then(|o| o.as_object()) {
+        Some(o) => o,
+        None => return String::new(),
+    };
+    let mut parts = name.split('.');
+    let first = parts.next().unwrap_or("");
+    let mut current = obj.get(first).or_else(|| {
+        obj.iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(first))
+            .map(|(_, v)| v)
+    });
+    for part in parts {
+        current = current.and_then(|c| c.as_object()).and_then(|o| {
+            o.get(part).or_else(|| {
+                o.iter()
+                    .find(|(k, _)| k.eq_ignore_ascii_case(part))
+                    .map(|(_, v)| v)
+            })
+        });
+    }
+    match current {
+        Some(Value::String(s)) => s.trim().to_string(),
+        Some(Value::Number(n)) => n.to_string(),
+        Some(Value::Bool(b)) => b.to_string(),
+        _ => String::new(),
+    }
 }
 
 /// Field names n8n credential types use for a bearer-style token, most specific

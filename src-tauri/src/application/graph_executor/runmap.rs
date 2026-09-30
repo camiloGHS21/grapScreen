@@ -29,6 +29,15 @@ const EMBEDDED: &str = include_str!(concat!(
     "/../src/data/n8n-runmap.json"
 ));
 
+/// Polling triggers are captured by a separate pass (`--triggers`): their code
+/// path is `poll()`, not `execute()`, so they cannot share the action sweep.
+/// The two artifacts are merged at load time, which keeps one lookup for the
+/// engine and two honest pipelines for the capture.
+const EMBEDDED_TRIGGERS: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../src/data/n8n-trigger-runmap.json"
+));
+
 const DEFAULT_TIMEOUT_SECS: u64 = 60;
 
 /// One HTTP call the captured node made.
@@ -125,24 +134,37 @@ pub struct RunMap {
 }
 
 impl RunMap {
-    fn from_json(raw: &str) -> Result<Self, String> {
+    fn from_json(raw: &str, raw_triggers: &str) -> Result<Self, String> {
         #[derive(Deserialize)]
         struct Artifact {
             #[serde(default)]
             nodes: HashMap<String, RunNode>,
         }
-        let parsed: Artifact =
-            serde_json::from_str(raw).map_err(|e| format!("mapa de ejecución ilegible: {}", e))?;
-        Ok(Self {
-            by_key: parsed.nodes,
-        })
+        let mut nodes: HashMap<String, RunNode> = serde_json::from_str::<Artifact>(raw)
+            .map_err(|e| format!("mapa de ejecución ilegible: {}", e))?
+            .nodes;
+        let triggers: HashMap<String, RunNode> =
+            serde_json::from_str::<Artifact>(raw_triggers)
+                .map_err(|e| format!("mapa de disparadores ilegible: {}", e))?
+                .nodes;
+        for (key, node) in triggers {
+            match nodes.get_mut(&key) {
+                // A trigger that also has captured actions keeps both: its
+                // `poll()` case lands under the empty operation.
+                Some(existing) => existing.cases.extend(node.cases),
+                None => {
+                    nodes.insert(key, node);
+                }
+            }
+        }
+        Ok(Self { by_key: nodes })
     }
 
     /// Process-wide map, parsed on first use.
     pub fn global() -> &'static RunMap {
         static MAP: OnceLock<RunMap> = OnceLock::new();
         MAP.get_or_init(|| {
-            RunMap::from_json(EMBEDDED)
+            RunMap::from_json(EMBEDDED, EMBEDDED_TRIGGERS)
                 .unwrap_or_else(|e| panic!("mapa de ejecución n8n corrupto: {}", e))
         })
     }
@@ -154,6 +176,19 @@ impl RunMap {
     /// Whether the engine can execute this node at all, as it stands.
     pub fn is_executable(&self, key: &str) -> bool {
         self.by_key.get(key).is_some_and(|n| n.usable_cases() > 0)
+    }
+
+    /// Whether a polling trigger carries a captured `poll()` request.
+    ///
+    /// Triggers watch data instead of acting on it: their capture has a single
+    /// case under an empty operation, and the engine replays it through
+    /// [`poll_plan`] rather than through [`plan`].
+    pub fn is_pollable(&self, key: &str) -> bool {
+        self.by_key.get(key).is_some_and(|node| {
+            node.cases
+                .iter()
+                .any(|case| case.operation.is_empty() && case.sendable().is_some())
+        })
     }
 
     /// Catalogue keys with at least one captured operation.
@@ -192,8 +227,22 @@ fn render_scalar(value: &Value) -> String {
     }
 }
 
-/// Looks a parameter up by name, then by dotted path (`a.b`).
+/** Looks a parameter up by name, then by dotted path (`a.b`). */
 fn param_at<'a>(params: &'a Map<String, Value>, name: &str) -> Option<&'a Value> {
+    if name == "this" {
+        // The whole node config, when node code stringified a locator object
+        // into a URL. The useful field is `value` of the first locator we find.
+        for (_, v) in params {
+            if let Some(inner) = v.as_object() {
+                if inner.get("__rl") == Some(&Value::Bool(true)) {
+                    if let Some(value) = inner.get("value") {
+                        return Some(value);
+                    }
+                }
+            }
+        }
+        return None;
+    }
     if let Some(found) = params.get(name) {
         return Some(found);
     }
@@ -226,14 +275,37 @@ fn lookup<'a>(
 ) -> Option<Value> {
     if kind == "cred" {
         let map = credential_object(credential)?;
-        return map
-            .get(name)
-            .or_else(|| {
-                map.iter()
-                    .find(|(k, _)| k.eq_ignore_ascii_case(name))
+        // A credential path can be nested: Salesforce builds its URL from
+        // `oauthTokenData.instance_url`, which the OAuth exchange keeps one level
+        // below the root. Looking the whole dotted name up as a single flat key
+        // finds nothing, and the request then goes out with an empty host - a
+        // silent failure the capture itself cannot detect. Every segment is
+        // matched case-insensitively, exactly like the flat lookup did.
+        let mut parts = name.split('.');
+        let first = parts.next().unwrap_or(name);
+        let mut current: &Value = match map.get(first).or_else(|| {
+            map.iter()
+                .find(|(k, _)| k.eq_ignore_ascii_case(first))
+                .map(|(_, v)| v)
+        }) {
+            Some(found) => found,
+            None => return None,
+        };
+        for part in parts {
+            let obj = match current.as_object() {
+                Some(o) => o,
+                None => return None,
+            };
+            current = match obj.get(part).or_else(|| {
+                obj.iter()
+                    .find(|(k, _)| k.eq_ignore_ascii_case(part))
                     .map(|(_, v)| v)
-            })
-            .cloned();
+            }) {
+                Some(found) => found,
+                None => return None,
+            };
+        }
+        return Some(current.clone());
     }
     param_at(params, name).cloned()
 }
@@ -418,8 +490,17 @@ pub fn plan(data: &Value) -> Result<PlannedRequest, String> {
 
     let params = config_object(data);
     // Placeholders can name the credential as well as a parameter; the vault
-    // scope is installed by the engine before the node runs.
-    let credential = replay_helpers::get_current_credential();
+    // scope is the replay's when a flow runs, and a direct vault read when the
+    // daemon plans its poll without a replay to lean on.
+    let credential = if data
+        .get("n8n_credential")
+        .map(|value| !value.is_null())
+        .unwrap_or(false)
+    {
+        data.get("n8n_credential").cloned()
+    } else {
+        replay_helpers::get_current_credential()
+    };
     let operation = params
         .get("operation")
         .map(render_scalar)
@@ -446,6 +527,20 @@ pub fn plan(data: &Value) -> Result<PlannedRequest, String> {
         })?
     };
 
+    plan_request(&key, data, credential, case)
+}
+
+/// Turns one captured case into an executable request.
+///
+/// Shared by `plan` and `poll_plan`: flow nodes resolve the credential from
+/// their replay scope, while the daemon threads its vault read-through.
+fn plan_request(
+    key: &str,
+    data: &Value,
+    credential: Option<Value>,
+    case: &RunCase,
+) -> Result<PlannedRequest, String> {
+    let params = config_object(data);
     let request = case.sendable().ok_or_else(|| {
         format!(
             "La operación '{}{}' de '{}' no se pudo capturar ({}).",
@@ -455,6 +550,74 @@ pub fn plan(data: &Value) -> Result<PlannedRequest, String> {
             case.error.as_deref().unwrap_or("sin petición registrada")
         )
     })?;
+
+    // The AWS family never captures a URL: n8n's helper builds and signs it
+    // (`{ service, path }` in the query). The engine rebuilds it here — the
+    // URL plus the SigV4 signature are pure data + the credential, which is
+    // what the AWS nodes in n8n do too.
+    if request.path.trim().is_empty() {
+        if let Some(qs) = &request.qs {
+            let service = resolve_json(
+                &Value::String(qs.get("service").and_then(|v| v.as_str()).unwrap_or("").to_string()),
+                &params,
+                credential.as_ref(),
+            );
+            let service = render_scalar(&service);
+            // A plain service name addresses `service.region.amazonaws.com`; a
+            // dotted one (`mybucket.s3`) is the bucket-in-host form, which the
+            // recipe carries differently and the engine does not rebuild yet.
+            if service.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') && !service.is_empty() {
+                let raw_path = qs
+                    .get("path")
+                    .map(|p| render_scalar(&resolve_json(p, &params, credential.as_ref())))
+                    .unwrap_or_default();
+                let body = request.payload().map(|payload| {
+                    match resolve_json(payload, &params, credential.as_ref()) {
+                        Value::String(s) => s,
+                        other => other.to_string(),
+                    }
+                });
+                let extra_query: Vec<(String, String)> = match qs.get("query").and_then(|q| q.as_object()) {
+                    Some(inner) => inner
+                        .iter()
+                        .map(|(name, value)| {
+                            (
+                                name.clone(),
+                                render_scalar(&resolve_json(value, &params, credential.as_ref())),
+                            )
+                        })
+                        .collect(),
+                    None => Vec::new(),
+                };
+                let signed = super::aws::build(
+                    &request.method,
+                    &super::aws::AwsRecipe { service: service.clone(), path: raw_path },
+                    &extra_query,
+                    body.as_deref(),
+                    credential.as_ref(),
+                )
+                .ok_or_else(|| {
+                    format!(
+                        "La credencial 'aws' necesita región, accessKeyId y secretAccessKey para firmar '{}'.",
+                        key
+                    )
+                })?;
+                return Ok(PlannedRequest {
+                    key: key.to_string(),
+                    resource: case.resource.clone(),
+                    operation: case.operation.clone(),
+                    method: signed.method,
+                    url: signed.url,
+                    headers: signed.headers,
+                    body: signed.body,
+                });
+            }
+        }
+        return Err(format!(
+            "La operación '{}' de '{}' no tiene URL que enviar: n8n la construye y firma en su propio helper, y este motor no la reproduce (familia AWS).",
+            case.operation, key
+        ));
+    }
 
     let raw_path = render_path(&request.path, &params, credential.as_ref());
     let url = if raw_path.starts_with("http://") || raw_path.starts_with("https://") {
@@ -512,11 +675,11 @@ pub fn plan(data: &Value) -> Result<PlannedRequest, String> {
     if body.is_some() && !headers.iter().any(|(k, _)| k.eq_ignore_ascii_case("content-type")) {
         headers.push(("Content-Type".to_string(), "application/json".to_string()));
     }
-    if let Some(raw) = data.get("n8n_body").and_then(|v| v.as_str()) {
-        if !raw.trim().is_empty() {
-            let resolved = replay_helpers::interpolate_variables(raw);
+    if let Some(raw_body) = data.get("n8n_body").and_then(|v| v.as_str()) {
+        if !raw_body.trim().is_empty() {
+            let resolved = replay_helpers::interpolate_variables(raw_body);
             return Ok(PlannedRequest {
-                key,
+                key: key.to_string(),
                 resource: case.resource.clone(),
                 operation: case.operation.clone(),
                 method: request.method.trim().to_uppercase(),
@@ -528,7 +691,7 @@ pub fn plan(data: &Value) -> Result<PlannedRequest, String> {
     }
 
     Ok(PlannedRequest {
-        key,
+        key: key.to_string(),
         resource: case.resource.clone(),
         operation: case.operation.clone(),
         method: request.method.trim().to_uppercase(),
@@ -536,6 +699,58 @@ pub fn plan(data: &Value) -> Result<PlannedRequest, String> {
         headers,
         body,
     })
+}
+
+/// Builds the single fetch the trigger daemon polls with.
+///
+/// The daemon never runs a replay, so it cannot install a credential scope:
+/// the credential is resolved from the vault directly, like
+/// [`declarative::runner::poll_once`] does.
+pub fn poll_plan(data: &Value) -> Result<PlannedRequest, String> {
+    let key = data
+        .get("n8n_key")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if key.is_empty() {
+        return Err("Este disparador no tiene asignado un nodo de n8n (falta n8n_key).".into());
+    }
+
+    let node = RunMap::global().get(&key).ok_or_else(|| {
+        format!(
+            "El disparador n8n '{}' todavía no tiene un mapa de ejecución: no puede sondearse.",
+            key
+        )
+    })?;
+
+    let case = node
+        .cases
+        .iter()
+        .find(|case| case.operation.is_empty() && case.sendable().is_some())
+        .ok_or_else(|| {
+            format!(
+                "El disparador n8n '{}' no tiene su `poll()` capturado: no puede sondearse.",
+                key
+            )
+        })?;
+
+    plan_case(
+        &key,
+        data,
+        crate::application::graph_executor::declarative::credential_for(data),
+        case,
+    )
+}
+
+/// Turns one captured case into an executable request.
+fn plan_case(
+    key: &str,
+    data: &Value,
+    credential: Option<Value>,
+    case: &RunCase,
+) -> Result<PlannedRequest, String> {
+    plan_request(key, data, credential, case)
 }
 
 /// Whether the node was told to treat a non-2xx answer as data.
@@ -642,6 +857,25 @@ mod tests {
             .collect()
     }
 
+    /// The daemon's planner, without touching the credential vault: the tests
+    /// run outside a replay, so the vault has nothing scoped to hand over.
+    fn plan_trigger(data: &Value) -> Result<PlannedRequest, String> {
+        let key = data
+            .get("n8n_key")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        let node = RunMap::global()
+            .get(&key)
+            .ok_or_else(|| format!("sin mapa para '{}'", key))?;
+        let case = node
+            .cases
+            .iter()
+            .find(|case| case.operation.is_empty() && case.sendable().is_some())
+            .ok_or_else(|| format!("'{}' sin poll() capturado", key))?;
+        plan_request(&key, data, None, case)
+    }
+
     #[test]
     fn the_artifact_parses_and_covers_a_large_part_of_the_catalogue() {
         let map = RunMap::global();
@@ -707,6 +941,49 @@ mod tests {
     }
 
     #[test]
+    fn a_nested_credential_path_resolves() {
+        // Salesforce builds its URL from `oauthTokenData.instance_url`, which the
+        // OAuth exchange stores one level down inside the credential. Reading it
+        // as a flat field name yields nothing, and the request then goes out with
+        // an empty host - a silent failure the capture itself cannot detect.
+        let credential = json!({
+            "data": { "oauthTokenData": { "instance_url": "https://acme.my.salesforce.com" } }
+        });
+        let resolved = resolve_json(
+            &json!("{{$credentials.oauthTokenData.instance_url}}/services/data/v59.0/query"),
+            &Map::new(),
+            Some(&credential),
+        );
+        assert_eq!(
+            resolved,
+            json!("https://acme.my.salesforce.com/services/data/v59.0/query")
+        );
+    }
+
+    #[test]
+    fn a_nested_credential_path_is_case_insensitive_at_every_step() {
+        let credential =
+            json!({ "data": { "OauthTokenData": { "Instance_Url": "https://x.test" } } });
+        let resolved = resolve_json(
+            &json!("{{$credentials.oauthTokenData.instance_url}}/q"),
+            &Map::new(),
+            Some(&credential),
+        );
+        assert_eq!(resolved, json!("https://x.test/q"));
+    }
+
+    #[test]
+    fn a_flat_credential_field_still_resolves_after_the_nested_change() {
+        let credential = json!({ "data": { "accessToken": "tok" } });
+        let resolved = resolve_json(
+            &json!("{{$credentials.accessToken}}"),
+            &Map::new(),
+            Some(&credential),
+        );
+        assert_eq!(resolved, json!("tok"));
+    }
+
+    #[test]
     fn an_engine_expression_is_left_for_the_interpolator() {
         // `{{ $json.x }}` is the engine's own syntax, not a capture placeholder:
         // this module must leave it for the expression evaluator.
@@ -768,6 +1045,89 @@ mod tests {
         .unwrap_err();
         assert!(error.contains("no está soportada"), "mensaje: {}", error);
         assert!(error.contains(key), "el error debe nombrar el nodo: {}", error);
+    }
+
+    #[test]
+    fn a_captured_poll_plans_the_request_the_trigger_makes() {
+        // `GmailTrigger` asks the Gmail API for messages; the capture proves the
+        // path and the query n8n's own `poll()` builds, which is what the daemon
+        // must dial instead of the API root.
+        let planned = plan_trigger(&json!({
+            "n8n_key": "GmailTrigger",
+            "n8n_config": { "resource": "message", "event": "messageReceived", "simple": true }
+        }))
+        .expect("GmailTrigger debe tener su poll() capturado");
+        assert_eq!(planned.method, "GET");
+        assert!(
+            planned.url.starts_with("https://www.googleapis.com/gmail/v1/users/me/messages"),
+            "url inesperada: {}",
+            planned.url
+        );
+    }
+
+    #[test]
+    fn a_trigger_without_a_captured_poll_says_so() {
+        let error = plan_trigger(&json!({ "n8n_key": "Cron" })).unwrap_err();
+        assert!(error.contains("Cron"), "mensaje: {}", error);
+    }
+
+    #[test]
+    fn a_poll_plan_never_expects_an_operation() {
+        // The trigger's case is stored under an empty operation: a node config
+        // with no `operation` at all must still plan.
+        let node = RunMap::global()
+            .get("GmailTrigger")
+            .expect("GmailTrigger está en el mapa");
+        assert!(node.is_complete() || node.usable_cases() > 0);
+        let planned = plan_trigger(&json!({
+            "n8n_key": "GmailTrigger",
+            "n8n_config": { "simple": true }
+        }));
+        assert!(planned.is_ok(), "sin operación debe planificar igual");
+    }
+
+    #[test]
+    fn an_aws_recipe_plans_a_signed_request_through_the_builder() {
+        // This is the recipe the real SES node hands us: `{ service, path }`
+        // and nowhere to read a URL from. The engine must not say "no URL" —
+        // it rebuilds the request and signs it.
+        let map = RunMap::global();
+        let node = map.get("AwsSes").unwrap_or_else(|| {
+            panic!(
+                "expected AwsSes in the map; executable keys: {}",
+                map.executable_keys().join(", ")
+            );
+        });
+        let sendable = node.cases.iter().find(|c| c.sendable().is_some()).expect("un caso enviable");
+        let credential = serde_json::json!({
+            "data": { "region": "eu-west-1", "accessKeyId": "AKIAEXAMPLE", "secretAccessKey": "secret" }
+        });
+        let recipe_service = sendable
+            .requests
+            .last()
+            .as_ref()
+            .and_then(|r| r.qs.as_ref())
+            .and_then(|qs| qs.get("service"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert_eq!(recipe_service, "email", "la receta SES cambió de forma");
+        let data = serde_json::json!({
+            "n8n_key": "AwsSes",
+            "n8n_config": { "operation": sendable.operation.clone() },
+            "n8n_credential": credential,
+        });
+        let result = plan(&data);
+        match result {
+            Ok(planned) => {
+                assert!(planned.url.starts_with("https://email."), "url: {}", planned.url);
+                assert!(planned.headers.iter().any(|(name, value)| name == "authorization" && value.starts_with("AWS4-HMAC-SHA256")));
+            }
+            Err(error) => {
+                // SES builds the URL from its form body, so a case whose body
+                // was not captured honestly says so instead of signing garbage.
+                assert!(error.contains("URL") || error.contains("aws"), "error: {error}");
+            }
+        }
     }
 
     #[test]

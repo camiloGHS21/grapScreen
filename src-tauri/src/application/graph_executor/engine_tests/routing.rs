@@ -315,6 +315,66 @@ fn sqlite_query_reports_an_invalid_statement() {
 
 // ── kinds that fail without their provider, which proves dispatch ────────
 
+/// A catalogue node whose key merely *looks* like an agent's is not run by the
+/// agent runner.
+///
+/// The dispatch used to ask `n8n_key.contains("agent")`, and `Magento2` and
+/// `MessageAnAgent` both answer yes. `ai_agent_runner` returns `Ok` even when it
+/// never reaches a model, so those two nodes reported success, produced a
+/// summary line, and called nothing — the flow carried on as if the step had
+/// run. The `Ok` is what makes it invisible, so the test asserts the opposite:
+/// their real dispatcher has no captured request for them and must say so.
+#[test]
+fn a_catalogue_node_whose_key_only_looks_like_an_agent_is_not_run_by_the_agent_runner() {
+    // The last case has no key at all and an agent-shaped *name*: the old test
+    // matched on that too, so a node named "AI Agent" was an agent whatever it
+    // was.
+    let cases = [
+        ("Magento2", "Magento 2"),
+        ("MessageAnAgent", "Message an Agent"),
+        ("", "AI Agent"),
+    ];
+    for (key, name) in cases {
+        let graph = Graph::new()
+            .node("start", "start", cfg())
+            .connect("start", "output", "subject")
+            .node("subject", "n8n_node", json!({ "n8n_key": key, "n8n_name": name }));
+
+        let run = Runner::new(Harness::inert(), graph)
+            .with_items(vec![json!({ "n": 1 })])
+            .run();
+
+        let error = run
+            .result
+            .as_ref()
+            .err()
+            .unwrap_or_else(|| panic!("'{}' debería fallar por falta de captura, no responder Ok", key));
+        // Two honest failures name their cause: an unmapped key ("no está
+        // capturada") or a mapped one whose `execute` could not reach a model
+        // ("no declara ninguna operación"). The agent runner never returning an
+        // error is what made the old dispatch invisible.
+        assert!(
+            error.contains("no está capturada") || error.contains("no declara ninguna operación"),
+            "'{}' debe fallar en su propio ejecutor, no en el del agente: {}",
+            key,
+            error
+        );
+    }
+}
+
+/// The two keys that *are* the agent still match, whole and case-insensitive.
+#[test]
+fn only_the_agent_keys_themselves_match_the_agent_runner() {
+    use crate::application::graph_executor::node_runners::is_agent_key;
+
+    for key in ["Agent", "agent", "AGENT", "AgentV1", "agentv1"] {
+        assert!(is_agent_key(key), "'{}' es el nodo de agente", key);
+    }
+    for key in ["Magento2", "MessageAnAgent", "AgentTool", "ToolAgent", "ai_agent"] {
+        assert!(!is_agent_key(key), "'{}' no es el nodo de agente", key);
+    }
+}
+
 /// With no configuration, the provider-backed nodes raise their own error. That
 /// is the dispatch proof available here: the catch-all returns `Ok` for these
 /// kinds, so an `Err` can only come from the real runner having been reached.

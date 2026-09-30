@@ -47,6 +47,10 @@ reqwest = { version = "0.12", default-features = false, features = ["blocking", 
 rusqlite = { version = "0.32", features = ["bundled"] }
 # PostgreSQL node support in Rust backend.
 postgres = { version = "0.19", default-features = false }
+# MySQL node support in Rust backend.
+mysql = { version = "25", default-features = false }
+# Redis node support in Rust backend.
+redis = { version = "0.27", default-features = false }
 # Phase 11 — integrations. Email (SMTP) uses lettre with rustls to stay
 # consistent with the native HTTP client (no OpenSSL on the system).
 lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "rustls-tls"] }

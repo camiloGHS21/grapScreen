@@ -244,6 +244,12 @@ fn auth_for(data: &Value, desc: &NodeDescriptor) -> AuthApplication {
     }
 }
 
+/// The daemon half of [`auth_for`]: same vault read-through, but usable from
+/// the trigger service, which plans its polls without a replay to lean on.
+pub fn auth_for_data(data: &Value, desc: &NodeDescriptor) -> AuthApplication {
+    auth_for(data, desc)
+}
+
 /// One polling fetch, as the trigger daemon needs it.
 #[derive(Debug, Clone)]
 pub struct PollOutcome {

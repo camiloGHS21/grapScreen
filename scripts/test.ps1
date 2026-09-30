@@ -129,14 +129,14 @@ $bin = Get-ChildItem -Path $target -Filter "grapscreen_lib-*.exe" -ErrorAction S
     Select-Object -First 1
 if ($bin) {
     if ($Filter) {
-        & $bin.FullName --exact $Filter
+        & $bin.FullName $Filter
     } else {
         & $bin.FullName
     }
 } else {
     Write-Warning "no patched test binary found; falling back to cargo test (may hit 0xC0000139 if cargo rebuilds)."
     if ($Filter) {
-        & $cargo test --lib --manifest-path "src-tauri\Cargo.toml" -- --exact $Filter
+        & $cargo test --lib --manifest-path "src-tauri\Cargo.toml" -- $Filter
     } else {
         & $cargo test --lib --manifest-path "src-tauri\Cargo.toml"
     }

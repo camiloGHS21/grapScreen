@@ -21,6 +21,58 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
+/// One fetch of the URL the trigger watches, for the daemon's change detector.
+///
+/// Uses the captured `poll()` request when the node's map has one, and the
+ /// generic base-URL guess otherwise. A pollable trigger whose captured request
+ /// cannot be planned stays an error: arming a loop polls the API root instead
+ /// of the real endpoint, which is how such triggers silently never fire.
+fn poll_captured(
+    mapped: &Result<
+        crate::application::graph_executor::runmap::PlannedRequest,
+        String,
+    >,
+    config: &serde_json::Value,
+    desc: &crate::application::graph_executor::declarative::NodeDescriptor,
+) -> Result<crate::application::graph_executor::declarative::PollOutcome, String> {
+    match mapped {
+        Ok(planned) => {
+            let auth = crate::application::graph_executor::declarative::runner::auth_for_data(config, desc);
+            let mut headers = planned.headers.clone();
+            for (name, value) in &auth.headers {
+                if !headers
+                    .iter()
+                    .any(|(existing, _)| existing.eq_ignore_ascii_case(name))
+                {
+                    headers.push((name.clone(), value.clone()));
+                }
+            }
+            let url = crate::application::graph_executor::declarative::runner::with_query(
+                &planned.url,
+                &auth.query,
+            );
+            let request = crate::application::http_client::HttpRequest {
+                method: planned.method.clone(),
+                url: url.clone(),
+                headers,
+                body: planned.body.clone(),
+                timeout_secs: 60,
+            };
+            let response = crate::application::http_client::send(&request).map_err(|e| format!("{}", e))?;
+            if !response.is_success() {
+                let preview = crate::application::http_client::preview(response.body.trim(), 300);
+                return Err(format!("HTTP {}: {}", response.status, preview));
+            }
+            Ok(crate::application::graph_executor::declarative::PollOutcome {
+                url,
+                status: response.status,
+                body: response.body,
+            })
+        }
+        Err(_) => crate::application::graph_executor::declarative::poll_once(config, desc),
+    }
+}
+
 /// Reads a config value that the UI may store as a number or as a string.
 fn cfg_u64(data: &serde_json::Value, key: &str, default: u64, min: u64) -> u64 {
     let raw = match data.get(key) {
@@ -455,12 +507,25 @@ pub fn start_triggers(
                             continue;
                         }
                         let interval_secs = cfg_u64(&config, "n8n_interval", 60, 5);
-                        descs.push(format!("{} (sondeo cada {}s)", label, interval_secs));
+                        // Planned before the loop so the armed description names
+                        // the endpoint: without the capture this said only
+                        // "sondeo cada 60s", which hid which URL was polled.
+                        let mapped = crate::application::graph_executor::runmap::poll_plan(&config);
+                        match &mapped {
+                            Ok(planned) => descs.push(format!(
+                                "{} (sondeo cada {}s a {})",
+                                label, interval_secs, planned.url
+                            )),
+                            Err(reason) => descs.push(format!(
+                                "{} (sondeo cada {}s; {})",
+                                label, interval_secs, reason
+                            )),
+                        }
                         armed += 1;
                         std::thread::spawn(move || {
                             let mut last_hash: Option<String> = None;
                             while sleep_check(interval_secs * 1000, &stop) {
-                                let outcome = match crate::application::graph_executor::declarative::poll_once(&config, desc) {
+                                let outcome = match poll_captured(&mapped, &config, desc) {
                                     Ok(o) => o,
                                     Err(e) => {
                                         // A single failed poll is normal (network

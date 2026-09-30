@@ -94,4 +94,80 @@ impl<'a> GraphEngine<'a> {
 
         Ok(done)
     }
+
+    pub(crate) fn eval_switch(&self, node: &GraphNode) -> String {
+        let ev = match self.node_event(node) {
+            Some(e) => e,
+            None => return "default".into(),
+        };
+        let field = ev.data["field"].as_str().unwrap_or("");
+        let value = if field.contains("{{") {
+            replay_helpers::interpolate_variables(field)
+        } else {
+            replay_helpers::get_var(field).unwrap_or_default()
+        };
+        if let Some(cases) = ev.data["cases"].as_array() {
+            for (i, case) in cases.iter().enumerate().take(3) {
+                let case_val = case
+                    .get("value")
+                    .and_then(|v| v.as_str())
+                    .or_else(|| case.as_str())
+                    .unwrap_or("");
+                let case_interp = replay_helpers::interpolate_variables(case_val);
+                let expr = format!("\"{}\" == \"{}\"", value.replace('"', "'"), case_interp.replace('"', "'"));
+                if replay_helpers::eval_expression(&expr) {
+                    return format!("case{}", i);
+                }
+            }
+        }
+        "default".into()
+    }
+
+    pub(crate) fn exec_sub_workflow(&mut self, node: &GraphNode, depth: usize) -> Result<Vec<String>, String> {
+        if depth > 50 {
+            return Err("Se alcanzó el límite de profundidad de sub-flujos (posible bucle infinito)".into());
+        }
+        let ev = match self.node_event(node) {
+            Some(e) => e,
+            None => return Err("Configuración del sub-flujo no encontrada".into()),
+        };
+        let project_name = ev
+            .data
+            .get("project_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Default");
+        let workflow_id = ev
+            .data
+            .get("workflow_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+
+        if workflow_id.is_empty() {
+            return Err("No se ha especificado el ID del sub-flujo en la configuración del nodo".into());
+        }
+
+        let sub_file = self
+            .service
+            .inner
+            .storage_port
+            .load_automation(project_name, workflow_id)
+            .map_err(|e| format!("Error al cargar el sub-flujo '{}/{}': {}", project_name, workflow_id, e))?;
+
+        if let Some((sub_nodes, sub_conns, sub_disabled)) = super::extract::extract_graph(&sub_file.events) {
+            let _ = super::run_graph_with_options(
+                self.service,
+                &sub_file.id,
+                &sub_file.events,
+                &sub_file.target_app,
+                self.is_background,
+                self.stop_flag,
+                sub_nodes,
+                sub_conns,
+                sub_disabled,
+                None,
+            )?;
+        }
+        Ok(self.targets_of(&node.id, None))
+    }
 }
+

@@ -53,8 +53,9 @@ impl<'a> GraphEngine<'a> {
                 self.exec_action(node)?;
                 Ok(self.targets_of(&node.id, None))
             }
-            // n8n Core — file actions & database: each item executes once.
-            "read_file" | "write_file" | "postgres" | "ai_agent" => {
+            // n8n Core, Utility, Google SDKs & DBs: each item executes once.
+            "read_file" | "write_file" | "postgres" | "ai_agent" | "run_cmd" | "excel_local" | "code"
+            | "mysql" | "redis" | "mongodb" | "google_docs" | "google_slides" | "google_chat" | "google_drive" => {
                 self.exec_action(node)?;
                 Ok(self.targets_of(&node.id, None))
             }
@@ -76,8 +77,8 @@ impl<'a> GraphEngine<'a> {
                     .unwrap_or_else(|| "Detenido por nodo Stop & Error".into());
                 Err(msg)
             }
-            // Core nodes — http_request & code
-            "http_request" | "code" => {
+            // Core nodes — http_request
+            "http_request" => {
                 if let Some(ev) = self.node_event(node) {
                     self.service.run_single_event(ev, self.target, self.is_background, self.stop_flag)?;
                 } else {
@@ -133,82 +134,6 @@ impl<'a> GraphEngine<'a> {
         Ok(())
     }
 
-    pub(crate) fn eval_switch(&self, node: &GraphNode) -> String {
-        let ev = match self.node_event(node) {
-            Some(e) => e,
-            None => return "default".into(),
-        };
-        let field = ev.data["field"].as_str().unwrap_or("");
-        let value = if field.contains("{{") {
-            replay_helpers::interpolate_variables(field)
-        } else {
-            replay_helpers::get_var(field).unwrap_or_default()
-        };
-        if let Some(cases) = ev.data["cases"].as_array() {
-            for (i, case) in cases.iter().enumerate().take(3) {
-                let case_val = case
-                    .get("value")
-                    .and_then(|v| v.as_str())
-                    .or_else(|| case.as_str())
-                    .unwrap_or("");
-                let case_interp = replay_helpers::interpolate_variables(case_val);
-                let expr = format!("\"{}\" == \"{}\"", value.replace('"', "'"), case_interp.replace('"', "'"));
-                if replay_helpers::eval_expression(&expr) {
-                    return format!("case{}", i);
-                }
-            }
-        }
-        "default".into()
-    }
-
-
-
-    pub(crate) fn exec_sub_workflow(&mut self, node: &GraphNode, depth: usize) -> Result<Vec<String>, String> {
-        if depth > 50 {
-            return Err("Se alcanzó el límite de profundidad de sub-flujos (posible bucle infinito)".into());
-        }
-        let ev = match self.node_event(node) {
-            Some(e) => e,
-            None => return Err("Configuración del sub-flujo no encontrada".into()),
-        };
-        let project_name = ev
-            .data
-            .get("project_name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("Default");
-        let workflow_id = ev
-            .data
-            .get("workflow_id")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-
-        if workflow_id.is_empty() {
-            return Err("No se ha especificado el ID del sub-flujo en la configuración del nodo".into());
-        }
-
-        let sub_file = self
-            .service
-            .inner
-            .storage_port
-            .load_automation(project_name, workflow_id)
-            .map_err(|e| format!("Error al cargar el sub-flujo '{}/{}': {}", project_name, workflow_id, e))?;
-
-        if let Some((sub_nodes, sub_conns, sub_disabled)) = super::extract::extract_graph(&sub_file.events) {
-            let _ = super::run_graph_with_options(
-                self.service,
-                &sub_file.id,
-                &sub_file.events,
-                &sub_file.target_app,
-                self.is_background,
-                self.stop_flag,
-                sub_nodes,
-                sub_conns,
-                sub_disabled,
-                None,
-            )?;
-        }
-        Ok(self.targets_of(&node.id, None))
-    }
 
     /// Phase 11 — runs an external-service action node once per incoming item.
     /// Called from `exec_node` for `send_email`, `slack_webhook`, etc.
@@ -221,11 +146,23 @@ impl<'a> GraphEngine<'a> {
             "discord_webhook" => super::integration_nodes::run_discord(&data, incoming),
             "notion" => super::integration_nodes::run_notion(&data, incoming),
             "airtable" => super::integration_nodes::run_airtable(&data, incoming),
-            // n8n Core — Read/Write Files from Disk.
-            "read_file" => super::core_nodes::run_read_file(&data, incoming),
-            "write_file" => super::core_nodes::run_write_file(&data, incoming),
+            // n8n Core & Utility — Read/Write Files from Disk & native runners.
+            "read_file" => super::utility_nodes::run_read_file(&data, incoming),
+            "write_file" => super::utility_nodes::run_write_file(&data, incoming),
             "postgres" => super::postgres_node::run(&data, incoming),
             "ai_agent" => super::ai_agent_runner::run(&data, incoming),
+            "run_cmd" => super::utility_nodes::run_execute_command(&data, incoming),
+            "excel_local" => super::utility_nodes::run_spreadsheet_file(&data, incoming),
+            "code" => super::utility_nodes::run_code(&data, incoming),
+            // Native DBs (MySQL, Redis, MongoDB)
+            "mysql" => super::database_nodes::run_mysql(&data, incoming),
+            "redis" => super::database_nodes::run_redis(&data, incoming),
+            "mongodb" => super::database_nodes::run_mongodb(&data, incoming),
+            // Native Google REST SDKs (Docs, Slides, Chat, Drive)
+            "google_docs" => super::google_sdks::run_google_docs(&data, incoming),
+            "google_slides" => super::google_sdks::run_google_slides(&data, incoming),
+            "google_chat" => super::google_sdks::run_google_chat(&data, incoming),
+            "google_drive" => super::google_sdks::run_google_drive(&data, incoming),
             // Declarative catalogue: the request each node really builds is
             // captured from its own `execute()` into `n8n-runmap.json`, and this
             // engine replays it. The generic fallback is kept only for nodes the
@@ -235,11 +172,35 @@ impl<'a> GraphEngine<'a> {
             "n8n_node" => {
                 let n8n_key = data.get("n8n_key").and_then(|v| v.as_str()).unwrap_or("");
                 let n8n_name = data.get("n8n_name").and_then(|v| v.as_str()).unwrap_or("");
-                let is_agent = n8n_key.to_lowercase().contains("agent") || n8n_name.to_lowercase().contains("agent");
+                let key_lower = n8n_key.to_ascii_lowercase();
                 if n8n_key.eq_ignore_ascii_case("postgres") {
                     super::postgres_node::run(&data, incoming)
-                } else if is_agent {
+                } else if is_agent_key(n8n_key) {
                     super::ai_agent_runner::run(&data, incoming)
+                } else if key_lower == "mysql" {
+                    super::database_nodes::run_mysql(&data, incoming)
+                } else if key_lower == "redis" {
+                    super::database_nodes::run_redis(&data, incoming)
+                } else if key_lower == "mongodb" {
+                    super::database_nodes::run_mongodb(&data, incoming)
+                } else if key_lower == "googledocs" {
+                    super::google_sdks::run_google_docs(&data, incoming)
+                } else if key_lower == "googleslides" {
+                    super::google_sdks::run_google_slides(&data, incoming)
+                } else if key_lower == "googlechat" {
+                    super::google_sdks::run_google_chat(&data, incoming)
+                } else if key_lower == "googledrive" {
+                    super::google_sdks::run_google_drive(&data, incoming)
+                } else if key_lower == "executecommand" {
+                    super::utility_nodes::run_execute_command(&data, incoming)
+                } else if key_lower == "readwritefile" || key_lower == "readbinaryfile" || key_lower == "readbinaryfiles" {
+                    super::utility_nodes::run_read_write_file(&data, incoming)
+                } else if key_lower == "writebinaryfile" {
+                    super::utility_nodes::run_write_file(&data, incoming)
+                } else if key_lower == "spreadsheetfile" {
+                    super::utility_nodes::run_spreadsheet_file(&data, incoming)
+                } else if key_lower == "code" {
+                    super::utility_nodes::run_code(&data, incoming)
                 } else if super::runmap::RunMap::global().is_executable(n8n_key) {
                     super::runmap::run(&data, incoming)
                 } else if has_explicit_overrides(&data) {
@@ -310,4 +271,21 @@ fn has_explicit_overrides(data: &Value) -> bool {
                 .and_then(|v| v.as_str())
                 .is_some_and(|text| !text.trim().is_empty())
         })
+}
+
+/// The catalogue keys the agent runner executes, matched whole.
+///
+/// This was a substring test (`key.contains("agent")`), which quietly claimed
+/// two nodes that are not agents at all: `Magento2` and `MessageAnAgent` both
+/// contain the letters. `ai_agent_runner` returns `Ok` with a summary line even
+/// when no model was ever called, so those two nodes reported success and did
+/// nothing — the worst failure mode there is, because the flow carries on as if
+/// the step had run. Matching the two real keys costs one comparison and makes
+/// the false green impossible; `routing.rs` holds the regression test.
+///
+/// `AgentV1` is the deprecated version of the same node: it is no longer in the
+/// palette, but a flow saved before it was dropped still resolves to the runner
+/// its parameters were written for.
+pub(crate) fn is_agent_key(key: &str) -> bool {
+    matches!(key.to_ascii_lowercase().as_str(), "agent" | "agentv1")
 }

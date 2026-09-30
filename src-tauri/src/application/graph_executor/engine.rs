@@ -112,6 +112,9 @@ pub const ITEM_AWARE_KINDS: &[&str] = &[
     "rename_keys",
     "markdown",
     "crypto",
+    // n8n Utility nodes: spreadsheet and code operate on the full item array.
+    "excel_local",
+    "code",
 ];
 
 /// Kind names the engine treats as data-transforming nodes: they consume the

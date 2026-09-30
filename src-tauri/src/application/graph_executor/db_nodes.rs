@@ -326,20 +326,24 @@ mod tests {
     use super::*;
     use serde_json::json;
 
+    static TEST_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
     /// Creates a throwaway database file and returns its absolute path.
     ///
-    /// Uses a nanosecond timestamp so every call is unique, even inside the
+    /// Uses an atomic counter and timestamp so every call is unique, even inside the
     /// same process. This prevents table-name collisions when multiple tests
     /// run in parallel.
     fn temp_db(name: &str) -> std::path::PathBuf {
+        let seq = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let stamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .map(|d| d.as_nanos())
             .unwrap_or(0);
         let dir = std::env::temp_dir().join(format!(
-            "grapscreen_sqlite_test_{}_{}_{}",
+            "grapscreen_sqlite_test_{}_{}_{}_{}",
             std::process::id(),
             stamp,
+            seq,
             name
         ));
         let _ = std::fs::remove_dir_all(&dir);
@@ -351,7 +355,7 @@ mod tests {
         let db = temp_db("setup");
         let conn = Connection::open(&db).unwrap();
         conn.execute_batch(
-            "CREATE TABLE personas (id INTEGER PRIMARY KEY, nombre TEXT, edad INTEGER);
+            "CREATE TABLE IF NOT EXISTS personas (id INTEGER PRIMARY KEY, nombre TEXT, edad INTEGER);
              INSERT INTO personas (nombre, edad) VALUES ('ana', 30), ('luis', 25);",
         )
         .unwrap();
