@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronLeft, Pencil, Play, History, Gauge, Zap, Check, Loader2, MoreVertical, Download, Trash2, Video } from "lucide-react";
+import { ChevronLeft, Pencil, Play, History, Gauge, Zap, Check, Loader2, MoreVertical, Download, Trash2, Video, Upload } from "lucide-react";
 
 export type EditorTab = "editor" | "executions" | "evaluations" | "triggers";
 
@@ -34,6 +34,7 @@ interface EditorTopBarProps {
   onToggleMenu?: (e: React.MouseEvent) => void;
   onRebuild?: () => void;
   onExport?: () => void;
+  onImportN8n?: () => void;
   onDelete?: () => void;
 }
 
@@ -69,6 +70,7 @@ export function EditorTopBar({
   onToggleMenu,
   onRebuild,
   onExport,
+  onImportN8n,
   onDelete,
 }: EditorTopBarProps) {
   return (
@@ -116,6 +118,16 @@ export function EditorTopBar({
 
       {/* Right: actions */}
       <div className="ftb-right">
+        {onImportN8n && (
+          <button
+            type="button"
+            className="ftb-btn ghost"
+            onClick={onImportN8n}
+            title="Importar automatización desde archivo JSON exportado de n8n"
+          >
+            <Upload size={12} /> Importar flujo n8n (.json)
+          </button>
+        )}
         {onToggleTrigger && (
           <button
             type="button"
@@ -151,6 +163,11 @@ export function EditorTopBar({
             "Sin guardar"
           )}
         </span>
+        {onImportN8n && (
+          <button type="button" className="ftb-btn ghost" onClick={onImportN8n} title="Importar flujo n8n (.json)">
+            <Upload size={12} /> Importar n8n
+          </button>
+        )}
         <button type="button" className="ftb-btn ghost" onClick={onSave} title="Guardar cambios">
           Guardar
         </button>
@@ -187,6 +204,11 @@ export function EditorTopBar({
                 <button type="button" role="menuitem" onClick={onRename}>
                   <Pencil size={12} /> Renombrar
                 </button>
+                {onImportN8n && (
+                  <button type="button" role="menuitem" onClick={onImportN8n}>
+                    <Upload size={12} /> Importar flujo n8n (.json)
+                  </button>
+                )}
                 {onExport && (
                   <button type="button" role="menuitem" onClick={onExport}>
                     <Download size={12} /> Exportar flujo…

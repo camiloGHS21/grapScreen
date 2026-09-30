@@ -10,6 +10,8 @@ import { ExportAutomationModal } from "../modals/ExportAutomationModal";
 import { formatDuration } from "../../utils/format";
 import { invoke } from "@tauri-apps/api/core";
 import { buildNodes } from "../flowchart/buildNodes";
+import { useN8nImporter } from "../flowchart/hooks/useN8nImporter";
+import { CanvasDropZone } from "../flowchart/components/CanvasDropZone";
 interface AutomationStageViewProps {
   projs: any;
   auts: any;
@@ -74,6 +76,10 @@ export function AutomationStageView({
   // n8n "Active" switch: this automation fires on its own triggers.
   const [triggerActive, setTriggerActive] = React.useState(false);
   const [triggerBusy, setTriggerBusy] = React.useState(false);
+  const n8n = useN8nImporter({
+    onSaveEvents: auts.saveEvents,
+    notify,
+  });
 
   React.useEffect(() => {
     setTab("editor");
@@ -182,48 +188,59 @@ export function AutomationStageView({
         }}
         onRebuild={() => { setMenu(null); rec.setRecordingNameOpen(true); }}
         onExport={() => { setMenu(null); setExportOpen(true); }}
+        onImportN8n={n8n.triggerFilePicker}
         onDelete={() => { setMenu(null); auts.removeAut(auts.selectedAutomation); }}
       />
 
+      <input
+        type="file"
+        ref={n8n.fileInputRef}
+        onChange={n8n.handleFileSelected}
+        accept=".json,application/json"
+        style={{ display: "none" }}
+      />
+
       <div className="aut-flow" style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
-        {tab === "editor" && (
-          <Flowchart
-            events={auts.selectedProjectDetail?.events || []}
-            onNodeClick={flow.handleNodeClick}
-            activeStep={exec.progressIndex}
-            activeNodeId={exec.progressNodeId}
-            nodeStatuses={exec.nodeStatuses}
-            onAddStep={flow.addStep}
-            onAddStepChain={flow.addStepChain}
-            onReorder={flow.reorder}
-            target_app={auts.selectedProjectDetail?.target_app ?? null}
-            onSaveEvents={auts.saveEvents}
-            onExecuteUntil={handleExecuteUntil}
-            executing={exec.executing}
-            onExecute={handleRunFlow}
-            onStopExecute={exec.stopExecute}
-            bgMode={exec.bgMode}
-            onToggleBgMode={() => exec.setBgMode(!exec.bgMode)}
-            onOpenHistory={() => setHistoryOpen(true)}
-            onDeleteTargetApp={async () => {
-              if (!projs.selectedProject || !auts.selectedAutomation) return;
-              try {
-                await invoke("save_automation_target_app", {
-                  projectName: projs.selectedProject.name,
-                  id: auts.selectedAutomation.id,
-                  targetApp: null
-                });
-                await auts.loadProjectDetail(projs.selectedProject.name, auts.selectedAutomation.id);
-                await projs.refresh();
-              } catch (e) {
-                console.error(e);
-              }
-            }}
-            aiProps={ai}
-            projectName={projs.selectedProject?.name}
-            automationId={auts.selectedAutomation?.id}
-          />
-        )}
+        <CanvasDropZone onDropFile={n8n.handleFileDrop} disabled={tab !== "editor"}>
+          {tab === "editor" && (
+            <Flowchart
+              events={auts.selectedProjectDetail?.events || []}
+              onNodeClick={flow.handleNodeClick}
+              activeStep={exec.progressIndex}
+              activeNodeId={exec.progressNodeId}
+              nodeStatuses={exec.nodeStatuses}
+              onAddStep={flow.addStep}
+              onAddStepChain={flow.addStepChain}
+              onReorder={flow.reorder}
+              target_app={auts.selectedProjectDetail?.target_app ?? null}
+              onSaveEvents={auts.saveEvents}
+              onExecuteUntil={handleExecuteUntil}
+              executing={exec.executing}
+              onExecute={handleRunFlow}
+              onStopExecute={exec.stopExecute}
+              bgMode={exec.bgMode}
+              onToggleBgMode={() => exec.setBgMode(!exec.bgMode)}
+              onOpenHistory={() => setHistoryOpen(true)}
+              onDeleteTargetApp={async () => {
+                if (!projs.selectedProject || !auts.selectedAutomation) return;
+                try {
+                  await invoke("save_automation_target_app", {
+                    projectName: projs.selectedProject.name,
+                    id: auts.selectedAutomation.id,
+                    targetApp: null
+                  });
+                  await auts.loadProjectDetail(projs.selectedProject.name, auts.selectedAutomation.id);
+                  await projs.refresh();
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+              aiProps={ai}
+              projectName={projs.selectedProject?.name}
+              automationId={auts.selectedAutomation?.id}
+            />
+          )}
+        </CanvasDropZone>
 
         {tab === "executions" && (
           <ExecutionsView automationId={auts.selectedAutomation?.id || ""} notify={notify} />

@@ -11,11 +11,12 @@
     "bundle": "tauri build",
     "extract:n8n": "node scripts/n8n-extract-descriptors.mjs",
     "extract:credentials": "node scripts/extract-credentials.mjs && node scripts/extract-credential-types.mjs",
-    "capture:runmap": "node scripts/n8n-runmap-capture.mjs && node scripts/n8n-runmap-report.mjs",
+    "capture:runmap": "node scripts/n8n-runmap-capture.mjs && node scripts/n8n-runmap-capture.mjs --triggers && node scripts/n8n-runmap-report.mjs",
     "repair:params": "node scripts/n8n-params-repair.mjs",
     "verify:credentials": "node scripts/n8n-credential-audit.mjs --check",
     "verify:templates": "node scripts/verify-templates.mjs",
-    "verify:templates-ui": "node scripts/verify-template-ui.mjs"
+    "verify:templates-ui": "node scripts/verify-template-ui.mjs",
+    "verify:importer": "node scripts/verify-n8n-importer.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.5.0",
