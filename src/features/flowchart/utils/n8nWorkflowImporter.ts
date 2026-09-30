@@ -83,6 +83,20 @@ function translateSingleNode(
     __manual: true,
   };
 
+  const opts = (params.options || {}) as Record<string, unknown>;
+  if (node.continueOnFail || node.onError === "continueRegularOutput" || node.onError === "continueErrorOutput" || opts.continueOnFail) {
+    eventData.continueOnFail = true;
+  }
+  if (node.retryOnFail || opts.retryOnFail) {
+    eventData.retryOnFail = true;
+  }
+  const maxTries = Number(node.maxTries || opts.maxTries || 1);
+  if (maxTries > 1) eventData.maxTries = maxTries;
+  const waitBetweenTries = Number(node.waitBetweenTries || opts.waitBetweenTries || 1000);
+  if (waitBetweenTries !== 1000) eventData.waitBetweenTries = waitBetweenTries;
+  if (node.alwaysOutputData || opts.alwaysOutputData) eventData.alwaysOutputData = true;
+  if (node.executeOnce || opts.executeOnce) eventData.executeOnce = true;
+
   if (node.credentials && typeof node.credentials === "object") {
     eventData.credentials = node.credentials;
     const credEntries = Object.entries(node.credentials);

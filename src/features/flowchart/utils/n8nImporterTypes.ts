@@ -9,6 +9,13 @@ export interface N8nWorkflowNode {
   disabled?: boolean;
   notes?: string;
   notesInFlow?: boolean;
+  continueOnFail?: boolean;
+  retryOnFail?: boolean;
+  maxTries?: number;
+  waitBetweenTries?: number;
+  alwaysOutputData?: boolean;
+  executeOnce?: boolean;
+  onError?: string;
 }
 
 export interface N8nConnectionItem {

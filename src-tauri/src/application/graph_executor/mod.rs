@@ -21,6 +21,7 @@ pub mod aws;
 pub mod utility_nodes;
 pub mod google_sdks;
 pub mod database_nodes;
+pub mod node_options;
 
 #[cfg(test)]
 pub mod testkit;
@@ -30,6 +31,8 @@ mod engine_tests;
 mod utility_nodes_tests;
 #[cfg(test)]
 mod database_nodes_tests;
+#[cfg(test)]
+mod node_options_tests;
 
 pub use engine::GraphEngine;
 pub use extract::{extract_graph, GraphConnection, GraphNode};

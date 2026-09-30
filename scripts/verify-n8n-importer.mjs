@@ -272,7 +272,48 @@ async function runTests() {
   assert(exported.connections["Fetch API"].main[0][0].node === "Send to Slack", "Exported connection Fetch API -> Slack mismatch");
   console.log("PASS: Test 9 passed.");
 
-  console.log("\nALL 9 TEST SUITES (IMPORT & EXPORT) PASSED SUCCESSFULLY!");
+  console.log("Running Test 10: Node Resilience & Lifecycle Options (continueOnFail, retryOnFail, alwaysOutputData)");
+  const resilienceWf = {
+    name: "Resilient Flow",
+    nodes: [
+      {
+        id: "res-1",
+        name: "Unreliable API",
+        type: "n8n-nodes-base.httpRequest",
+        continueOnFail: true,
+        retryOnFail: true,
+        maxTries: 3,
+        waitBetweenTries: 250,
+        alwaysOutputData: true,
+        executeOnce: true,
+        parameters: { url: "https://api.example.com/unreliable" },
+      },
+    ],
+    connections: {},
+  };
+  const res10 = importN8nWorkflow(resilienceWf);
+  assert(res10.summary.nodeCount === 1, "Res10 node count mismatch");
+  const ev10 = res10.events.find(e => e.data.custom_name === "Unreliable API");
+  assert(ev10, "Res10 event missing");
+  assert(ev10.data.continueOnFail === true, "continueOnFail mapping failed");
+  assert(ev10.data.retryOnFail === true, "retryOnFail mapping failed");
+  assert(ev10.data.maxTries === 3, "maxTries mapping failed");
+  assert(ev10.data.waitBetweenTries === 250, "waitBetweenTries mapping failed");
+  assert(ev10.data.alwaysOutputData === true, "alwaysOutputData mapping failed");
+  assert(ev10.data.executeOnce === true, "executeOnce mapping failed");
+
+  // Round-trip export test
+  const exported10 = exportN8nWorkflow("Exported Resilient", res10.events);
+  const expNode = exported10.nodes[0];
+  assert(expNode.continueOnFail === true, "Export continueOnFail missing");
+  assert(expNode.retryOnFail === true, "Export retryOnFail missing");
+  assert(expNode.maxTries === 3, "Export maxTries missing");
+  assert(expNode.waitBetweenTries === 250, "Export waitBetweenTries missing");
+  assert(expNode.alwaysOutputData === true, "Export alwaysOutputData missing");
+  assert(expNode.executeOnce === true, "Export executeOnce missing");
+  console.log("PASS: Test 10 passed.");
+
+  console.log("\nALL 10 TEST SUITES (IMPORT, EXPORT & NODE OPTIONS) PASSED SUCCESSFULLY!");
 }
 
 runTests().catch((err) => {

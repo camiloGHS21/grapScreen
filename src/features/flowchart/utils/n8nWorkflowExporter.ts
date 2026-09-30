@@ -211,6 +211,13 @@ export function exportN8nWorkflow(workflowName: string, events: RecordedEvent[])
       };
     }
 
+    if (d.continueOnFail) node.continueOnFail = true;
+    if (d.retryOnFail) node.retryOnFail = true;
+    if (d.maxTries) node.maxTries = Number(d.maxTries);
+    if (d.waitBetweenTries) node.waitBetweenTries = Number(d.waitBetweenTries);
+    if (d.alwaysOutputData) node.alwaysOutputData = true;
+    if (d.executeOnce) node.executeOnce = true;
+
     nodes.push(node);
     idx++;
   }
