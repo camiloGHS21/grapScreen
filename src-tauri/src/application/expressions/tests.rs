@@ -219,3 +219,33 @@ fn credentials_token() {
     };
     assert_eq!(render_string("Bearer {{ $credentials.api_key }}", &ctx), "Bearer sk-secret-key");
 }
+
+#[test]
+fn test_input_and_env_expressions() {
+    std::env::set_var("GRAP_TEST_ENV", "production_mode");
+    let items = vec![
+        json!({ "json": { "title": "FirstItem" } }),
+        json!({ "json": { "title": "SecondItem" } }),
+    ];
+    let nodes = HashMap::new();
+    let mut vars = HashMap::new();
+    vars.insert("threshold".to_string(), "95".to_string());
+    let ctx = ExprContext {
+        items: &items,
+        item_index: 1,
+        run_index: 0,
+        node_outputs: &nodes,
+        variables: &vars,
+        execution_id: "exec_123",
+        credentials: None,
+    };
+
+    assert_eq!(render("{{ $input.item.json.title }}", &ctx), json!("SecondItem"));
+    assert_eq!(render("{{ $input.first().json.title }}", &ctx), json!("FirstItem"));
+    assert_eq!(render("{{ $input.last().json.title }}", &ctx), json!("SecondItem"));
+    assert_eq!(render("{{ $input.all().map(i => i.json.title).join(' | ') }}", &ctx), json!("FirstItem | SecondItem"));
+    assert_eq!(render("{{ $env.GRAP_TEST_ENV }}", &ctx), json!("production_mode"));
+    assert_eq!(render("{{ $parameter.threshold }}", &ctx), json!("95"));
+    assert_eq!(render("{{ $workflow.id }}", &ctx), json!("exec_123"));
+}
+

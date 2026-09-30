@@ -12,6 +12,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { buildNodes } from "../flowchart/buildNodes";
 import { useN8nImporter } from "../flowchart/hooks/useN8nImporter";
 import { CanvasDropZone } from "../flowchart/components/CanvasDropZone";
+import { downloadN8nWorkflow } from "../flowchart/utils/n8nWorkflowExporter";
 interface AutomationStageViewProps {
   projs: any;
   auts: any;
@@ -46,26 +47,26 @@ export function AutomationStageView({
   /** n8n "Execute previous nodes": run the flow stopping after this node. */
   const handleExecuteUntil = (nodeId: string) => {
     if (!projs.selectedProject || !auts.selectedAutomation) return;
-    invoke("execute_automation_until", {
-      projectName: projs.selectedProject.name,
-      id: auts.selectedAutomation.id,
-      nodeId,
-    }).then(() => {
-      notify("Ejecutando hasta el nodo seleccionado…");
-    }).catch((e) => notify(String(e)));
+    invoke("execute_automation_until", { projectName: projs.selectedProject.name, id: auts.selectedAutomation.id, nodeId })
+      .then(() => notify("Ejecutando hasta el nodo seleccionado…"))
+      .catch((e) => notify(String(e)));
   };
 
   const handleRunSingleNode = (nodeId: string) => {
     const pName = projs.selectedProject?.name;
     const aId = auts.selectedAutomation?.id;
     if (!pName || !aId) return;
-    invoke("run_single_node", {
-      projectName: pName,
-      automationId: aId,
-      nodeId,
-    }).then(() => {
-      notify("Ejecutando hasta el nodo seleccionado…");
-    }).catch((e) => notify(String(e)));
+    invoke("run_single_node", { projectName: pName, automationId: aId, nodeId })
+      .then(() => notify("Ejecutando hasta el nodo seleccionado…"))
+      .catch((e) => notify(String(e)));
+  };
+
+  const handleExportN8n = () => {
+    setMenu(null);
+    const events = auts.selectedProjectDetail?.events || [];
+    const name = auts.selectedAutomation?.name || "flujo";
+    downloadN8nWorkflow(name, events);
+    notify("Flujo exportado en formato n8n (.json)");
   };
 
   const [historyOpen, setHistoryOpen] = React.useState(false);
@@ -189,6 +190,7 @@ export function AutomationStageView({
         onRebuild={() => { setMenu(null); rec.setRecordingNameOpen(true); }}
         onExport={() => { setMenu(null); setExportOpen(true); }}
         onImportN8n={n8n.triggerFilePicker}
+        onExportN8n={handleExportN8n}
         onDelete={() => { setMenu(null); auts.removeAut(auts.selectedAutomation); }}
       />
 

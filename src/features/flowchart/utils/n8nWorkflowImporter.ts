@@ -51,6 +51,8 @@ function resolveCoreNodeKind(typeStem: string): string | null {
     mysql: "mysql",
     redis: "redis",
     mongodb: "mongodb",
+    postgres: "postgres",
+    httprequest: "http_request",
     // Native n8n Google SDKs
     googledocs: "google_docs",
     googleslides: "google_slides",
@@ -75,6 +77,7 @@ function translateSingleNode(
   let kind = "n8n_node";
   let eventData: Record<string, unknown> = {
     id: dataId,
+    n8n_id: node.id,
     custom_name: node.name,
     n8n_config: params,
     __manual: true,

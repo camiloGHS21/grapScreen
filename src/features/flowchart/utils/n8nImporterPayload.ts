@@ -58,6 +58,14 @@ export function populateCoreNodeData(
       out.description = nodeName || "Merge";
       out.mode = String(params.mode || "append");
       break;
+    case "http_request":
+      out.description = nodeName || "HTTP Request";
+      out.method = String(params.method || params.httpMethod || "GET").toUpperCase();
+      out.url = String(params.url || params.uri || "");
+      out.headers = typeof params.headers === "object" ? JSON.stringify(params.headers) : String(params.headers || "{}");
+      out.body = typeof params.body === "object" ? JSON.stringify(params.body) : String(params.body || "");
+      out.output_var = String(params.output_var || "http_response");
+      break;
     case "wait":
       out.description = nodeName || "Esperar";
       out.seconds = calculateWaitSeconds(params);

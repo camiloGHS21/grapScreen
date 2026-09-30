@@ -21,10 +21,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const relative = (p) => `./${p.split("\\").join("/")}`;
 
-async function loadImporter() {
+async function loadModules() {
   const result = await build({
     stdin: {
-      contents: `export { importN8nWorkflow } from ${JSON.stringify(relative("src/features/flowchart/utils/n8nWorkflowImporter.ts"))};`,
+      contents: `
+        export { importN8nWorkflow } from ${JSON.stringify(relative("src/features/flowchart/utils/n8nWorkflowImporter.ts"))};
+        export { exportN8nWorkflow } from ${JSON.stringify(relative("src/features/flowchart/utils/n8nWorkflowExporter.ts"))};
+      `,
       resolveDir: ROOT,
       sourcefile: "importer-test-entry.ts",
       loader: "ts",
@@ -49,8 +52,8 @@ function assert(condition, message) {
 }
 
 async function runTests() {
-  console.log("Loading n8n workflow importer module...");
-  const { importN8nWorkflow } = await loadImporter();
+  console.log("Loading n8n workflow importer & exporter modules...");
+  const { importN8nWorkflow, exportN8nWorkflow } = await loadModules();
 
   console.log("Running Test 1: Linear Workflow (Schedule Trigger -> HTTP Request -> Slack)");
   const linearWorkflow = {
@@ -257,7 +260,19 @@ async function runTests() {
   assert(driveEv && driveEv.kind === "google_drive" && driveEv.data.query.includes("report"), "GoogleDrive mapping failed");
   console.log("PASS: Test 8 passed.");
 
-  console.log("\nALL 8 TEST SUITES PASSED SUCCESSFULLY!");
+  console.log("Running Test 9: Bi-directional Round-trip Export (grapScreen events -> n8n Workflow JSON)");
+  const exported = exportN8nWorkflow("RoundTrip Sync", res1.events);
+  assert(exported && exported.name === "RoundTrip Sync", "Exported workflow name mismatch");
+  assert(exported.nodes.length === 3, "Exported workflow nodes length mismatch");
+  assert(exported.nodes.some(n => n.name === "Schedule" && n.type === "n8n-nodes-base.scheduleTrigger"), "Exported Schedule node missing");
+  assert(exported.nodes.some(n => n.name === "Fetch API" && n.type === "n8n-nodes-base.httpRequest"), "Exported HTTP Request node missing");
+  assert(exported.nodes.some(n => n.name === "Send to Slack" && n.type === "n8n-nodes-base.slack"), "Exported Slack node missing");
+  assert(exported.connections && exported.connections["Schedule"] && exported.connections["Schedule"].main, "Exported connections missing");
+  assert(exported.connections["Schedule"].main[0][0].node === "Fetch API", "Exported connection Schedule -> Fetch API mismatch");
+  assert(exported.connections["Fetch API"].main[0][0].node === "Send to Slack", "Exported connection Fetch API -> Slack mismatch");
+  console.log("PASS: Test 9 passed.");
+
+  console.log("\nALL 9 TEST SUITES (IMPORT & EXPORT) PASSED SUCCESSFULLY!");
 }
 
 runTests().catch((err) => {

@@ -62,6 +62,57 @@ pub fn resolve_dollar(token: &str, ctx: &ExprContext) -> Option<Value> {
         return ctx.variables.get(rest).map(|v| Value::String(v.clone()));
     }
 
+    // ── $input... (n8n v1+ input references) ──
+    if token == "$input" {
+        return Some(Value::Array(ctx.items.to_vec()));
+    }
+    if let Some(rest) = token.strip_prefix("$input") {
+        if rest == ".all()" || rest == ".all" {
+            return Some(Value::Array(ctx.items.to_vec()));
+        }
+        if let Some(tail) = rest.strip_prefix(".first()") {
+            let first = ctx.items.first().cloned().unwrap_or(Value::Null);
+            return Some(resolve_item_tail(&first, tail));
+        }
+        if let Some(tail) = rest.strip_prefix(".last()") {
+            let last = ctx.items.last().cloned().unwrap_or(Value::Null);
+            return Some(resolve_item_tail(&last, tail));
+        }
+        if let Some(tail) = rest.strip_prefix(".item") {
+            let item = ctx.current_item().cloned().unwrap_or(Value::Null);
+            return Some(resolve_item_tail(&item, tail));
+        }
+        if let Some(tail) = rest.strip_prefix(".params") {
+            let p_name = tail.trim_start_matches('.');
+            return ctx.variables.get(p_name).map(|v| Value::String(v.clone()));
+        }
+        let item = ctx.current_item().cloned().unwrap_or(Value::Null);
+        return Some(resolve_item_tail(&item, rest));
+    }
+
+    // ── $env.VAR or $env["VAR"] ──
+    if let Some(rest) = token.strip_prefix("$env") {
+        let name = rest.trim_start_matches('.').trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'');
+        if !name.is_empty() {
+            return Some(std::env::var(name).map(Value::String).unwrap_or(Value::Null));
+        }
+    }
+
+    // ── $parameter.VAR or $parameter["VAR"] ──
+    if let Some(rest) = token.strip_prefix("$parameter") {
+        let name = rest.trim_start_matches('.').trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'');
+        if let Some(v) = ctx.variables.get(name) {
+            return Some(Value::String(v.clone()));
+        }
+    }
+
+    // ── $workflow.id / $workflow.name ──
+    if let Some(rest) = token.strip_prefix("$workflow.") {
+        if rest == "id" || rest == "name" {
+            return Some(Value::String(ctx.execution_id.to_string()));
+        }
+    }
+
     None
 }
 

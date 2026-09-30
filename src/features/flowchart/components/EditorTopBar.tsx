@@ -35,6 +35,7 @@ interface EditorTopBarProps {
   onRebuild?: () => void;
   onExport?: () => void;
   onImportN8n?: () => void;
+  onExportN8n?: () => void;
   onDelete?: () => void;
 }
 
@@ -71,6 +72,7 @@ export function EditorTopBar({
   onRebuild,
   onExport,
   onImportN8n,
+  onExportN8n,
   onDelete,
 }: EditorTopBarProps) {
   return (
@@ -211,7 +213,12 @@ export function EditorTopBar({
                 )}
                 {onExport && (
                   <button type="button" role="menuitem" onClick={onExport}>
-                    <Download size={12} /> Exportar flujo…
+                    <Download size={12} /> Exportar ejecutable…
+                  </button>
+                )}
+                {onExportN8n && (
+                  <button type="button" role="menuitem" onClick={onExportN8n}>
+                    <Download size={12} /> Exportar flujo n8n (.json)
                   </button>
                 )}
                 {onDelete && (
