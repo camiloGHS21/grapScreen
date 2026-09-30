@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { NODE_COLORS } from "../../../Flowchart";
-import { n8nCategoryLabel, type CatalogItem } from "../utils/nodeCatalog";
+import { itemIdentity, n8nCategoryLabel, type CatalogItem } from "../utils/nodeCatalog";
 
-export const itemIdentity = (item: CatalogItem) => item.n8nKey ?? item.type;
+// Re-exported so the panels that key their lists by identity keep importing it
+// from the item they render; the definition lives with `CatalogItem`.
+export { itemIdentity };
 
 interface PanelItemProps {
   item: CatalogItem;
@@ -78,6 +80,16 @@ export function PanelItem({ item, onPick, showCategory }: PanelItemProps) {
           )}
         </span>
         <span className="fsp-item-desc">{item.desc}</span>
+        {/* The reason a blocked node is blocked, written out in full.
+            It used to live only in the `title` of a disabled button — the one
+            element that never receives the pointer — and the description it was
+            folded into is clipped with an ellipsis, so the half of the sentence
+            that says *why* was the half that got cut. */}
+        {item.comingSoon && (
+          <span className="fsp-item-reason">
+            {item.comingSoonReason || "este motor no puede ejecutar este nodo"}
+          </span>
+        )}
       </span>
       {!item.comingSoon && <Plus size={15} className="fsp-plus" />}
     </button>

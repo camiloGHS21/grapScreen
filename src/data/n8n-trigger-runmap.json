@@ -1,0 +1,922 @@
+{
+ "generatedBy": "scripts/n8n-runmap-capture.mjs",
+ "source": {
+  "repo": "n8n-io/n8n",
+  "sha": "4169b55bf3b3e6c255d7361642bc5243bd04345a"
+ },
+ "nodes": {
+  "ActiveCampaignTrigger": {
+   "status": "no-poll"
+  },
+  "AcuitySchedulingTrigger": {
+   "status": "no-poll"
+  },
+  "AffinityTrigger": {
+   "status": "no-poll"
+  },
+  "AirtableTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "fields",
+      "this",
+      "viewId"
+     ],
+     "requests": [
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "airtableApi",
+       "path": "https://api.airtable.com/v0/{{$parameter.this}}/{{$parameter.this}}",
+       "qs": {
+        "view": "{{$parameter.viewId}}",
+        "fields[]": [
+         "{{$parameter.fields}}"
+        ],
+        "maxRecords": 1,
+        "pageSize": 100,
+        "offset": {}
+       }
+      },
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "airtableApi",
+       "path": "https://api.airtable.com/v0/{{$parameter.this}}/{{$parameter.this}}",
+       "qs": {
+        "view": "{{$parameter.viewId}}",
+        "fields[]": [
+         "{{$parameter.fields}}"
+        ],
+        "maxRecords": 1,
+        "pageSize": 100,
+        "offset": {}
+       }
+      },
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "airtableApi",
+       "path": "https://api.airtable.com/v0/{{$parameter.this}}/{{$parameter.this}}",
+       "qs": {
+        "view": "{{$parameter.viewId}}",
+        "fields[]": [
+         "{{$parameter.fields}}"
+        ],
+        "maxRecords": 1,
+        "pageSize": 100,
+        "offset": {}
+       }
+      },
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "airtableApi",
+       "path": "https://api.airtable.com/v0/{{$parameter.this}}/{{$parameter.this}}",
+       "qs": {
+        "view": "{{$parameter.viewId}}",
+        "fields[]": [
+         "{{$parameter.fields}}"
+        ],
+        "maxRecords": 1,
+        "pageSize": 100,
+        "offset": {}
+       }
+      },
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "airtableApi",
+       "path": "https://api.airtable.com/v0/{{$parameter.this}}/{{$parameter.this}}",
+       "qs": {
+        "view": "{{$parameter.viewId}}",
+        "fields[]": [
+         "{{$parameter.fields}}"
+        ],
+        "maxRecords": 1,
+        "pageSize": 100,
+        "offset": {}
+       }
+      },
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "airtableApi",
+       "path": "https://api.airtable.com/v0/{{$parameter.this}}/{{$parameter.this}}",
+       "qs": {
+        "view": "{{$parameter.viewId}}",
+        "fields[]": [
+         "{{$parameter.fields}}"
+        ],
+        "maxRecords": 1,
+        "pageSize": 100,
+        "offset": {}
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "AmqpTrigger": {
+   "status": "no-poll"
+  },
+  "AsanaTrigger": {
+   "status": "no-poll"
+  },
+  "AutopilotTrigger": {
+   "status": "no-poll"
+  },
+  "AwsSnsTrigger": {
+   "status": "no-poll"
+  },
+  "BitbucketTrigger": {
+   "status": "no-poll"
+  },
+  "BoxTrigger": {
+   "status": "no-poll"
+  },
+  "BrevoTrigger": {
+   "status": "no-poll"
+  },
+  "CalTrigger": {
+   "status": "no-poll"
+  },
+  "CalendlyTrigger": {
+   "status": "no-poll"
+  },
+  "ChargebeeTrigger": {
+   "status": "no-poll"
+  },
+  "ChatTrigger": {
+   "status": "no-poll"
+  },
+  "ClickUpTrigger": {
+   "status": "no-poll"
+  },
+  "ClockifyTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "workspaceId"
+     ],
+     "requests": [
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "clockifyApi",
+       "path": "https://api.clockify.me/api/v1/workspaces/{{$parameter.workspaceId}}/user//time-entries",
+       "qs": {
+        "start": {},
+        "end": "2026-01-01T00:00:00Z",
+        "hydrated": true,
+        "in-progress": false
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       },
+       "body": {}
+      }
+     ]
+    }
+   ]
+  },
+  "ConvertKitTrigger": {
+   "status": "no-poll"
+  },
+  "CopperTrigger": {
+   "status": "no-poll"
+  },
+  "Cron": {
+   "status": "no-poll"
+  },
+  "CurrentsTrigger": {
+   "status": "no-poll"
+  },
+  "CustomerIoTrigger": {
+   "status": "no-poll"
+  },
+  "E2eTestPollingTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "url"
+     ],
+     "requests": [
+      {
+       "kind": "httpRequest",
+       "method": "GET",
+       "path": "{{$parameter.url}}"
+      }
+     ]
+    }
+   ]
+  },
+  "EmailReadImap": {
+   "status": "no-poll"
+  },
+  "EmeliaTrigger": {
+   "status": "no-poll"
+  },
+  "ErrorTrigger": {
+   "status": "no-poll"
+  },
+  "EventbriteTrigger": {
+   "status": "no-poll"
+  },
+  "ExecuteWorkflowTrigger": {
+   "status": "no-poll"
+  },
+  "FacebookLeadAdsTrigger": {
+   "status": "no-poll"
+  },
+  "FacebookTrigger": {
+   "status": "no-poll"
+  },
+  "FigmaTrigger": {
+   "status": "no-poll"
+  },
+  "FlowTrigger": {
+   "status": "no-poll"
+  },
+  "FormIoTrigger": {
+   "status": "no-poll"
+  },
+  "FormstackTrigger": {
+   "status": "no-poll"
+  },
+  "GetResponseTrigger": {
+   "status": "no-poll"
+  },
+  "GithubTrigger": {
+   "status": "no-poll"
+  },
+  "GitlabTrigger": {
+   "status": "no-poll"
+  },
+  "GmailTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "dataPropertyAttachmentsPrefixName",
+      "q",
+      "sender"
+     ],
+     "requests": [
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "gmailOAuth2",
+       "path": "https://www.googleapis.com/gmail/v1/users/me/messages",
+       "qs": {
+        "maxResults": 1,
+        "includeSpamTrash": false,
+        "includeDrafts": false,
+        "labelIds": [],
+        "q": "{{$parameter.q}} from:{{$parameter.sender}} is:unread",
+        "dataPropertyAttachmentsPrefixName": "{{$parameter.dataPropertyAttachmentsPrefixName}}",
+        "downloadAttachments": false
+       },
+       "headers": {
+        "Accept": "application/json",
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "GoogleBusinessProfileTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "account",
+      "location"
+     ],
+     "requests": [
+      {
+       "kind": "httpRequestWithAuthentication",
+       "method": "GET",
+       "credentialType": "googleBusinessProfileOAuth2Api",
+       "path": "https://mybusiness.googleapis.com/v4/{{$parameter.account}}/{{$parameter.location}}/reviews",
+       "qs": {
+        "pageSize": 1
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "GoogleCalendarTrigger": {
+   "status": "ok",
+   "error": "[object Object]",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "this"
+     ],
+     "requests": [
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "googleCalendarOAuth2Api",
+       "path": "https://www.googleapis.com/calendar/v3/calendars/{{$parameter.this}}/events",
+       "qs": {
+        "showDeleted": true,
+        "q": [],
+        "orderBy": "updated",
+        "maxResults": 1
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "GoogleDriveTrigger": {
+   "status": "ok",
+   "error": "[object Object]",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [],
+     "requests": [
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "googleDriveOAuth2Api",
+       "path": "https://www.googleapis.com/drive/v3/files",
+       "qs": {
+        "includeItemsFromAllDrives": true,
+        "supportsAllDrives": true,
+        "spaces": "appDataFolder, drive",
+        "corpora": "allDrives",
+        "q": "trashed = false AND mimeType != 'application/vnd.google-apps.folder'",
+        "fields": "nextPageToken, files(*)",
+        "pageSize": 1
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "GoogleSheetsTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "this"
+     ],
+     "requests": [
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "googleSheetsTriggerOAuth2Api",
+       "path": "https://sheets.googleapis.com/v4/spreadsheets/{{$parameter.this}}",
+       "qs": {
+        "fields": "sheets.properties"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      },
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "googleSheetsTriggerOAuth2Api",
+       "path": "https://www.googleapis.com/drive/v3/files/{{$parameter.this}}/revisions",
+       "qs": {
+        "fields": "revisions(id, exportLinks), nextPageToken",
+        "pageSize": 1000
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "GumroadTrigger": {
+   "status": "no-poll"
+  },
+  "HelpScoutTrigger": {
+   "status": "no-poll"
+  },
+  "HubspotTrigger": {
+   "status": "no-poll"
+  },
+  "Interval": {
+   "status": "no-poll"
+  },
+  "InvoiceNinjaTrigger": {
+   "status": "no-poll"
+  },
+  "JiraTrigger": {
+   "status": "no-poll"
+  },
+  "JotFormTrigger": {
+   "status": "no-poll"
+  },
+  "KafkaTrigger": {
+   "status": "no-poll"
+  },
+  "KeapTrigger": {
+   "status": "no-poll"
+  },
+  "KoBoToolboxTrigger": {
+   "status": "no-poll"
+  },
+  "LemlistTrigger": {
+   "status": "no-poll"
+  },
+  "LinearTrigger": {
+   "status": "no-poll"
+  },
+  "LocalFileTrigger": {
+   "status": "no-poll"
+  },
+  "LoneScaleTrigger": {
+   "status": "no-poll"
+  },
+  "MailchimpTrigger": {
+   "status": "no-poll"
+  },
+  "MailerLiteTrigger": {
+   "status": "no-poll"
+  },
+  "MailjetTrigger": {
+   "status": "no-poll"
+  },
+  "ManualChatTrigger": {
+   "status": "no-poll"
+  },
+  "ManualTrigger": {
+   "status": "no-poll"
+  },
+  "MauticTrigger": {
+   "status": "no-poll"
+  },
+  "McpTrigger": {
+   "status": "no-poll"
+  },
+  "MicrosoftAgent365Trigger": {
+   "status": "no-poll"
+  },
+  "MicrosoftOneDriveTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [],
+     "requests": [
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "microsoftOneDriveOAuth2Api",
+       "path": "https://graph.microsoft.com/v1.0/me/drive/root/delta",
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "MicrosoftOutlookTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "custom",
+      "sender"
+     ],
+     "requests": [
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "microsoftOutlookOAuth2Api",
+       "path": "https://graph.microsoft.com/v1.0/users/{{$credentials.userPrincipalName}}/messages",
+       "qs": {
+        "$select": "id,conversationId,subject,bodyPreview,from,toRecipients,categories,hasAttachments",
+        "$filter": "receivedDateTime ge 1900-01-01T00:00:00Z and ((from/emailAddress/address eq '{{$parameter.sender}}' or from/emailAddress/name eq '{{$parameter.sender}}') and isRead eq false and {{$parameter.custom}})",
+        "$top": 1,
+        "$orderby": "receivedDateTime desc"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "MicrosoftTeamsTrigger": {
+   "status": "no-poll"
+  },
+  "MqttTrigger": {
+   "status": "no-poll"
+  },
+  "FormTrigger": {
+   "status": "no-poll"
+  },
+  "N8nTrigger": {
+   "status": "no-poll"
+  },
+  "NetlifyTrigger": {
+   "status": "no-poll"
+  },
+  "NotionTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "this"
+     ],
+     "requests": [
+      {
+       "kind": "httpRequestWithAuthentication",
+       "method": "POST",
+       "credentialType": "notionOAuth2Api",
+       "path": "https://api.notion.com/v1/data_sources/{{$parameter.this}}/query",
+       "headers": {
+        "Notion-Version": "2026-03-11"
+       },
+       "body": {
+        "page_size": 1,
+        "sorts": [
+         {
+          "timestamp": "created_time",
+          "direction": "descending"
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "OnfleetTrigger": {
+   "status": "no-poll"
+  },
+  "PayPalTrigger": {
+   "status": "no-poll"
+  },
+  "PipedriveTrigger": {
+   "status": "no-poll"
+  },
+  "PostgresTrigger": {
+   "status": "no-poll"
+  },
+  "PostmarkTrigger": {
+   "status": "no-poll"
+  },
+  "PushcutTrigger": {
+   "status": "no-poll"
+  },
+  "RabbitMQTrigger": {
+   "status": "no-poll"
+  },
+  "RedisTrigger": {
+   "status": "no-poll"
+  },
+  "RssFeedReadTrigger": {
+   "status": "ok",
+   "error": "import_rss_parser.default is not a constructor",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "feedUrl"
+     ],
+     "requests": [
+      {
+       "kind": "httpRequest",
+       "method": "GET",
+       "path": "{{$parameter.feedUrl}}",
+       "headers": {
+        "User-Agent": "rss-parser",
+        "Accept": "application/rss+xml"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "SalesforceTrigger": {
+   "status": "ok",
+   "error": "Symbol(runmap.capture-limit)",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [],
+     "requests": [
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "salesforceOAuth2Api",
+       "path": "{{$credentials.oauthTokenData.instance_url}}/services/data/v59.0/query",
+       "qs": {
+        "q": "SELECT id,name,type,LastModifiedDate FROM Account  LIMIT 1"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      },
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "salesforceOAuth2Api",
+       "path": "{{$credentials.oauthTokenData.instance_url}}/services/data/v59.0/query/",
+       "qs": {
+        "q": "SELECT id,name,type,LastModifiedDate FROM Account  LIMIT 1"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      },
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "salesforceOAuth2Api",
+       "path": "{{$credentials.oauthTokenData.instance_url}}/services/data/v59.0/query/",
+       "qs": {
+        "q": "SELECT id,name,type,LastModifiedDate FROM Account  LIMIT 1"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      },
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "salesforceOAuth2Api",
+       "path": "{{$credentials.oauthTokenData.instance_url}}/services/data/v59.0/query/",
+       "qs": {
+        "q": "SELECT id,name,type,LastModifiedDate FROM Account  LIMIT 1"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      },
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "salesforceOAuth2Api",
+       "path": "{{$credentials.oauthTokenData.instance_url}}/services/data/v59.0/query/",
+       "qs": {
+        "q": "SELECT id,name,type,LastModifiedDate FROM Account  LIMIT 1"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      },
+      {
+       "kind": "requestOAuth2",
+       "method": "GET",
+       "credentialType": "salesforceOAuth2Api",
+       "path": "{{$credentials.oauthTokenData.instance_url}}/services/data/v59.0/query/",
+       "qs": {
+        "q": "SELECT id,name,type,LastModifiedDate FROM Account  LIMIT 1"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "ScheduleTrigger": {
+   "status": "no-poll"
+  },
+  "SeaTableTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [
+      "tableName",
+      "viewName"
+     ],
+     "requests": [
+      {
+       "kind": "httpRequest",
+       "method": "GET",
+       "path": "{{$credentials.domain}}/api/v2.1/dtable/app-access-token/",
+       "headers": {
+        "Authorization": "Token {{$credentials.token}}"
+       }
+      },
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "seaTableApi",
+       "path": "{{$credentials.domain}}/api-gateway/api/v2/dtables//metadata/",
+       "headers": {
+        "Authorization": "Token "
+       }
+      },
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "seaTableApi",
+       "path": "{{$credentials.domain}}/api-gateway/api/v2/dtables//rows/",
+       "qs": {
+        "table_name": "{{$parameter.tableName}}",
+        "view_name": "{{$parameter.viewName}}",
+        "limit": 3,
+        "convert_keys": true
+       },
+       "headers": {
+        "Authorization": "Token "
+       }
+      },
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "seaTableApi",
+       "path": "{{$credentials.domain}}/api-gateway/api/v2/dtables//related-users/",
+       "headers": {
+        "Authorization": "Token "
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "ShopifyTrigger": {
+   "status": "no-poll"
+  },
+  "SimulateTrigger": {
+   "status": "no-poll"
+  },
+  "SlackTrigger": {
+   "status": "no-poll"
+  },
+  "SseTrigger": {
+   "status": "no-poll"
+  },
+  "StravaTrigger": {
+   "status": "no-poll"
+  },
+  "StripeTrigger": {
+   "status": "no-poll"
+  },
+  "SurveyMonkeyTrigger": {
+   "status": "no-poll"
+  },
+  "TaigaTrigger": {
+   "status": "no-poll"
+  },
+  "TelegramTrigger": {
+   "status": "no-poll"
+  },
+  "TheHiveProjectTrigger": {
+   "status": "no-poll"
+  },
+  "TheHiveTrigger": {
+   "status": "no-poll"
+  },
+  "TogglTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [],
+     "requests": [
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "togglApi",
+       "path": "https://api.track.toggl.com/api/v9/me/time_entries",
+       "qs": {
+        "start_date": {},
+        "end_date": "2026-01-01T00:00:00.000Z"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "TrelloTrigger": {
+   "status": "no-poll"
+  },
+  "TwilioTrigger": {
+   "status": "no-poll"
+  },
+  "TypeformTrigger": {
+   "status": "no-poll"
+  },
+  "VenafiTlsProtectCloudTrigger": {
+   "status": "no-poll"
+  },
+  "VenafiTlsProtectDatacenterTrigger": {
+   "status": "ok",
+   "cases": [
+    {
+     "resource": null,
+     "operation": "",
+     "status": "ok",
+     "needs": [],
+     "requests": [
+      {
+       "kind": "requestWithAuthentication",
+       "method": "GET",
+       "credentialType": "venafiTlsProtectDatacenterApi",
+       "path": "{{$credentials.domain}}/vedsdk/certificates",
+       "qs": {
+        "ValidToGreater": {},
+        "ValidToLess": "2026-01-01T00:00:00.000Z"
+       },
+       "headers": {
+        "Content-Type": "application/json"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "CiscoWebexTrigger": {
+   "status": "no-poll"
+  },
+  "WebflowTrigger": {
+   "status": "no-poll"
+  },
+  "Webhook": {
+   "status": "no-poll"
+  },
+  "WhatsAppTrigger": {
+   "status": "no-poll"
+  },
+  "WiseTrigger": {
+   "status": "no-poll"
+  },
+  "WooCommerceTrigger": {
+   "status": "no-poll"
+  },
+  "WorkableTrigger": {
+   "status": "no-poll"
+  },
+  "WorkflowTrigger": {
+   "status": "no-poll"
+  },
+  "WufooTrigger": {
+   "status": "no-poll"
+  },
+  "ZendeskTrigger": {
+   "status": "no-poll"
+  }
+ }
+}

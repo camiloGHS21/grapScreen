@@ -19,7 +19,6 @@ import {
   OWN_HIDDEN,
   honestFlag,
   isN8nTrigger,
-  n8nRunnable,
   type N8nCatalogEntry,
 } from "./n8nParity";
 
@@ -320,10 +319,11 @@ function buildN8nItems(entries: N8nCatalogEntry[], groupId: NodeGroupId): Catalo
   const seen = new Set<string>();
   return entries
     .filter((e) => !N8N_HIDDEN.has(e.key))
-    // Only nodes this engine can actually execute stay in the palette: a step
-    // the user adds must run, not sit disabled promising something it cannot
-    // deliver. The reason a node is absent lives in `n8nParity.n8nRunnable`.
-    .filter((e) => n8nRunnable(e))
+    // The whole catalogue is shown, including the entries this engine cannot
+    // run: a node that is missing is a node the user cannot tell apart from one
+    // that does not exist, and n8n has it. What cannot run is *blocked* with its
+    // reason — see `honestFlag` — so nothing in the list promises a step that
+    // would fail the moment it is placed.
     .slice()
     .sort((a, b) => a.displayName.localeCompare(b.displayName))
     .filter((e) => (seen.has(e.key) ? false : seen.add(e.key)))
@@ -340,8 +340,10 @@ function buildN8nItems(entries: N8nCatalogEntry[], groupId: NodeGroupId): Catalo
       // The one agent node. It carries the n8n identity — name, logo, ports
       // and the parameter form generated from n8n's own descriptor — but it
       // is created as the `ai_agent` engine kind, which is the runner the Rust
-      // side actually has for an agent. Every other AI entry is a LangChain
-      // sub-node and stays out of the step palette (see `n8nParity`).
+      // side actually has for an agent. Today that entry is the hand-written
+      // one: n8n's `Agent` is the one catalogue key the parity table suppresses
+      // (`N8N_DUPLICATE_SUPPRESSED`, which explains why), so this branch is the
+      // guard for that key rather than the path the palette currently takes.
       const isAgent = e.key === "Agent";
       return {
         type: (isAgent ? "ai_agent" : isTrigger ? "n8n_trigger" : "n8n_node") as FlowNodeType,
@@ -583,6 +585,53 @@ export function categorisedN8nItems(
 export const ALL_CATALOG_ITEMS: CatalogItem[] = CATALOG_GROUPS.flatMap(
   (g) => CATALOG_ITEMS[g.id],
 );
+
+/**
+ * What identifies one entry in a list: the catalogue key when there is one, and
+ * otherwise the engine kind *with its label*.
+ *
+ * The kind alone is not unique — the app shows `wait` twice ("Wait" in Flujo and
+ * "Esperar aprobación" in Revisión humana), and collapsing those two into one
+ * identity is what made the blocked one drop out of the search results.
+ */
+export const itemIdentity = (item: CatalogItem) =>
+  item.n8nKey ?? `${item.type}:${item.label}`;
+
+/** Folds accents and case, so "Redaccion" finds "Redacción". */
+const normalise = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/**
+ * Everything the search can return, blocked entries included.
+ *
+ * The search used to drop them, which made it disagree with the categories: a
+ * node the user could browse to and read about was "not found" when they typed
+ * its name, and with the whole catalogue now in the list that was ~380 nodes.
+ * Where two entries share an identity the one that runs wins, so an available
+ * node is never shadowed by a blocked twin.
+ *
+ * It lives here, next to the catalogue it filters, so the palette and
+ * `scripts/verify-palette.mjs` search the same list instead of two copies of it.
+ */
+export const SEARCHABLE_ITEMS: CatalogItem[] = (() => {
+  const byIdentity = new Map<string, CatalogItem>();
+  for (const item of ALL_CATALOG_ITEMS) {
+    const id = itemIdentity(item);
+    const seen = byIdentity.get(id);
+    if (!seen || (seen.comingSoon && !item.comingSoon)) byIdentity.set(id, item);
+  }
+  return [...byIdentity.values()];
+})();
+
+/** Whether one catalogue entry answers a search query. */
+export function matchesCatalogQuery(item: CatalogItem, query: string): boolean {
+  const q = normalise(query.trim());
+  if (!q) return false;
+  const haystack = normalise(
+    `${item.label} ${item.desc} ${item.type} ${item.n8nCategory ?? ""} ${item.n8nKey ?? ""}`,
+  );
+  return haystack.includes(q);
+}
 
 /**
  * Node types that own a rich configuration form, so clicking one opens the

@@ -196,7 +196,153 @@ function installLoadHook() {
       if (workflowValues?.NodeConnectionType === undefined) {
         stub.NodeConnectionType = { Main: "main" };
       }
+      // Errors n8n raises from `execute()`/`poll()` are `Error` subclasses, and
+      // node code reads `error.message` / `error.stack`. A Proxy stub answers
+      // those with another proxy, so every throw lands as `NodeOperationError.message`
+      // instead of a real reason. Real classes keep the capture readable.
+      class WorkflowError extends Error {
+        constructor(_node, error, extra) {
+          const message = error instanceof Error ? error.message : String(error);
+          super(message);
+          this.extra = extra;
+          this.name = this.constructor.name;
+        }
+      }
+      stub.NodeOperationError = WorkflowError;
+      stub.NodeApiError = WorkflowError;
+      stub.UserError = WorkflowError;
       return stub;
+    }
+    if (request === "moment-timezone" || request === "moment") {
+      // The calendar/drive triggers reach for `moment().tz(...)` at load and
+      // `moment.tz.names()` inside the module body. A plain Proxy cannot answer
+      // a callable that is itself a callable with properties, so the stub is a
+      // real function carrying them. Dates are not part of the HTTP shape the
+      // capture records, so a fixed epoch is fine.
+      const now = new Date("2026-01-01T00:00:00.000Z");
+      const tzFn = Object.assign(
+        () => momentish(),
+        {
+          guess: () => "UTC",
+          names: () => ["UTC"],
+          setDefault: () => undefined,
+          zone: () => ({ parse: () => 0, abbr: () => "UTC", offset: () => 0 }),
+        },
+      );
+      const m = Object.assign(
+        () => momentish(),
+        {
+          tz: tzFn,
+          utc: () => momentish(),
+          locale: () => undefined,
+          version: "2.29.4",
+          isMoment: (obj) => Boolean(obj && obj[Symbol.toStringTag] === "grapscreen-moment"),
+        },
+      );
+      /**
+       * A moment instance. The known methods return what node code reads from
+       * them (a formatted string, a boolean, a number); anything else — `set`,
+       * `add`, `clone`, whatever n8n reaches for next — chains back into another
+       * instance so a calendar trigger cannot die on a missing method name.
+       */
+      function momentish() {
+        const known = {
+          utc: () => momentish(),
+          tz: tzFn,
+          local: () => momentish(),
+          format: (pattern) =>
+            typeof pattern === "string" && pattern.includes("YYYY")
+              ? "2026-01-01T00:00:00"
+              : now.toISOString(),
+          startOf: () => momentish(),
+          endOf: () => momentish(),
+          add: () => momentish(),
+          subtract: () => momentish(),
+          set: () => momentish(),
+          clone: () => momentish(),
+          toISOString: () => now.toISOString(),
+          toDate: () => now,
+          valueOf: () => now.getTime(),
+          unix: () => Math.floor(now.getTime() / 1000),
+          isBetween: () => true,
+          isSame: () => true,
+          isBefore: () => false,
+          isAfter: () => false,
+          isSameOrBefore: () => true,
+          isSameOrAfter: () => true,
+          isValid: () => true,
+          diff: () => 0,
+          toJSON: () => now.toISOString(),
+          day: () => 1,
+          month: () => 0,
+          year: () => 2026,
+          hour: () => 0,
+          minute: () => 0,
+          second: () => 0,
+          millisecond: () => 0,
+          daysInMonth: () => 31,
+          fromNow: () => "in a day",
+        };
+        return new Proxy(known, {
+          get(target, prop) {
+            if (prop in target) return target[prop];
+            if (prop === Symbol.toPrimitive) return () => now.toISOString();
+            if (prop === Symbol.toStringTag) return "grapscreen-moment";
+            if (typeof prop !== "string") return undefined;
+            return () => momentish();
+          },
+        });
+      }
+      // `GenericFunctions` (imported by the trigger) reads `moment.tz.names()`
+      // at module scope, so the callable itself must carry `tz`. CJS and ESM
+      // interop disagree about the shape, so the same function is exported
+      // under `default` and as the module itself.
+      m.default = m;
+      m.tz = tzFn;
+      return m;
+    }
+    if (request === "currency-codes") {
+      const cc = {
+        data: [{ code: "USD", currency: "US Dollar" }],
+        codes: () => ["USD"],
+        numbers: () => ["840"],
+        code: () => ({ code: "USD", currency: "US Dollar" }),
+        number: () => ({ code: "USD", currency: "US Dollar" }),
+      };
+      cc.default = cc;
+      return cc;
+    }
+    if (request === "xml2js") {
+      const xml2jsStub = {
+        parseString: (_xml, options, cb) => {
+          const callback = typeof options === "function" ? options : cb;
+          if (typeof callback === "function") {
+            try {
+              callback(null, {});
+            } catch {}
+          }
+        },
+        parseStringPromise: async () => ({}),
+        Parser: class {
+          parseString(_xml, cb) {
+            if (typeof cb === "function") {
+              try {
+                cb(null, {});
+              } catch {}
+            }
+          }
+          parseStringPromise() {
+            return Promise.resolve({});
+          }
+        },
+        Builder: class {
+          buildObject() {
+            return "<xml></xml>";
+          }
+        },
+      };
+      xml2jsStub.default = xml2jsStub;
+      return xml2jsStub;
     }
     try {
       return original.call(this, request, parent, isMain);

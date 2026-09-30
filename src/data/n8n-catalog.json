@@ -602,13 +602,16 @@
   "icon": "chroma.svg",
   "glyph": null,
   "baseUrl": null,
-  "credentialName": "chromaCloudApi",
-  "authType": "generic",
+  "credentialName": "chromaSelfHostedApi",
+  "authType": null,
   "credentialFields": [
-   "apiKey"
+   "baseUrl",
+   "authentication",
+   "apiKey",
+   "token"
   ],
   "credentialNames": [
-   "chromaCloudApi"
+   "chromaSelfHostedApi"
   ]
  },
  {
@@ -697,10 +700,28 @@
   "icon": "bedrock.svg",
   "glyph": null,
   "baseUrl": null,
-  "credentialName": null,
-  "authType": null,
-  "credentialFields": [],
-  "credentialNames": []
+  "credentialName": "aws",
+  "authType": "generic",
+  "credentialFields": [
+   "region",
+   "accessKeyId",
+   "secretAccessKey",
+   "temporaryCredentials",
+   "sessionToken",
+   "customEndpoints",
+   "rekognitionEndpoint",
+   "lambdaEndpoint",
+   "snsEndpoint",
+   "sesEndpoint",
+   "sqsEndpoint",
+   "s3Endpoint",
+   "ssmEndpoint",
+   "bedrockEndpoint",
+   "bedrockRuntimeEndpoint"
+  ],
+  "credentialNames": [
+   "aws"
+  ]
  },
  {
   "key": "AwsCertificateManager",
@@ -3453,10 +3474,28 @@
   "icon": "bedrock.svg",
   "glyph": null,
   "baseUrl": null,
-  "credentialName": null,
-  "authType": null,
-  "credentialFields": [],
-  "credentialNames": []
+  "credentialName": "aws",
+  "authType": "generic",
+  "credentialFields": [
+   "region",
+   "accessKeyId",
+   "secretAccessKey",
+   "temporaryCredentials",
+   "sessionToken",
+   "customEndpoints",
+   "rekognitionEndpoint",
+   "lambdaEndpoint",
+   "snsEndpoint",
+   "sesEndpoint",
+   "sqsEndpoint",
+   "s3Endpoint",
+   "ssmEndpoint",
+   "bedrockEndpoint",
+   "bedrockRuntimeEndpoint"
+  ],
+  "credentialNames": [
+   "aws"
+  ]
  },
  {
   "key": "EmbeddingsAzureOpenAi",
@@ -7735,11 +7774,18 @@
   "icon": "outlook.svg",
   "glyph": null,
   "baseUrl": "https://graph.microsoft.com/v1.0/me",
-  "credentialName": "microsoftEntraServicePrincipalApi",
-  "authType": "generic",
-  "credentialFields": [],
+  "credentialName": "microsoftOutlookOAuth2Api",
+  "authType": null,
+  "credentialFields": [
+   "customScopes",
+   "customScopesNotice",
+   "enabledScopes",
+   "scope",
+   "useShared",
+   "userPrincipalName"
+  ],
   "credentialNames": [
-   "microsoftEntraServicePrincipalApi"
+   "microsoftOutlookOAuth2Api"
   ]
  },
  {
@@ -10402,10 +10448,20 @@
   "icon": "redis-c59d1a64.svg",
   "glyph": null,
   "baseUrl": null,
-  "credentialName": null,
-  "authType": null,
-  "credentialFields": [],
-  "credentialNames": []
+  "credentialName": "redis",
+  "authType": "generic",
+  "credentialFields": [
+   "password",
+   "user",
+   "host",
+   "port",
+   "database",
+   "ssl",
+   "disableTlsVerification"
+  ],
+  "credentialNames": [
+   "redis"
+  ]
  },
  {
   "key": "RedisTrigger",
@@ -13161,11 +13217,14 @@
   "icon": "whatsapp.svg",
   "glyph": null,
   "baseUrl": "https://graph.facebook.com/v19.0",
-  "credentialName": "whatsAppTriggerApi",
-  "authType": "generic",
-  "credentialFields": [],
+  "credentialName": "whatsAppApi",
+  "authType": null,
+  "credentialFields": [
+   "accessToken",
+   "businessAccountId"
+  ],
   "credentialNames": [
-   "whatsAppTriggerApi"
+   "whatsAppApi"
   ]
  },
  {

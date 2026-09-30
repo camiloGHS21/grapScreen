@@ -1,8 +1,16 @@
 import n8nCatalog from "../../../data/n8n-catalog.json";
 import runmapSummary from "../../../data/n8n-executable.json";
-import { ALWAYS_KEEP_OWN, NOT_HTTP_KEYS, OWN_DUPLICATES } from "./n8nParityTables";
+import {
+  ALWAYS_KEEP_OWN,
+  EVENT_TRIGGER_REASONS,
+  N8N_DUPLICATE_SUPPRESSED,
+  N8N_REPLACES_OWN,
+  NOT_HTTP_KEYS,
+  OWN_DUPLICATES,
+  TRIGGERS_NEEDING_OAUTH_URL,
+} from "./n8nParityTables";
 
-export { ALWAYS_KEEP_OWN, NOT_HTTP_KEYS, OWN_DUPLICATES };
+export { ALWAYS_KEEP_OWN, NOT_HTTP_KEYS, OWN_DUPLICATES, TRIGGERS_NEEDING_OAUTH_URL };
 
 /**
  * What the execution map captured from n8n's own node code, summarised by
@@ -12,16 +20,23 @@ export { ALWAYS_KEEP_OWN, NOT_HTTP_KEYS, OWN_DUPLICATES };
  * captured; `complete` are those where *every* declared operation was. The
  * palette shows the first and badges the difference, because a node that runs
  * half of its operations is not the same offer as one that runs all of them.
+ *
+ * `relative` are the nodes whose captured request is a *path*, not a URL
+ * (`{{$credentials.oauthTokenData.instance_url}}/services/data/…`): they run,
+ * but only once something supplies the API root.
  */
 interface RunMapSummary {
   keys: string[];
   complete: string[];
   counts: Record<string, [number, number]>;
+  relative?: string[];
+  pollable?: Record<string, boolean>;
 }
 
 const RUNMAP = runmapSummary as unknown as RunMapSummary;
 const RUNMAP_KEYS: ReadonlySet<string> = new Set(RUNMAP.keys);
-const RUNMAP_COMPLETE: ReadonlySet<string> = new Set(RUNMAP.complete);
+const RUNMAP_RELATIVE: ReadonlySet<string> = new Set(RUNMAP.relative ?? []);
+const RUNMAP_POLLABLE: ReadonlySet<string> = new Set(Object.keys(RUNMAP.pollable ?? {}));
 
 /** `[operaciones capturadas, operaciones declaradas]`, or undefined. */
 export function runmapCoverage(key: string): [number, number] | undefined {
@@ -94,13 +109,19 @@ export function n8nRunnable(entry: N8nCatalogEntry): boolean {
   if (entry.category === "AI") return false;
   if (NOT_HTTP_KEYS.has(entry.key)) return false;
   if (isN8nTrigger(entry)) {
+    // A captured request this vault can never complete is not a runnable
+    // trigger: the URL would go out with no host.
+    if (TRIGGERS_NEEDING_OAUTH_URL.has(entry.key)) return false;
     switch (entry.triggerMode) {
       case "webhook":
         return true;
       case "schedule":
         return true;
       case "polling":
-        return Boolean(entry.baseUrl);
+        // A polling trigger must know *what* to fetch. With the `poll()` call
+        // captured it polls the endpoint n8n would; without one it would poll
+        // the API root, which is a loop that never sees data.
+        return RUNMAP_POLLABLE.has(entry.key);
       default:
         return false;
     }
@@ -122,6 +143,8 @@ export interface DedupeDecision {
   displayName: string;
   /** Whether the canonical n8n entry runs as it stands. */
   runnable: boolean;
+  /** Whether the audited table says the n8n entry covers the whole capability. */
+  replaces: boolean;
   /** Which side the palette keeps. */
   keep: "own" | "n8n";
 }
@@ -129,22 +152,26 @@ export interface DedupeDecision {
 /**
  * One decision per capability. Deterministic on purpose: the palette, the
  * search and the acceptance evidence all read from this same table.
+ *
+ * Two conditions, and the second is the one that stops the swap from losing
+ * capabilities. `runnable` says the engine can execute the n8n entry at all;
+ * `replaces` says an audit found that entry does everything the hand-written
+ * node did. Without the second, the 45 duplicates whose n8n side cannot run
+ * (Core data nodes, LangChain sub-nodes, broker triggers) would take the slot
+ * from a node that works and leave the capability unusable.
  */
 export const DEDUPE_DECISIONS: DedupeDecision[] = Object.entries(OWN_DUPLICATES)
   .map(([own, keys]) => {
     const canonical = keys.map((k) => N8N_BY_KEY.get(k)).find(Boolean) || null;
     const runnable = canonical ? n8nRunnable(canonical) : false;
-    // "Runnable" is not enough to replace a hand-written node: a catalogue node
-    // that only captured half of its operations would *narrow* the capability.
-    // Only a node that runs every operation it declares wins the spot; the rest
-    // stay behind the native implementation until the capture covers them.
-    const complete = canonical ? RUNMAP_COMPLETE.has(canonical.key) : false;
+    const replaces = N8N_REPLACES_OWN.has(own) && !ALWAYS_KEEP_OWN.has(own);
     return {
       own,
       n8nKey: canonical?.key || keys[0],
       displayName: canonical?.displayName || keys[0],
       runnable,
-      keep: runnable && complete && !ALWAYS_KEEP_OWN.has(own) ? ("n8n" as const) : ("own" as const),
+      replaces,
+      keep: runnable && replaces ? ("n8n" as const) : ("own" as const),
     };
   })
   .filter((d) => N8N_BY_KEY.size > 0);
@@ -154,28 +181,49 @@ export const OWN_HIDDEN: ReadonlySet<string> = new Set(
   DEDUPE_DECISIONS.filter((d) => d.keep === "n8n").map((d) => d.own),
 );
 
-/** n8n catalogue keys the palette hides: duplicates of a kept hand-written node. */
+/**
+ * n8n catalogue keys the palette still suppresses, even though every other
+ * catalogue entry is now shown.
+ *
+ * The catalogue is shown whole: an entry being a duplicate of a hand-written
+ * node is no longer a reason to hide it, because a duplicate that runs is the
+ * better node and one that cannot run is shown blocked with its reason. The one
+ * exception is where showing it would offer a *worse* node for a capability that
+ * already has a working one (`N8N_DUPLICATE_SUPPRESSED`).
+ */
 export const N8N_DUPLICATE_HIDDEN: ReadonlySet<string> = new Set(
-  DEDUPE_DECISIONS.filter((d) => d.keep === "own").flatMap((d) => OWN_DUPLICATES[d.own] || []),
+  DEDUPE_DECISIONS.filter((d) => N8N_DUPLICATE_SUPPRESSED.has(d.own)).flatMap(
+    (d) => OWN_DUPLICATES[d.own] || [],
+  ),
 );
 
 /**
  * The AI catalogue is a sub-node catalogue: chat models, memories, tools and
  * output parsers exist to be wired to an agent, which is how n8n's own panel
- * offers them. They stay out of the step palette (they are not steps and the
- * engine has no runner for them) and live in the agent's port panels instead,
- * where `aiPortCatalog.ts` lists them with their real keys.
+ * offers them. They are shown in the palette like every other catalogue entry —
+ * the user asked for the whole catalogue, and hiding 109 of 565 entries is not
+ * "the whole catalogue" — but always blocked, because they are not steps and
+ * the engine has no runner for them. The agent's port panels
+ * (`aiPortCatalog.ts`) stay the place where they are actually picked, and this
+ * set is what tells the two situations apart.
+ *
+ * The two agent keys are left out: `Agent` is the counterpart of the
+ * hand-written agent (`N8N_DUPLICATE_SUPPRESSED`) and `AgentV1` is deprecated,
+ * so neither is a sub-node of anything.
  */
-export const AI_SUBNODE_HIDDEN: ReadonlySet<string> = new Set(
-  N8N_ENTRIES.filter((e) => e.category === "AI" && e.key !== "Agent" && e.appCategory !== "trigger").map(
-    (e) => e.key,
-  ),
+export const AI_SUBNODES: ReadonlySet<string> = new Set(
+  N8N_ENTRIES.filter(
+    (e) =>
+      e.category === "AI" &&
+      e.key !== "Agent" &&
+      e.key !== "AgentV1" &&
+      e.appCategory !== "trigger",
+  ).map((e) => e.key),
 );
 
 /** Every catalogue key the palette must leave out. */
 export const N8N_HIDDEN: ReadonlySet<string> = new Set([
   ...N8N_DUPLICATE_HIDDEN,
-  ...AI_SUBNODE_HIDDEN,
   // Deprecated in n8n itself: the agent is Agent v3.1, and the palette already
   // shows exactly one agent node.
   "AgentV1",
@@ -190,51 +238,82 @@ export interface HonestFlag {
   reason?: string;
 }
 
-/**
- * What the palette must say about an entry it is about to show.
- *
- * Two levels, because "cannot run" and "cannot run yet" are different:
- * a missing API root is fixable by typing one on the node, an unimplemented
- * runner is not, so the first is a badge and the second disables the entry.
- */
-export function honestFlag(entry: N8nCatalogEntry): HonestFlag {
-  if (n8nRunnable(entry)) return {};
-
+/** Why an entry the engine cannot run is unavailable, in its own terms. */
+function unavailableReason(entry: N8nCatalogEntry): string {
   if (isN8nTrigger(entry)) {
     const mode = entry.triggerMode || "event";
-    if (mode === "event") {
-      return {
-        comingSoon: true,
-        reason: "requiere un cliente externo (Kafka, MQTT, IMAP); este motor no lo arma",
-      };
+    if (TRIGGERS_NEEDING_OAUTH_URL.has(entry.key)) {
+      return "su URL se arma con la instancia que n8n escribe en la credencial durante su propio intercambio OAuth, y la bóveda de esta app no la tiene";
     }
     if (mode === "polling") {
-      return { note: "requiere URL base" };
+      return "su sondeo no está capturado: el motor lo sondearía sin saber qué pedir";
     }
-    return { comingSoon: true, reason: "este motor no implementa este disparador" };
+    if (mode === "event") {
+      return (
+        EVENT_TRIGGER_REASONS[entry.key] ||
+        `${entry.displayName} no expone ni webhook ni sondeo, y este motor no puede suscribirse a su fuente`
+      );
+    }
+    return `este motor no implementa este disparador (${entry.displayName})`;
   }
 
   if (entry.category === "Core") {
-    return {
-      comingSoon: true,
-      reason: "nodo de datos de n8n: el motor solo ejecuta su equivalente propio",
-    };
+    return "nodo de datos de n8n: transforma items dentro de n8n, y el motor solo ejecuta su equivalente propio";
   }
 
   if (entry.category === "AI") {
-    return { comingSoon: true, reason: "sub-nodo de agente: se conecta a un nodo de agente" };
+    return "sub-nodo de agente: se cablea a un nodo de agente, no es un paso";
   }
 
-  if (!entry.baseUrl) {
-    return { note: "requiere URL base" };
+  if (NOT_HTTP_KEYS.has(entry.key)) {
+    return "n8n lo resuelve dentro de su propio proceso (archivos, shell, criptografía) y el motor solo sabe construir una petición HTTP";
   }
 
-  // App nodes are only shown when they run, so reaching this point means the
-  // node is runnable but not every operation was captured.
+  return "su petición no está capturada, así que el motor no sabe qué llamar";
+}
+
+/**
+ * Whether the entry runs but has no API root to run against.
+ *
+ * Two different shapes of the same gap: an action node whose captured request is
+ * a path instead of a URL (`n8n-runmap.json` says which — Salesforce, Zoho,
+ * Zulip and the AWS family build their URL from a root the descriptor does not
+ * carry), and a polling trigger, which the daemon only arms when
+ * `Descriptor::effective_base_url` resolves to something.
+ *
+ * This is a badge, never a block: the node runs, and one typed field is what
+ * stands between it and working.
+ */
+export function needsBaseUrl(entry: N8nCatalogEntry): boolean {
+  if (entry.baseUrl) return false;
+  if (isN8nTrigger(entry)) return entry.triggerMode === "polling";
+  // The capture decides from the request itself: `RUNMAP_RELATIVE` lists the
+  // mapped nodes whose recorded path is not an absolute URL.
+  return RUNMAP_RELATIVE.has(entry.key);
+}
+
+/**
+ * What the palette must say about an entry it is about to show.
+ *
+ * Two levels, and the order matters: "cannot run" is a block, "needs one datum"
+ * is a badge. A blocked entry stays blocked even when the missing thing looks
+ * like a field the user could type — a node with no runner is not fixed by an
+ * API root, and letting it be added because one of its problems is fixable is
+ * how a flow ends up with a step that never runs.
+ */
+export function honestFlag(entry: N8nCatalogEntry): HonestFlag {
+  if (!n8nRunnable(entry)) {
+    return { comingSoon: true, reason: unavailableReason(entry) };
+  }
+
+  // From here on the node runs. Everything left is something it still needs.
   const coverage = runmapCoverage(entry.key);
   if (coverage && coverage[0] < coverage[1]) {
+    // The partial-coverage badge wins over the root note: it says what the
+    // node *cannot* run, which is more informative than what it may be typed.
     return { note: `${coverage[0]} de ${coverage[1]} operaciones` };
   }
+  if (needsBaseUrl(entry)) return { note: "requiere URL base" };
 
-  return { comingSoon: true, reason: "el motor no puede ejecutar este nodo" };
+  return {};
 }

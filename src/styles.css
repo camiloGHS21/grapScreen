@@ -7642,6 +7642,33 @@ button:active:not(:disabled), .btn:active:not(:disabled), .sb-nav-item:active {
   background: var(--s2);
   border-color: var(--line);
 }
+/* Shown but not runnable. The list now carries the whole catalogue, so a
+   blocked entry has to *look* blocked: without this rule the disabled button
+   rendered exactly like the one next to it that works, and the only signals
+   were a chip and a hover tooltip that a disabled button never shows. */
+.fsp-item:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+.fsp-item:disabled:hover {
+  background: transparent;
+  border-color: transparent;
+}
+.fsp-item:disabled .fsp-item-title,
+.fsp-item:disabled .fsp-item-desc {
+  color: var(--dim);
+}
+.fsp-item:disabled .fsp-item-icon {
+  filter: grayscale(1);
+}
+/* The reason, written out: it wraps instead of being clipped, because "no
+   disponible" without a why is what turns into a bug report. */
+.fsp-item-reason {
+  font: 400 10.5px 'Manrope', sans-serif;
+  color: var(--muted);
+  line-height: 1.35;
+  margin-top: 1px;
+}
 .fsp-item-icon {
   flex-shrink: 0;
   width: 28px;

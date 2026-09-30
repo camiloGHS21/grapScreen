@@ -7,6 +7,7 @@
  "keys": [
   "ActionNetwork",
   "ActiveCampaign",
+  "Adalo",
   "Affinity",
   "AgileCrm",
   "Airtable",
@@ -16,11 +17,19 @@
   "Asana",
   "Autopilot",
   "AwsCertificateManager",
+  "AwsCognito",
   "AwsComprehend",
+  "AwsDynamoDB",
+  "AwsIam",
   "AwsLambda",
   "AwsRekognition",
+  "AwsSes",
   "AwsSns",
+  "AwsSqs",
   "AwsTextract",
+  "AwsTranscribe",
+  "AzureCosmosDb",
+  "AzureStorage",
   "BambooHr",
   "Bannerbear",
   "Baserow",
@@ -29,6 +38,7 @@
   "Bitwarden",
   "Box",
   "Brandfetch",
+  "Brevo",
   "Bubble",
   "Chargebee",
   "CircleCi",
@@ -45,6 +55,7 @@
   "ConvertKit",
   "Copper",
   "Cortex",
+  "Currents",
   "CustomerIo",
   "Databricks",
   "DeepL",
@@ -61,6 +72,8 @@
   "ElasticSecurity",
   "Elasticsearch",
   "Emelia",
+  "FacebookGraphApi",
+  "FileMaker",
   "Flow",
   "Freshdesk",
   "Freshservice",
@@ -72,40 +85,59 @@
   "Gitlab",
   "Gmail",
   "GoToWebinar",
+  "Gong",
+  "GoogleAds",
   "GoogleAnalytics",
   "GoogleBigQuery",
+  "GoogleBooks",
+  "GoogleBusinessProfile",
+  "GoogleCalendar",
+  "GoogleChat",
   "GoogleCloudNaturalLanguage",
+  "GoogleCloudStorage",
   "GoogleContacts",
+  "GoogleDocs",
   "GoogleDrive",
   "GoogleFirebaseCloudFirestore",
   "GoogleFirebaseRealtimeDatabase",
+  "GooglePerspective",
   "GoogleSheets",
+  "GoogleSlides",
   "GoogleTasks",
+  "GoogleTranslate",
   "Gotify",
   "Grafana",
+  "GraphQL",
   "Grist",
   "HackerNews",
   "HaloPSA",
   "Harvest",
   "HelpScout",
+  "HighLevel",
   "HomeAssistant",
+  "Hubspot",
   "HumanticAi",
   "Hunter",
   "Intercom",
   "InvoiceNinja",
   "Iterable",
   "Jenkins",
+  "JinaAi",
   "Jira",
   "Keap",
   "KoBoToolbox",
   "Lemlist",
+  "Line",
   "Linear",
   "LingvaNex",
   "LinkedIn",
   "LoneScale",
   "Magento2",
   "Mailcheck",
+  "Mailchimp",
   "MailerLite",
+  "Mailgun",
+  "Mailjet",
   "Mandrill",
   "Marketstack",
   "Matrix",
@@ -113,10 +145,16 @@
   "Mautic",
   "Medium",
   "MessageBird",
+  "Metabase",
   "MicrosoftDynamicsCrm",
+  "MicrosoftEntra",
   "MicrosoftExcel",
   "MicrosoftExcelSharePoint",
+  "MicrosoftGraphSecurity",
   "MicrosoftOneDrive",
+  "MicrosoftOutlook",
+  "MicrosoftSharePoint",
+  "MicrosoftTeams",
   "MicrosoftToDo",
   "Mindee",
   "MiniMax",
@@ -126,12 +164,15 @@
   "MonicaCrm",
   "Moonshot",
   "Msg91",
+  "N8n",
   "Nasa",
   "Netlify",
   "NetscalerAdc",
   "NocoDB",
   "Notion",
+  "Npm",
   "Odoo",
+  "Okta",
   "Ollama",
   "OneSimpleApi",
   "Onfleet",
@@ -141,19 +182,26 @@
   "Paddle",
   "PagerDuty",
   "PayPal",
+  "Peekalink",
+  "Perplexity",
   "PhilipsHue",
   "Pipedrive",
   "Plivo",
+  "PostBin",
   "PostHog",
   "ProfitWell",
   "Pushbullet",
   "Pushcut",
   "Pushover",
   "QuickBase",
+  "QuickBooks",
+  "QuickChart",
   "Raindrop",
   "Reddit",
   "Rocketchat",
+  "RssFeedRead",
   "Rundeck",
+  "S3",
   "Salesforce",
   "Salesmate",
   "SeaTable",
@@ -171,6 +219,7 @@
   "Stackby",
   "Storyblok",
   "Strapi",
+  "Strava",
   "Stripe",
   "Supabase",
   "SyncroMsp",
@@ -186,6 +235,7 @@
   "Twilio",
   "Twist",
   "Twitter",
+  "UProc",
   "UnleashedSoftware",
   "Uplead",
   "UptimeRobot",
@@ -209,23 +259,38 @@
   "Zulip"
  ],
  "complete": [
+  "ActionNetwork",
   "ActiveCampaign",
+  "Adalo",
   "Affinity",
+  "AgileCrm",
   "AlibabaCloud",
+  "Anthropic",
+  "ApiTemplateIo",
   "Asana",
+  "Autopilot",
   "AwsCertificateManager",
+  "AwsCognito",
   "AwsComprehend",
+  "AwsDynamoDB",
+  "AwsIam",
   "AwsLambda",
   "AwsRekognition",
+  "AwsSes",
   "AwsSns",
+  "AwsSqs",
   "AwsTextract",
+  "AwsTranscribe",
+  "AzureCosmosDb",
+  "AzureStorage",
+  "BambooHr",
   "Bannerbear",
   "Baserow",
   "Beeminder",
-  "Bitly",
   "Bitwarden",
   "Box",
   "Brandfetch",
+  "Bubble",
   "Chargebee",
   "CircleCi",
   "Clearbit",
@@ -237,50 +302,89 @@
   "Contentful",
   "ConvertKit",
   "Copper",
-  "CustomerIo",
+  "Cortex",
+  "Currents",
+  "Databricks",
   "DeepL",
   "Demio",
   "Dhl",
+  "Discord",
   "Discourse",
   "Disqus",
   "Drift",
   "Dropbox",
   "Dropcontact",
+  "ERPNext",
   "Egoi",
+  "ElasticSecurity",
   "Emelia",
+  "FacebookGraphApi",
+  "FileMaker",
   "Flow",
+  "FreshworksCrm",
+  "GetResponse",
+  "Gitlab",
+  "Gong",
+  "GoogleAds",
+  "GoogleAnalytics",
+  "GoogleBigQuery",
+  "GoogleBooks",
+  "GoogleBusinessProfile",
+  "GoogleChat",
   "GoogleCloudNaturalLanguage",
+  "GoogleCloudStorage",
+  "GoogleContacts",
+  "GoogleDocs",
+  "GoogleDrive",
+  "GoogleFirebaseRealtimeDatabase",
+  "GooglePerspective",
+  "GoogleSheets",
+  "GoogleSlides",
   "GoogleTasks",
+  "GoogleTranslate",
   "Gotify",
   "Grafana",
+  "GraphQL",
+  "Grist",
   "HackerNews",
   "HaloPSA",
   "Harvest",
   "HelpScout",
+  "HighLevel",
   "HomeAssistant",
   "HumanticAi",
   "Hunter",
   "Intercom",
   "InvoiceNinja",
+  "Iterable",
+  "Jenkins",
+  "JinaAi",
   "Jira",
-  "KoBoToolbox",
+  "Keap",
   "Lemlist",
+  "Line",
   "Linear",
   "LingvaNex",
   "LinkedIn",
   "LoneScale",
   "Magento2",
   "Mailcheck",
+  "Mailchimp",
   "MailerLite",
+  "Mailgun",
+  "Mailjet",
   "Mandrill",
   "Matrix",
-  "Mautic",
   "Medium",
   "MessageBird",
+  "Metabase",
   "MicrosoftDynamicsCrm",
+  "MicrosoftEntra",
   "MicrosoftExcel",
   "MicrosoftExcelSharePoint",
+  "MicrosoftGraphSecurity",
   "MicrosoftOneDrive",
+  "MicrosoftSharePoint",
   "MicrosoftToDo",
   "Mindee",
   "MiniMax",
@@ -292,37 +396,50 @@
   "Netlify",
   "NetscalerAdc",
   "NocoDB",
+  "Npm",
+  "Okta",
   "Ollama",
   "OneSimpleApi",
   "OpenThesaurus",
   "OpenWeatherMap",
   "Oura",
-  "Paddle",
   "PagerDuty",
+  "PayPal",
+  "Peekalink",
+  "Perplexity",
   "PhilipsHue",
   "Pipedrive",
   "Plivo",
+  "PostBin",
   "PostHog",
   "ProfitWell",
   "Pushbullet",
   "Pushcut",
   "Pushover",
   "QuickBase",
+  "QuickBooks",
+  "QuickChart",
   "Raindrop",
   "Reddit",
   "Rocketchat",
+  "RssFeedRead",
   "Rundeck",
+  "S3",
   "Salesmate",
-  "SecurityScorecard",
+  "SeaTable",
   "Segment",
   "Sendy",
-  "SentryIo",
-  "Signl4",
+  "ServiceNow",
   "Sms77",
   "Spotify",
   "Stackby",
   "Strapi",
+  "Strava",
+  "Supabase",
+  "SyncroMsp",
   "Taiga",
+  "Tapfiliate",
+  "Telegram",
   "TheHive",
   "Todoist",
   "TravisCi",
@@ -330,7 +447,7 @@
   "Twake",
   "Twilio",
   "Twist",
-  "Twitter",
+  "UProc",
   "UnleashedSoftware",
   "Uplead",
   "UptimeRobot",
@@ -339,29 +456,37 @@
   "VenafiTlsProtectDatacenter",
   "Vero",
   "Vonage",
+  "Webflow",
   "Wekan",
+  "Wise",
   "WooCommerce",
   "Wordpress",
   "Xero",
   "Yourls",
-  "Zendesk",
-  "Zoom"
+  "Zammad",
+  "ZohoCrm",
+  "Zoom",
+  "Zulip"
  ],
  "counts": {
   "ActionNetwork": [
-   21,
+   23,
    23
   ],
   "ActiveCampaign": [
    48,
    48
   ],
+  "Adalo": [
+   5,
+   5
+  ],
   "Affinity": [
    16,
    16
   ],
   "AgileCrm": [
-   11,
+   15,
    15
   ],
   "Airtable": [
@@ -373,11 +498,11 @@
    5
   ],
   "Anthropic": [
-   9,
+   10,
    10
   ],
   "ApiTemplateIo": [
-   2,
+   3,
    3
   ],
   "Asana": [
@@ -385,16 +510,28 @@
    22
   ],
   "Autopilot": [
-   10,
+   11,
    11
   ],
   "AwsCertificateManager": [
    5,
    5
   ],
+  "AwsCognito": [
+   13,
+   13
+  ],
   "AwsComprehend": [
    3,
    3
+  ],
+  "AwsDynamoDB": [
+   4,
+   4
+  ],
+  "AwsIam": [
+   12,
+   12
   ],
   "AwsLambda": [
    1,
@@ -404,16 +541,36 @@
    1,
    1
   ],
+  "AwsSes": [
+   13,
+   13
+  ],
   "AwsSns": [
    3,
    3
+  ],
+  "AwsSqs": [
+   1,
+   1
   ],
   "AwsTextract": [
    1,
    1
   ],
+  "AwsTranscribe": [
+   4,
+   4
+  ],
+  "AzureCosmosDb": [
+   10,
+   10
+  ],
+  "AzureStorage": [
+   8,
+   8
+  ],
   "BambooHr": [
-   13,
+   15,
    15
   ],
   "Bannerbear": [
@@ -429,7 +586,7 @@
    18
   ],
   "Bitly": [
-   3,
+   1,
    3
   ],
   "Bitwarden": [
@@ -444,8 +601,12 @@
    4,
    4
   ],
+  "Brevo": [
+   9,
+   15
+  ],
   "Bubble": [
-   3,
+   5,
    5
   ],
   "Chargebee": [
@@ -461,7 +622,7 @@
    3
   ],
   "ClickUp": [
-   55,
+   56,
    57
   ],
   "Clockify": [
@@ -501,15 +662,19 @@
    32
   ],
   "Cortex": [
-   2,
+   4,
    4
   ],
+  "Currents": [
+   22,
+   22
+  ],
   "CustomerIo": [
-   9,
+   6,
    9
   ],
   "Databricks": [
-   28,
+   36,
    36
   ],
   "DeepL": [
@@ -525,7 +690,7 @@
    1
   ],
   "Discord": [
-   15,
+   21,
    21
   ],
   "Discourse": [
@@ -553,11 +718,11 @@
    4
   ],
   "ElasticSecurity": [
-   13,
+   14,
    14
   ],
   "Elasticsearch": [
-   7,
+   8,
    9
   ],
   "Emelia": [
@@ -565,15 +730,23 @@
    9
   ],
   "ERPNext": [
-   2,
+   5,
    5
+  ],
+  "FacebookGraphApi": [
+   1,
+   1
+  ],
+  "FileMaker": [
+   1,
+   1
   ],
   "Flow": [
    4,
    4
   ],
   "Freshdesk": [
-   6,
+   8,
    10
   ],
   "Freshservice": [
@@ -581,11 +754,11 @@
    72
   ],
   "FreshworksCrm": [
-   30,
+   32,
    32
   ],
   "GetResponse": [
-   4,
+   5,
    5
   ],
   "Ghost": [
@@ -593,27 +766,51 @@
    7
   ],
   "Github": [
-   46,
+   47,
    48
   ],
   "Gitlab": [
-   16,
+   18,
    18
   ],
   "Gmail": [
-   19,
+   21,
    26
   ],
+  "Gong": [
+   4,
+   4
+  ],
+  "GoogleAds": [
+   2,
+   2
+  ],
   "GoogleAnalytics": [
-   1,
+   2,
    2
   ],
   "GoogleBigQuery": [
-   1,
+   2,
    2
   ],
+  "GoogleBooks": [
+   9,
+   9
+  ],
+  "GoogleBusinessProfile": [
+   9,
+   9
+  ],
+  "GoogleCalendar": [
+   5,
+   6
+  ],
+  "GoogleChat": [
+   9,
+   9
+  ],
   "GoogleFirebaseCloudFirestore": [
-   6,
+   5,
    7
   ],
   "GoogleCloudNaturalLanguage": [
@@ -621,27 +818,47 @@
    1
   ],
   "GoogleFirebaseRealtimeDatabase": [
-   2,
+   5,
    5
+  ],
+  "GoogleCloudStorage": [
+   10,
+   10
   ],
   "GoogleContacts": [
-   3,
+   5,
    5
   ],
+  "GoogleDocs": [
+   3,
+   3
+  ],
   "GoogleDrive": [
-   16,
+   17,
    17
   ],
+  "GooglePerspective": [
+   1,
+   1
+  ],
   "GoogleSheets": [
-   9,
+   10,
    10
+  ],
+  "GoogleSlides": [
+   6,
+   6
   ],
   "GoogleTasks": [
    5,
    5
   ],
+  "GoogleTranslate": [
+   1,
+   1
+  ],
   "GSuiteAdmin": [
-   15,
+   13,
    16
   ],
   "Gotify": [
@@ -649,15 +866,19 @@
    3
   ],
   "GoToWebinar": [
-   21,
+   20,
    22
   ],
   "Grafana": [
    16,
    16
   ],
-  "Grist": [
+  "GraphQL": [
    1,
+   1
+  ],
+  "Grist": [
+   5,
    5
   ],
   "HackerNews": [
@@ -676,9 +897,17 @@
    13,
    13
   ],
+  "HighLevel": [
+   17,
+   17
+  ],
   "HomeAssistant": [
    13,
    13
+  ],
+  "Hubspot": [
+   24,
+   31
   ],
   "HumanticAi": [
    3,
@@ -697,28 +926,36 @@
    31
   ],
   "Iterable": [
-   4,
+   6,
    6
   ],
   "Jenkins": [
-   10,
+   11,
    11
+  ],
+  "JinaAi": [
+   3,
+   3
   ],
   "Jira": [
    20,
    20
   ],
   "Keap": [
-   27,
+   28,
    28
   ],
   "KoBoToolbox": [
-   17,
+   16,
    17
   ],
   "Lemlist": [
    15,
    15
+  ],
+  "Line": [
+   1,
+   1
   ],
   "Linear": [
    7,
@@ -744,9 +981,21 @@
    1,
    1
   ],
+  "Mailchimp": [
+   14,
+   14
+  ],
   "MailerLite": [
    4,
    4
+  ],
+  "Mailgun": [
+   1,
+   1
+  ],
+  "Mailjet": [
+   3,
+   3
   ],
   "Mandrill": [
    2,
@@ -761,11 +1010,11 @@
    11
   ],
   "Mattermost": [
-   18,
+   17,
    19
   ],
   "Mautic": [
-   20,
+   19,
    20
   ],
   "Medium": [
@@ -776,9 +1025,17 @@
    2,
    2
   ],
+  "Metabase": [
+   10,
+   10
+  ],
   "MicrosoftDynamicsCrm": [
    5,
    5
+  ],
+  "MicrosoftEntra": [
+   12,
+   12
   ],
   "MicrosoftExcel": [
    17,
@@ -788,9 +1045,25 @@
    18,
    18
   ],
+  "MicrosoftGraphSecurity": [
+   5,
+   5
+  ],
   "MicrosoftOneDrive": [
    16,
    16
+  ],
+  "MicrosoftOutlook": [
+   36,
+   38
+  ],
+  "MicrosoftSharePoint": [
+   11,
+   11
+  ],
+  "MicrosoftTeams": [
+   24,
+   28
   ],
   "MicrosoftToDo": [
    15,
@@ -813,7 +1086,7 @@
    2
   ],
   "MondayCom": [
-   17,
+   15,
    18
   ],
   "MonicaCrm": [
@@ -827,6 +1100,10 @@
   "Msg91": [
    1,
    1
+  ],
+  "N8n": [
+   9,
+   15
   ],
   "Nasa": [
    15,
@@ -845,12 +1122,20 @@
    2
   ],
   "Notion": [
-   7,
+   16,
    17
+  ],
+  "Npm": [
+   5,
+   5
   ],
   "Odoo": [
    18,
    20
+  ],
+  "Okta": [
+   5,
+   5
   ],
   "Ollama": [
    2,
@@ -861,7 +1146,7 @@
    10
   ],
   "Onfleet": [
-   35,
+   36,
    37
   ],
   "OpenThesaurus": [
@@ -877,7 +1162,7 @@
    4
   ],
   "Paddle": [
-   9,
+   8,
    9
   ],
   "PagerDuty": [
@@ -885,7 +1170,15 @@
    9
   ],
   "PayPal": [
-   3,
+   4,
+   4
+  ],
+  "Peekalink": [
+   2,
+   2
+  ],
+  "Perplexity": [
+   4,
    4
   ],
   "PhilipsHue": [
@@ -899,6 +1192,10 @@
   "Plivo": [
    3,
    3
+  ],
+  "PostBin": [
+   6,
+   6
   ],
   "PostHog": [
    5,
@@ -924,6 +1221,14 @@
    10,
    10
   ],
+  "QuickBooks": [
+   42,
+   42
+  ],
+  "QuickChart": [
+   1,
+   1
+  ],
   "Raindrop": [
    13,
    13
@@ -936,12 +1241,20 @@
    4,
    4
   ],
+  "RssFeedRead": [
+   1,
+   1
+  ],
   "Rundeck": [
    2,
    2
   ],
+  "S3": [
+   12,
+   12
+  ],
   "Salesforce": [
-   56,
+   54,
    65
   ],
   "Salesmate": [
@@ -949,11 +1262,11 @@
    15
   ],
   "SeaTable": [
-   13,
+   16,
    16
   ],
   "SecurityScorecard": [
-   19,
+   18,
    19
   ],
   "Segment": [
@@ -969,11 +1282,11 @@
    6
   ],
   "SentryIo": [
-   25,
+   23,
    25
   ],
   "ServiceNow": [
-   23,
+   25,
    25
   ],
   "Sms77": [
@@ -981,11 +1294,11 @@
    2
   ],
   "Shopify": [
-   9,
+   8,
    10
   ],
   "Signl4": [
-   2,
+   1,
    2
   ],
   "Slack": [
@@ -1008,16 +1321,20 @@
    5,
    5
   ],
+  "Strava": [
+   9,
+   9
+  ],
   "Stripe": [
-   14,
+   19,
    20
   ],
   "Supabase": [
-   1,
+   5,
    5
   ],
   "SyncroMsp": [
-   15,
+   20,
    20
   ],
   "Taiga": [
@@ -1025,11 +1342,11 @@
    20
   ],
   "Tapfiliate": [
-   10,
+   12,
    12
   ],
   "Telegram": [
-   26,
+   27,
    27
   ],
   "TheHive": [
@@ -1037,7 +1354,7 @@
    4
   ],
   "TheHiveProject": [
-   33,
+   46,
    48
   ],
   "Todoist": [
@@ -1072,6 +1389,10 @@
    2,
    2
   ],
+  "UProc": [
+   1,
+   1
+  ],
   "UptimeRobot": [
    21,
    21
@@ -1101,7 +1422,7 @@
    10
   ],
   "Webflow": [
-   3,
+   5,
    5
   ],
   "Wekan": [
@@ -1109,7 +1430,7 @@
    24
   ],
   "Wise": [
-   11,
+   14,
    14
   ],
   "WooCommerce": [
@@ -1121,7 +1442,7 @@
    12
   ],
   "Twitter": [
-   8,
+   7,
    8
   ],
   "Xero": [
@@ -1137,15 +1458,15 @@
    20
   ],
   "Zammad": [
-   13,
+   21,
    21
   ],
   "Zendesk": [
-   23,
+   21,
    23
   ],
   "ZohoCrm": [
-   31,
+   61,
    61
   ],
   "Zoom": [
@@ -1153,9 +1474,91 @@
    5
   ],
   "Zulip": [
-   15,
+   16,
    16
   ]
+ },
+ "relative": [
+  "ActiveCampaign",
+  "AwsCertificateManager",
+  "AwsCognito",
+  "AwsComprehend",
+  "AwsDynamoDB",
+  "AwsLambda",
+  "AwsRekognition",
+  "AwsSes",
+  "AwsSns",
+  "AwsSqs",
+  "AwsTextract",
+  "AzureStorage",
+  "Bitwarden",
+  "Bubble",
+  "Cockpit",
+  "Cortex",
+  "Databricks",
+  "Discourse",
+  "ERPNext",
+  "ElasticSecurity",
+  "Elasticsearch",
+  "Ghost",
+  "Gong",
+  "Gotify",
+  "Grafana",
+  "GraphQL",
+  "Grist",
+  "HaloPSA",
+  "InvoiceNinja",
+  "Jenkins",
+  "Jira",
+  "Magento2",
+  "Mattermost",
+  "Mautic",
+  "Metabase",
+  "MicrosoftEntra",
+  "Misp",
+  "N8n",
+  "NetscalerAdc",
+  "NocoDB",
+  "Npm",
+  "Odoo",
+  "Okta",
+  "PayPal",
+  "Rocketchat",
+  "Rundeck",
+  "Salesforce",
+  "SeaTable",
+  "Sendy",
+  "Strapi",
+  "Supabase",
+  "Taiga",
+  "TheHive",
+  "TheHiveProject",
+  "VenafiTlsProtectDatacenter",
+  "Wekan",
+  "WooCommerce",
+  "Wordpress",
+  "Yourls",
+  "Zammad",
+  "ZohoCrm",
+  "Zulip"
+ ],
+ "pollable": {
+  "AirtableTrigger": true,
+  "ClockifyTrigger": true,
+  "E2eTestPollingTrigger": true,
+  "GmailTrigger": true,
+  "GoogleBusinessProfileTrigger": true,
+  "GoogleCalendarTrigger": true,
+  "GoogleDriveTrigger": true,
+  "GoogleSheetsTrigger": true,
+  "MicrosoftOneDriveTrigger": true,
+  "MicrosoftOutlookTrigger": true,
+  "NotionTrigger": true,
+  "RssFeedReadTrigger": true,
+  "SalesforceTrigger": true,
+  "SeaTableTrigger": true,
+  "TogglTrigger": true,
+  "VenafiTlsProtectDatacenterTrigger": true
  },
  "skipped": {
   "LmChatAnthropic": "sub-nodo de agente: no es un paso",

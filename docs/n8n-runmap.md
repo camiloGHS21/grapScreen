@@ -64,6 +64,103 @@ petición fue capturada:
 Un nodo sin mapa solo puede ejecutarse si el usuario escribió URL base y ruta
 en las opciones avanzadas (escotilla de escape deliberada).
 
+### Cobertura actual
+
+| Grupo | Capturado | Notas |
+|---|---|---|
+| Acciones del catálogo | **252** ejecutables (208 con todas sus operaciones) | ~2.900 casos de operación con petición real |
+| Disparadores de sondeo | **16 de 16 (100%)** | incluye `SeaTableTrigger`, `GmailTrigger`, `GoogleCalendarTrigger`… |
+| Sub-nodos de agente (AI) | — | no son pasos: se cablean a un agente (109 saltados) |
+| Core / archivos / brokers | — | n8n los resuelve en proceso; el motor usa su equivalente propio |
+| 62 nodos con ruta relativa | badge «requiere URL base» | su raíz vive en la credencial (`{{$credentials.url}}`) o hay que escribirla |
+
+### Lo que falta para el 100% (53 acciones, por familia)
+
+Una petición **sin URL no cuenta** como capturada: n8n firma y dirige en persona
+las peticiones de AWS, y una receta sin URL no se puede reenviar. Esa regla vive
+en el capturador para que la paleta no prometa nada. Ninguna de estas familias es
+«arreglar el arnés»: son capacidades distintas.
+
+| Familia | Cuántos | Qué hace falta |
+|---|---|---|
+| **Familia AWS** (S3, SES, SQS, DynamoDB, Transcribe) | 5 | El helper de n8n construye **y firma** (SigV4) la URL: hace falta un constructor de peticiones AWS + firma SigV4 en Rust. |
+| **SDK de Google** (Docs, Slides, Chat, Books, Perspective, Translate) | 6 | Igual: el cliente `googleapis` construye la URL internamente. |
+| **Clientes de protocolo/DB** (MySql, Postgres, MongoDb, Redis, Kafka, Amqp, RabbitMQ, Mqtt, Ldap, Ftp, Snowflake, CrateDb, QuestDb, TimescaleDb, MicrosoftSql) | 15 | No son HTTP: requieren un cliente nativo en Rust. Postgres ya lo tiene. |
+| **Almacenes de vectores / LLM por SDK** (Pinecone, Qdrant, Milvus, PGVector, Mistral) | 5 | Igual que los SDK anteriores. |
+| **Validación de credencial resuelta** (Mailchimp, Salesforce SOQL) | 0 | Los nodos validan el formato antes de pedir: el simulado responde un valor con esa forma y el capturador lo devuelve a su placeholder. |
+| **Carga del cargador** (ICalendar, OracleSql, WhatsApp) | 3 | Su grafo de imports no resuelve: se capturan con un bundle precompilado. |
+| **Bucle síncrono con el mock** (Amqp, Mqtt, Snowflake, Phantombuster) | 4 | Requieren aislar `execute()` en un proceso hijo con timeout real. |
+| **Nodos no HTTP con equivalente propio** (Function, Git, ExecuteCommand, ReadWriteFile, SpreadsheetFile, Totp…) | ~8 | El motor ya tiene runners equivalentes; falta una tabla que los declare equivalentes (con su adaptador de parámetros) en lugar de una captura HTTP. |
+
+## Disparadores con sondeo
+
+Un disparador de n8n no hace `execute()`: hace `poll()`. Se capturan en su
+propia pasada, `--triggers`, que escribe `src/data/n8n-trigger-runmap.json`
+(el motor fusiona los dos artefactos al cargarlos):
+
+```
+npm run capture:runmap     # acciones + disparadores + resumen
+```
+
+Ejemplos capturados:
+
+```
+NotionTrigger       POST https://api.notion.com/v1/data_sources/{{$parameter.this}}/query
+GmailTrigger        GET  https://www.googleapis.com/gmail/v1/users/me/messages
+GoogleCalendar      GET  https://www.googleapis.com/calendar/v3/calendars/{{$parameter.this}}/events
+Outlook             GET  {{$credentials.graphApiBaseUrl}}/v1.0/users/{{$credentials.userPrincipalName}}/messages
+Salesforce          GET  {{$credentials.oauthTokenData.instance_url}}/services/data/v59.0/query
+RssFeedReadTrigger  GET  {{$parameter.feedUrl}}
+```
+
+El demonio (`trigger_service`) planifica con `runmap::poll_plan` y sondea **esa**
+petición — ruta, query, cabeceras y cuerpo que construye el propio disparador —
+en vez del root de la API. Un disparador de sondeo sin captura no se ofrece en
+la paleta: armaría un bucle contra una URL que nunca devuelve datos.
+
+## Cómo el arnés se acerca al nodo real
+
+Cada uno de estos huecos produjo peticiones imposibles hasta que se cerró, y
+todos siguen cubiertos por el propio capturador:
+
+| El nodo hacía… | Lo que salía antes | Cómo se resuelve |
+|---|---|---|
+| `credentials.accessToken` en la URL | hueco vacío | proxy de credenciales → `{{$credentials.accessToken}}` |
+| `${credentials.url}/api…` | `Cannot convert object to primitive value` | `Symbol.toPrimitive` en el proxy, no en la rama genérica |
+| `` `${baseId}` `` con un `resourceLocator` | `%5Bobject%20Object%5D` | el objeto se convierte en `{{$parameter.this}}` |
+| `getNodeParameter('x', i, {extractValue})` | el objeto entero | `extractValue` devuelve el ID |
+| `additionalFields.associations.companyIds` | `undefined.includes` | sentinel por ruta completa en las colecciones |
+| `customFields.customFields.length` | `.length` de `undefined` | el `fixedCollection` responde `{grupo: [...]}` **y** `.values` |
+| `param.values.map` / `for…of param` | `map is not a function` | arreglo híbrido con `values` autorreferente |
+| `moment(x).set(...)`, `moment.tz.names()` | `is not a function` | stub encadenable de `moment`/`moment-timezone` |
+| `this.getNode().type.includes('Trigger')` | `undefined.includes` | el mock expone `type` y `typeVersion` reales |
+| validación de email/SOQL/fecha | el nodo aborta antes de pedir | valor sintético válido según `typeOptions.validation` |
+
+## Resultados de la captura (28/09/2026)
+
+Sobre los 565 nodos del catálogo, con el arnés completo:
+
+| Métrica | Valor |
+|---|---|
+| Ejecutables (≥1 operación capturada) | **252** |
+| Completos (todas sus operaciones) | **208** |
+| Parciales | 44 |
+| Con ruta relativa (falta raíz de la API) | 62 |
+| Disparadores de sondeo capturados | **16 de 16 (100%)** |
+| Sub-nodos de agente (no son pasos) | 109 |
+
+Casos de ejecución capturados en total: ~2.800. Los arreglos de arnés que más
+nodos desbloquearon (simbólicos de proxy, `getNode().type`, subcampos de
+colección desconocidos, `fixedCollection` por grupo, parámetros con punto,
+credenciales anidadas, métodos de string sobre centinelas, `moment-timezone` y
+nodos versionados con `poll()`) están documentados en el código de
+`scripts/n8n-runmap-capture.mjs`.
+
+Los errores que quedan son **validaciones propias del nodo** (correo, SOQL,
+fechas, URLs de Notion): ocurren *antes* de la petición y el arnés no puede
+adivinar qué valor pasaría la validación, así que esa operación queda parcial y
+el usuario la completa en el editor.
+
 ## Regenerar el mapa
 
 ```powershell
@@ -80,7 +177,11 @@ por su propia vía en `trigger_service`).
 - Cuerpos que n8n construye a partir de la **respuesta** de una llamada previa
   (mapeador de propiedades de Notion) quedan como caso `partial`: la forma
   depende de datos que solo existen en ejecución.
-- Los disparadores por sondeo se arman por su vía propia; capturar su `poll()`
-  es el paso siguiente natural del mismo arnés.
+- Unas 60 operaciones quedan sin capturar porque el nodo **valida antes de
+  pedir** (email de Gmail, SOQL de Salesforce, fechas): la paleta las anuncia con
+  el badge «N de M operaciones» y el usuario las completa desde el editor.
+- `SeaTableTrigger` no se captura: su helper aborta con
+  `uri.endsWith is not a function` sobre el proxy de credenciales.
 - Seis nodos entran en bucle con respuestas simuladas y quedan documentados en
-  `SKIP` dentro del capturador.
+  `SKIP` dentro del capturador (`AwsElb`, `AwsSes`, `AwsS3`, `EditImage`,
+  `GoogleGemini`, `Splunk` son además los que agotan el timeout de carga).

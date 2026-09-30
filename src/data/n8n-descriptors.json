@@ -868,13 +868,16 @@
   "icon": "chroma.svg",
   "glyph": null,
   "credential": {
-   "name": "chromaCloudApi",
-   "authType": "generic",
+   "name": "chromaSelfHostedApi",
+   "authType": null,
    "baseUrl": null,
    "headers": {},
    "qs": {},
    "fields": [
-    "apiKey"
+    "baseUrl",
+    "authentication",
+    "apiKey",
+    "token"
    ]
   },
   "baseUrl": null,
@@ -885,7 +888,7 @@
    "body": null
   },
   "credentialNames": [
-   "chromaCloudApi"
+   "chromaSelfHostedApi"
   ]
  },
  {
@@ -1003,7 +1006,30 @@
   "path": "packages/@n8n/nodes-langchain/nodes/llms/LmChatAwsBedrock/LmChatAwsBedrock.node.ts",
   "icon": "bedrock.svg",
   "glyph": null,
-  "credential": null,
+  "credential": {
+   "name": "aws",
+   "authType": "generic",
+   "baseUrl": null,
+   "headers": {},
+   "qs": {},
+   "fields": [
+    "region",
+    "accessKeyId",
+    "secretAccessKey",
+    "temporaryCredentials",
+    "sessionToken",
+    "customEndpoints",
+    "rekognitionEndpoint",
+    "lambdaEndpoint",
+    "snsEndpoint",
+    "sesEndpoint",
+    "sqsEndpoint",
+    "s3Endpoint",
+    "ssmEndpoint",
+    "bedrockEndpoint",
+    "bedrockRuntimeEndpoint"
+   ]
+  },
   "baseUrl": null,
   "request": {
    "method": "GET",
@@ -1011,7 +1037,9 @@
    "qs": {},
    "body": null
   },
-  "credentialNames": []
+  "credentialNames": [
+   "aws"
+  ]
  },
  {
   "key": "AwsCertificateManager",
@@ -4846,7 +4874,30 @@
   "path": "packages/@n8n/nodes-langchain/nodes/embeddings/EmbeddingsAwsBedrock/EmbeddingsAwsBedrock.node.ts",
   "icon": "bedrock.svg",
   "glyph": null,
-  "credential": null,
+  "credential": {
+   "name": "aws",
+   "authType": "generic",
+   "baseUrl": null,
+   "headers": {},
+   "qs": {},
+   "fields": [
+    "region",
+    "accessKeyId",
+    "secretAccessKey",
+    "temporaryCredentials",
+    "sessionToken",
+    "customEndpoints",
+    "rekognitionEndpoint",
+    "lambdaEndpoint",
+    "snsEndpoint",
+    "sesEndpoint",
+    "sqsEndpoint",
+    "s3Endpoint",
+    "ssmEndpoint",
+    "bedrockEndpoint",
+    "bedrockRuntimeEndpoint"
+   ]
+  },
   "baseUrl": null,
   "request": {
    "method": "GET",
@@ -4854,7 +4905,9 @@
    "qs": {},
    "body": null
   },
-  "credentialNames": []
+  "credentialNames": [
+   "aws"
+  ]
  },
  {
   "key": "EmbeddingsAzureOpenAi",
@@ -11040,12 +11093,19 @@
   "icon": "outlook.svg",
   "glyph": null,
   "credential": {
-   "name": "microsoftEntraServicePrincipalApi",
-   "authType": "generic",
+   "name": "microsoftOutlookOAuth2Api",
+   "authType": null,
    "baseUrl": null,
    "headers": {},
    "qs": {},
-   "fields": []
+   "fields": [
+    "customScopes",
+    "customScopesNotice",
+    "enabledScopes",
+    "scope",
+    "useShared",
+    "userPrincipalName"
+   ]
   },
   "baseUrl": "https://graph.microsoft.com/v1.0/me",
   "request": {
@@ -11055,7 +11115,7 @@
    "body": null
   },
   "credentialNames": [
-   "microsoftEntraServicePrincipalApi"
+   "microsoftOutlookOAuth2Api"
   ]
  },
  {
@@ -14956,7 +15016,22 @@
   "path": "packages/@n8n/nodes-langchain/nodes/vector_store/VectorStoreRedis/VectorStoreRedis.node.ts",
   "icon": "redis-c59d1a64.svg",
   "glyph": null,
-  "credential": null,
+  "credential": {
+   "name": "redis",
+   "authType": "generic",
+   "baseUrl": null,
+   "headers": {},
+   "qs": {},
+   "fields": [
+    "password",
+    "user",
+    "host",
+    "port",
+    "database",
+    "ssl",
+    "disableTlsVerification"
+   ]
+  },
   "baseUrl": null,
   "request": {
    "method": "GET",
@@ -14964,7 +15039,9 @@
    "qs": {},
    "body": null
   },
-  "credentialNames": []
+  "credentialNames": [
+   "redis"
+  ]
  },
  {
   "key": "RedisTrigger",
@@ -18889,12 +18966,15 @@
   "icon": "whatsapp.svg",
   "glyph": null,
   "credential": {
-   "name": "whatsAppTriggerApi",
-   "authType": "generic",
+   "name": "whatsAppApi",
+   "authType": null,
    "baseUrl": null,
    "headers": {},
    "qs": {},
-   "fields": []
+   "fields": [
+    "accessToken",
+    "businessAccountId"
+   ]
   },
   "baseUrl": "https://graph.facebook.com/v19.0",
   "request": {
@@ -18904,7 +18984,7 @@
    "body": null
   },
   "credentialNames": [
-   "whatsAppTriggerApi"
+   "whatsAppApi"
   ]
  },
  {

@@ -3,16 +3,17 @@ import { Search, X, ChevronRight, ChevronLeft, MousePointer2 } from "lucide-reac
 import {
   CATALOG_GROUPS,
   CATALOG_ITEMS,
-  ALL_CATALOG_ITEMS,
+  SEARCHABLE_ITEMS,
   categorisedN8nItems,
   integratedCount,
+  itemIdentity,
+  matchesCatalogQuery,
   type CatalogItem,
   type NodeGroupId,
 } from "../utils/nodeCatalog";
 import {
   type FlowSidePanelProps,
   type SidePanelMode,
-  normalise,
   ACTION_CATEGORY_DESCS,
 } from "./FlowSidePanelTypes";
 import {
@@ -21,7 +22,7 @@ import {
   INTEGRATED_CATEGORY,
   OTHER_CATEGORY,
 } from "./FlowSidePanelIcons";
-import { PanelItem, itemIdentity } from "./FlowSidePanelItem";
+import { PanelItem } from "./FlowSidePanelItem";
 import { FlowSidePanelDrilldown } from "./FlowSidePanelDrilldown";
 import { FlowPortSubNodePanel } from "./FlowPortSubNodePanel";
 import { AI_PORT_IDS } from "../utils/aiPortCatalog";
@@ -32,11 +33,6 @@ const TRIGGER_TYPES = new Set<string>([
   ...CATALOG_ITEMS["trigger"].map((i) => i.type),
   "n8n_trigger",
 ]);
-
-const searchableItems = ALL_CATALOG_ITEMS.filter((item, index, all) =>
-  !item.comingSoon &&
-  all.findIndex((other) => itemIdentity(other) === itemIdentity(item) && !other.comingSoon) === index,
-);
 
 export function FlowSidePanel({
   mode,
@@ -67,11 +63,8 @@ export function FlowSidePanel({
   }, [mode, group]);
 
   const searchResults = useMemo(() => {
-    const q = normalise(query.trim());
-    if (!q) return [];
-    const haystack = (item: CatalogItem) =>
-      normalise(`${item.label} ${item.desc} ${item.type} ${item.n8nCategory ?? ""} ${item.n8nKey ?? ""}`);
-    const matches = searchableItems.filter((item) => haystack(item).includes(q));
+    if (!query.trim()) return [];
+    const matches = SEARCHABLE_ITEMS.filter((item) => matchesCatalogQuery(item, query));
     if (isEmptyCanvas) return matches.filter((item) => TRIGGER_TYPES.has(item.type));
     return matches;
   }, [query, isEmptyCanvas]);

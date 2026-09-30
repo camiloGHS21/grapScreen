@@ -24,8 +24,8 @@ export interface CategoryRow {
   count: number;
 }
 
-export const normalise = (s: string) =>
-  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+// The query normaliser moved to `utils/nodeCatalog` with the search itself, so
+// the panel and the acceptance check fold accents the same way.
 
 export const ACTION_CATEGORY_DESCS: Record<string, string> = {
   action: "Conectar con Slack, Google Sheets, Notion, Gmail...",

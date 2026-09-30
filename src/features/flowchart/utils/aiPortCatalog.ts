@@ -67,6 +67,22 @@ function initialOf(entry: N8nCatalogEntry): string | undefined {
 }
 
 /**
+ * What the agent runner does with each port, as a badge on every entry.
+ *
+ * Only the chat model reaches the runner: `ai_agent_runner` reads the node's
+ * prompt, its system prompt, its key and the provider the wired model names, and
+ * calls the model endpoint. Memory, tools and output parsers are saved with the
+ * agent and then ignored — the runner has no code that reads them. Saying so on
+ * the entry is the difference between a slot the user can trust and one that
+ * silently accepts a configuration nothing consumes.
+ */
+const PORT_RUNNER_NOTE: Record<string, string> = {
+  memory: "se guarda con el agente; el ejecutor todavía no la usa",
+  tool: "se guarda con el agente; el ejecutor todavía no lo usa",
+  outputParser: "se guarda con el agente; el ejecutor todavía no lo usa",
+};
+
+/**
  * Builds one palette entry out of a catalogue key. Returns `null` for a key
  * that is not in the catalogue: a missing node must not silently become a
  * blank row (the acceptance check greps for exactly this).
@@ -75,10 +91,10 @@ export function subNodeItem(key: string, portId: string): CatalogItem | null {
   const entry = N8N_BY_KEY.get(key);
   if (!entry) return null;
   const provider = SUPPORTED_PROVIDERS[key];
-  const desc =
-    portId === "model" && !provider
-      ? `${entry.description} · no conectado al ejecutor: el agente usa OpenAI, DeepSeek, Gemini, Ollama u OpenRouter`
-      : entry.description;
+  const unsupportedModel = portId === "model" && !provider;
+  const desc = unsupportedModel
+    ? `${entry.description} · no conectado al ejecutor: el agente usa OpenAI, DeepSeek, Gemini, Ollama u OpenRouter`
+    : entry.description;
   return {
     type: "n8n_node",
     label: entry.displayName,
@@ -88,6 +104,9 @@ export function subNodeItem(key: string, portId: string): CatalogItem | null {
     n8nIcon: entry.icon,
     n8nInitial: initialOf(entry),
     n8nCategory: entry.appCategory,
+    // The badge, not a block: wiring one of these is a real edit to the agent
+    // and the value is kept — it is the runner that does not read it yet.
+    setupNote: unsupportedModel ? "no conectado al ejecutor" : PORT_RUNNER_NOTE[portId],
     accent: ACCENT[portId],
   };
 }

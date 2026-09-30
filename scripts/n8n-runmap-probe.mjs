@@ -18,8 +18,10 @@ if (!descriptor) {
 
 const loader = await createNodeLoader("./.n8n-cache/src", { concurrency: 1 });
 try {
-  const { captureNode } = await import("./n8n-runmap-capture.mjs");
-  const result = await captureNode(loader, descriptor);
+  const { captureNode, capturePollTrigger } = await import("./n8n-runmap-capture.mjs");
+  // A trigger watches data (`poll()`); an action mutates it (`execute()`).
+  const capture = descriptor.isTrigger ? capturePollTrigger : captureNode;
+  const result = await capture(loader, descriptor);
   const cases = result.cases ?? [];
   const picked = cases.filter(
     (c) =>
@@ -28,6 +30,7 @@ try {
   );
   for (const c of (picked.length ? picked : cases).slice(0, 6)) {
     console.log(`\n== ${c.resource ?? "-"} / ${c.operation} [${c.status}]${c.error ? ` ${c.error}` : ""}`);
+    if (c.error && process.env.GS_PROBE) console.log("   stack:", (c.trace ?? "").split("\n").slice(0, 4).join(" | "));
     for (const request of c.requests ?? []) {
       console.log(`  ${request.method} ${request.path}`);
       if (request.headers) console.log("  headers:", JSON.stringify(request.headers));
