@@ -377,9 +377,46 @@ async function runTests() {
   assert(exported11.nodes.length === 2, "Exported binary nodes length mismatch");
   const expRead = exported11.nodes.find(n => n.name === "Read Image");
   assert(expRead && (expRead.type === "n8n-nodes-base.readBinaryFile" || expRead.type === "n8n-nodes-base.readWriteFile"), "Exported ReadBinaryFile type mismatch");
-  console.log("PASS: Test 11 passed.");
+  console.log("Running Test 12: Expressions with Date and Arithmetic Methods ($now, DateTime, Math, Associativity)");
+  const exprWf = {
+    name: "Date & Math Expressions Flow",
+    nodes: [
+      {
+        id: "expr-1",
+        name: "Compute Dates and Math",
+        type: "n8n-nodes-base.set",
+        parameters: {
+          values: {
+            string: [
+              { name: "todayFormatted", value: "={{ $now.toFormat('yyyy-MM-dd') }}" },
+              { name: "nextWeek", value: "={{ $now.plus({ days: 7 }).toISODate() }}" },
+              { name: "parsedDate", value: "={{ DateTime.fromISO($json.createdAt).toISODate() }}" },
+            ],
+            number: [
+              { name: "taxTotal", value: "={{ Math.round($json.price * 1.16, 2) }}" },
+              { name: "netTotal", value: "={{ ($json.price - $json.discount) * $json.qty }}" },
+              { name: "diffDays", value: "={{ $json.dueAt.diff($json.createdAt, 'days') }}" },
+            ],
+          },
+        },
+      },
+    ],
+    connections: {},
+  };
+  const res12 = importN8nWorkflow(exprWf);
+  assert(res12.summary.nodeCount === 1, "Res12 nodeCount mismatch");
+  const setEv = res12.events[0];
+  assert(setEv.data.set_fields.includes("$now.toFormat('yyyy-MM-dd')"), "Date format expr preserved in import");
+  assert(setEv.data.set_fields.includes("$now.plus({ days: 7 })"), "Date plus expr preserved in import");
+  assert(setEv.data.set_fields.includes("Math.round($json.price * 1.16, 2)"), "Math round expr preserved in import");
+  assert(setEv.data.set_fields.includes("($json.price - $json.discount) * $json.qty"), "Parenthesized arithmetic preserved in import");
 
-  console.log("\nALL 11 TEST SUITES (IMPORT, EXPORT, RESILIENCE & BINARY PIPELINE) PASSED SUCCESSFULLY!");
+  // Round-trip export test
+  const exported12 = exportN8nWorkflow("Exported Date & Math", res12.events);
+  assert(exported12.nodes.length === 1, "Exported expr node length mismatch");
+  console.log("PASS: Test 12 passed.");
+
+  console.log("\nALL 12 TEST SUITES (IMPORT, EXPORT, RESILIENCE, BINARY & DATE/MATH EXPR) PASSED SUCCESSFULLY!");
 }
 
 runTests().catch((err) => {

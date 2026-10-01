@@ -34,20 +34,17 @@ function mapKindToN8nType(kind: string, n8nKey?: string): { type: string; versio
     case "code":
       return { type: "n8n-nodes-base.code", version: 2 };
     case "run_cmd":
-    case "executecommand":
-      return { type: "n8n-nodes-base.executeCommand", version: 1 };
+    case "executecommand": return { type: "n8n-nodes-base.executeCommand", version: 1 };
     case "read_binary_file":
-    case "readbinaryfile":
-      return { type: "n8n-nodes-base.readBinaryFile", version: 1 };
+    case "readbinaryfile": return { type: "n8n-nodes-base.readBinaryFile", version: 1 };
     case "write_binary_file":
-    case "writebinaryfile":
-      return { type: "n8n-nodes-base.writeBinaryFile", version: 1 };
+    case "writebinaryfile": return { type: "n8n-nodes-base.writeBinaryFile", version: 1 };
     case "read_file":
     case "write_file":
-    case "readwritefile":
-      return { type: "n8n-nodes-base.readWriteFile", version: 1 };
-    case "merge":
-      return { type: "n8n-nodes-base.merge", version: 3 };
+    case "readwritefile": return { type: "n8n-nodes-base.readWriteFile", version: 1 };
+    case "merge": return { type: "n8n-nodes-base.merge", version: 3 };
+    case "edit_fields":
+    case "set": return { type: "n8n-nodes-base.set", version: 3.4 };
     case "mysql": return { type: "n8n-nodes-base.mySql", version: 2.4 };
     case "redis": return { type: "n8n-nodes-base.redis", version: 1 };
     case "mongodb": return { type: "n8n-nodes-base.mongoDb", version: 1.1 };
@@ -57,10 +54,8 @@ function mapKindToN8nType(kind: string, n8nKey?: string): { type: string; versio
     case "google_chat": return { type: "n8n-nodes-base.googleChat", version: 1 };
     case "google_drive": return { type: "n8n-nodes-base.googleDrive", version: 3 };
     case "excel_local":
-    case "spreadsheetfile":
-      return { type: "n8n-nodes-base.spreadsheetFile", version: 2 };
-    default:
-      return { type: "n8n-nodes-base.noOp", version: 1 };
+    case "spreadsheetfile": return { type: "n8n-nodes-base.spreadsheetFile", version: 2 };
+    default: return { type: "n8n-nodes-base.noOp", version: 1 };
   }
 }
 
@@ -84,36 +79,13 @@ function extractN8nParameters(event: RecordedEvent): Record<string, unknown> {
       };
     case "condition":
     case "if":
-      return {
-        conditions: {
-          options: { caseSensitive: true },
-          conditions: [
-            {
-              id: "cond-1",
-              leftValue: d.condition || "",
-              rightValue: "",
-              operator: { type: "string", operation: "isNotEmpty" },
-            },
-          ],
-        },
-      };
+      return { conditions: { options: { caseSensitive: true }, conditions: [{ id: "cond-1", leftValue: d.condition || "", rightValue: "", operator: { type: "string", operation: "isNotEmpty" } }] } };
     case "cron":
-      return {
-        rule: {
-          interval: [{ field: "cronExpression", expression: d.cron || d.schedule || "* * * * *" }],
-        },
-      };
+      return { rule: { interval: [{ field: "cronExpression", expression: d.cron || d.schedule || "* * * * *" }] } };
     case "webhook":
-      return {
-        path: d.path || "webhook",
-        httpMethod: d.method || "POST",
-        responseMode: "onReceived",
-      };
+      return { path: d.path || "webhook", httpMethod: d.method || "POST", responseMode: "onReceived" };
     case "ai_agent":
-      return {
-        promptType: "define",
-        text: d.prompt || d.user_prompt || "",
-      };
+      return { promptType: "define", text: d.prompt || d.user_prompt || "" };
     case "run_cmd":
       return { command: d.cmd || d.command || "" };
     case "read_file":
@@ -128,6 +100,19 @@ function extractN8nParameters(event: RecordedEvent): Record<string, unknown> {
         ...(d.field1 ? { propertyName1: d.field1 } : {}),
         ...(d.field2 ? { propertyName2: d.field2 } : {}),
       };
+    case "edit_fields":
+    case "set": {
+      let fields: Record<string, unknown> = {};
+      try {
+        if (typeof d.set_fields === "string") fields = JSON.parse(d.set_fields);
+      } catch {}
+      const assignments = Object.entries(fields).map(([name, value]) => ({
+        name,
+        value: typeof value === "string" ? value : JSON.stringify(value),
+        type: typeof value === "number" ? "number" : typeof value === "boolean" ? "boolean" : "string",
+      }));
+      return { assignments: { assignments }, includeOtherFields: !d.keep_only };
+    }
     case "mysql":
     case "postgres": return { query: d.query || d.sql || "" };
     case "redis": return { operation: d.operation || "get", keyName: d.key || "" };

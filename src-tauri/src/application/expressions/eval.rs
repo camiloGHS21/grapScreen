@@ -1,8 +1,8 @@
-use super::context::{num, stringify, truthy, ExprContext};
+use super::context::{as_f64, num, stringify, truthy, ExprContext};
 use super::methods::call_function;
 use super::modern::resolve_dollar;
 use super::operators::{try_arithmetic, try_logical};
-use super::parser::{contains_expression, parse_trailing_call, segments, Segment};
+use super::parser::{contains_expression, is_wrapped_in_parens, parse_trailing_call, segments, Segment};
 use serde_json::Value;
 
 /// Interpolates `input`, keeping the JSON type when the whole string is a single expression.
@@ -43,6 +43,11 @@ pub fn eval(expr: &str, ctx: &ExprContext) -> Value {
     let expr = expr.trim();
     if expr.is_empty() {
         return Value::String(String::new());
+    }
+
+    // 0) Unwrap outer parentheses if wrapped: `(2 + 3)` -> `2 + 3`
+    if is_wrapped_in_parens(expr) {
+        return eval(&expr[1..expr.len() - 1], ctx);
     }
 
     // 1) Comparison / logical operators produce booleans.
@@ -99,6 +104,18 @@ pub fn resolve_token(token: &str, ctx: &ExprContext) -> Value {
     }
     if token == "null" {
         return Value::Null;
+    }
+
+    if let Some(v) = super::math::resolve_math_constant(token) {
+        return v;
+    }
+
+    if token.starts_with('-') && token.len() > 1 && !token[1..].starts_with(' ') {
+        let sub = &token[1..];
+        let val = eval(sub, ctx);
+        if let Some(n) = as_f64(&val) {
+            return num(-n);
+        }
     }
 
     // Trailing function or method call, e.g. `$items()`, `$json.items.map(...)`, `$('Node').all().join(...)`

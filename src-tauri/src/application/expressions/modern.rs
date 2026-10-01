@@ -25,6 +25,12 @@ pub fn resolve_dollar(token: &str, ctx: &ExprContext) -> Option<Value> {
         return Some(Value::String(ctx.execution_id.to_string()));
     }
 
+    if let Some(rest) = token.strip_prefix("$now.").or_else(|| token.strip_prefix("$today.")) {
+        if let Some(v) = super::dates::resolve_now_prop(rest) {
+            return Some(v);
+        }
+    }
+
     // ── $json[...] / $json.field ──
     if token == "$json" || token == "$item" {
         return Some(current_payload(ctx));

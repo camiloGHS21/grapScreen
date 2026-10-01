@@ -6,6 +6,22 @@ use serde_json::Value;
 pub fn call_function(call: &TrailingCall, ctx: &ExprContext) -> Option<Value> {
     let args = split_args(call.args_src);
 
+    if call.receiver == Some("Math") {
+        if let Some(v) = super::math::call_math(call.name, &args, ctx) {
+            return Some(v);
+        }
+    }
+    if call.receiver == Some("DateTime") {
+        if let Some(v) = super::dates::call_datetime(call.name, &args, ctx) {
+            return Some(v);
+        }
+    }
+    if call.receiver.is_none() {
+        if let Some(v) = super::math::call_global_math(call.name, &args, ctx) {
+            return Some(v);
+        }
+    }
+
     if let Some(recv) = call.receiver {
         let value = super::eval::eval(recv, ctx);
         return apply_helper(&value, call.name, &args, ctx);
@@ -35,6 +51,13 @@ pub fn call_function(call: &TrailingCall, ctx: &ExprContext) -> Option<Value> {
 }
 
 pub fn apply_helper(value: &Value, method: &str, args: &[String], ctx: &ExprContext) -> Option<Value> {
+    if let Some(v) = super::dates::apply_date_method(value, method, args, ctx) {
+        return Some(v);
+    }
+    if let Some(v) = super::math::apply_number_method(value, method, args, ctx) {
+        return Some(v);
+    }
+
     match method {
         // ── Modern node accessors ──
         "all" => match value {

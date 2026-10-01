@@ -99,6 +99,34 @@ export function populateCoreNodeData(
       out.path = String(params.path || "/webhook");
       out.method = String(params.httpMethod || "POST").toUpperCase();
       break;
+    case "edit_fields": {
+      out.description = nodeName || "Editar campos";
+      const fields: Record<string, unknown> = {};
+      if (params.values && typeof params.values === "object") {
+        for (const list of Object.values(params.values as Record<string, unknown[]>)) {
+          if (Array.isArray(list)) {
+            for (const item of list as Array<{ name?: string; value?: unknown }>) {
+              if (item?.name) fields[item.name] = item.value;
+            }
+          }
+        }
+      }
+      if (params.assignments && typeof params.assignments === "object") {
+        const ass = (params.assignments as { assignments?: Array<{ name?: string; value?: unknown }> }).assignments;
+        if (Array.isArray(ass)) {
+          for (const item of ass) {
+            if (item?.name) fields[item.name] = item.value;
+          }
+        }
+      }
+      if (typeof params.set_fields === "string") {
+        out.set_fields = params.set_fields;
+      } else {
+        out.set_fields = JSON.stringify(fields, null, 2);
+      }
+      out.keep_only = String(params.keepOnly || params.keep_only || "");
+      break;
+    }
     case "ai_agent":
       return {
         kind,

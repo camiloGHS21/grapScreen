@@ -1,6 +1,6 @@
 use super::context::{as_f64, json_eq, num, stringify, truthy, ExprContext};
 use super::eval::eval;
-use super::parser::find_top_level;
+use super::parser::{find_top_level, rfind_top_level};
 use serde_json::Value;
 
 pub fn try_logical(expr: &str, ctx: &ExprContext) -> Option<Value> {
@@ -62,40 +62,55 @@ pub fn compare(lhs: &Value, rhs: &Value, op: &str) -> bool {
 }
 
 pub fn try_arithmetic(expr: &str, ctx: &ExprContext) -> Option<Value> {
-    // Lowest precedence: + and - (left to right). Then * / %.
-    if let Some(pos) = find_top_level(expr, " + ") {
-        let lhs = eval(&expr[..pos], ctx);
-        let rhs = eval(&expr[pos + 3..], ctx);
-        return Some(add(lhs, rhs));
+    // Lowest precedence: + and - (left to right, split at rightmost)
+    let pos_add = rfind_top_level(expr, " + ");
+    let pos_sub = rfind_top_level(expr, " - ");
+    match (pos_add, pos_sub) {
+        (Some(pa), Some(ps)) => {
+            if pa > ps {
+                let lhs = eval(&expr[..pa], ctx);
+                let rhs = eval(&expr[pa + 3..], ctx);
+                return Some(add(lhs, rhs));
+            } else {
+                let lhs = as_f64(&eval(&expr[..ps], ctx))?;
+                let rhs = as_f64(&eval(&expr[ps + 3..], ctx))?;
+                return Some(num(lhs - rhs));
+            }
+        }
+        (Some(pa), None) => {
+            let lhs = eval(&expr[..pa], ctx);
+            let rhs = eval(&expr[pa + 3..], ctx);
+            return Some(add(lhs, rhs));
+        }
+        (None, Some(ps)) => {
+            let lhs = as_f64(&eval(&expr[..ps], ctx))?;
+            let rhs = as_f64(&eval(&expr[ps + 3..], ctx))?;
+            return Some(num(lhs - rhs));
+        }
+        (None, None) => {}
     }
-    if let Some(pos) = find_top_level(expr, " - ") {
-        let lhs = as_f64(&eval(&expr[..pos], ctx))?;
-        let rhs = as_f64(&eval(&expr[pos + 3..], ctx))?;
-        return Some(num(lhs - rhs));
-    }
-    for (op, len) in [(" * ", 3), (" / ", 3), (" % ", 3)] {
-        if let Some(pos) = find_top_level(expr, op) {
-            let lhs = as_f64(&eval(&expr[..pos], ctx))?;
-            let rhs = as_f64(&eval(&expr[pos + len..], ctx))?;
-            return Some(match op {
-                " * " => num(lhs * rhs),
-                " / " => {
-                    if rhs == 0.0 {
-                        Value::Null
-                    } else {
-                        num(lhs / rhs)
-                    }
-                }
-                _ => {
-                    if rhs == 0.0 {
-                        Value::Null
-                    } else {
-                        num(lhs % rhs)
-                    }
-                }
-            });
+
+    // Next precedence: * / % (left to right, split at rightmost)
+    let mut rightmost: Option<(usize, &str)> = None;
+    for op in [" * ", " / ", " % "] {
+        if let Some(pos) = rfind_top_level(expr, op) {
+            match rightmost {
+                Some((cur_pos, _)) if pos > cur_pos => rightmost = Some((pos, op)),
+                None => rightmost = Some((pos, op)),
+                _ => {}
+            }
         }
     }
+    if let Some((pos, op)) = rightmost {
+        let lhs = as_f64(&eval(&expr[..pos], ctx))?;
+        let rhs = as_f64(&eval(&expr[pos + 3..], ctx))?;
+        return Some(match op {
+            " * " => num(lhs * rhs),
+            " / " => if rhs == 0.0 { Value::Null } else { num(lhs / rhs) },
+            _ => if rhs == 0.0 { Value::Null } else { num(lhs % rhs) },
+        });
+    }
+
     None
 }
 
