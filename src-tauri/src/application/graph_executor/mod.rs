@@ -22,6 +22,7 @@ pub mod utility_nodes;
 pub mod google_sdks;
 pub mod database_nodes;
 pub mod node_options;
+pub mod binary_data;
 
 #[cfg(test)]
 pub mod testkit;
@@ -33,6 +34,8 @@ mod utility_nodes_tests;
 mod database_nodes_tests;
 #[cfg(test)]
 mod node_options_tests;
+#[cfg(test)]
+mod binary_data_tests;
 
 pub use engine::GraphEngine;
 pub use extract::{extract_graph, GraphConnection, GraphNode};

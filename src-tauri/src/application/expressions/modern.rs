@@ -16,20 +16,13 @@ pub fn resolve_dollar(token: &str, ctx: &ExprContext) -> Option<Value> {
         "$timestamp" => return Some(num(Local::now().timestamp_millis() as f64)),
         "$index" => return Some(num(ctx.item_index as f64)),
         "$runIndex" => return Some(num(ctx.run_index as f64)),
-        "$execution" => {
-            let mut m = Map::new();
-            m.insert("id".into(), Value::String(ctx.execution_id.to_string()));
-            return Some(Value::Object(m));
-        }
+        "$execution" => return Some(serde_json::json!({ "id": ctx.execution_id })),
         "$items" => return Some(Value::Array(ctx.items.to_vec())),
         _ => {}
     }
 
-    // ── $execution.id ──
-    if let Some(rest) = token.strip_prefix("$execution.") {
-        if rest == "id" {
-            return Some(Value::String(ctx.execution_id.to_string()));
-        }
+    if token == "$execution.id" {
+        return Some(Value::String(ctx.execution_id.to_string()));
     }
 
     // ── $json[...] / $json.field ──
@@ -39,6 +32,15 @@ pub fn resolve_dollar(token: &str, ctx: &ExprContext) -> Option<Value> {
     if let Some(rest) = token.strip_prefix("$json").or_else(|| token.strip_prefix("$item")) {
         let payload = current_payload(ctx);
         return Some(get_path(&payload, rest));
+    }
+
+    // ── $binary[...] / $binary.field ──
+    if token == "$binary" {
+        return Some(ctx.current_item().and_then(|it| it.get("binary")).cloned().unwrap_or(Value::Null));
+    }
+    if let Some(rest) = token.strip_prefix("$binary") {
+        let bin = ctx.current_item().and_then(|it| it.get("binary")).cloned().unwrap_or(Value::Null);
+        return Some(get_path(&bin, rest));
     }
 
     // ── $node["Name"].json.field ──
@@ -156,30 +158,18 @@ pub fn resolve_modern_node(token: &str, ctx: &ExprContext) -> Option<Value> {
         return Some(resolve_item_tail(&last_item, rest));
     }
 
+    let item = items_opt.and_then(|l| l.get(ctx.item_index).or_else(|| l.first())).cloned().unwrap_or(Value::Null);
     if let Some(rest) = after_paren.strip_prefix(".item") {
-        let item = match items_opt {
-            Some(l) => l.get(ctx.item_index).or_else(|| l.first()).cloned().unwrap_or(Value::Null),
-            None => Value::Null,
-        };
         return Some(resolve_item_tail(&item, rest));
     }
-
     if let Some(rest) = after_paren.strip_prefix(".json") {
-        let item = match items_opt {
-            Some(l) => l.get(ctx.item_index).or_else(|| l.first()).cloned().unwrap_or(Value::Null),
-            None => Value::Null,
-        };
         let unwrapped = unwrap_item(&item);
-        if rest.is_empty() {
-            return Some(unwrapped);
-        }
-        return Some(get_path(&unwrapped, rest));
+        return Some(if rest.is_empty() { unwrapped } else { get_path(&unwrapped, rest) });
     }
-
-    let item = match items_opt {
-        Some(l) => l.get(ctx.item_index).or_else(|| l.first()).cloned().unwrap_or(Value::Null),
-        None => Value::Null,
-    };
+    if let Some(rest) = after_paren.strip_prefix(".binary") {
+        let bin = item.get("binary").cloned().unwrap_or(Value::Null);
+        return Some(if rest.is_empty() { bin } else { get_path(&bin, rest) });
+    }
     Some(resolve_item_tail(&item, after_paren))
 }
 
@@ -189,13 +179,11 @@ fn resolve_item_tail(item: &Value, tail: &str) -> Value {
     }
     if let Some(rest) = tail.strip_prefix(".json") {
         let unwrapped = unwrap_item(item);
-        if rest.is_empty() {
-            return unwrapped;
-        }
-        return get_path(&unwrapped, rest);
+        return if rest.is_empty() { unwrapped } else { get_path(&unwrapped, rest) };
     }
-    if tail.starts_with(".binary") {
-        return item.get("binary").cloned().unwrap_or(Value::Null);
+    if let Some(rest) = tail.strip_prefix(".binary") {
+        let bin = item.get("binary").cloned().unwrap_or(Value::Null);
+        return if rest.is_empty() { bin } else { get_path(&bin, rest) };
     }
     get_path(item, tail)
 }

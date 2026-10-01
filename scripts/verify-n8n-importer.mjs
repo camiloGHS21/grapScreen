@@ -313,7 +313,46 @@ async function runTests() {
   assert(expNode.executeOnce === true, "Export executeOnce missing");
   console.log("PASS: Test 10 passed.");
 
-  console.log("\nALL 10 TEST SUITES (IMPORT, EXPORT & NODE OPTIONS) PASSED SUCCESSFULLY!");
+  console.log("Running Test 11: Binary Data Pipeline (item.binary, readBinaryFile & writeBinaryFile)");
+  const binaryWf = {
+    name: "Binary Flow",
+    nodes: [
+      {
+        id: "bin-1",
+        name: "Read Image",
+        type: "n8n-nodes-base.readBinaryFile",
+        parameters: { filePath: "/path/to/logo.png", dataPropertyName: "imageProp" },
+      },
+      {
+        id: "bin-2",
+        name: "Write Image",
+        type: "n8n-nodes-base.writeBinaryFile",
+        parameters: { filePath: "/path/to/output.png", dataPropertyName: "imageProp" },
+      },
+    ],
+    connections: {
+      "Read Image": { main: [[{ node: "Write Image", type: "main", index: 0 }]] },
+    },
+  };
+  const res11 = importN8nWorkflow(binaryWf);
+  assert(res11.summary.nodeCount === 2 && res11.summary.connectionCount === 1, "Res11 counts mismatch");
+
+  const readEv = res11.events.find(e => e.data.custom_name === "Read Image");
+  assert(readEv && readEv.data.file_path === "/path/to/logo.png", "ReadBinaryFile path mismatch");
+  assert(readEv.data.data_property_name === "imageProp", "ReadBinaryFile data_property_name mismatch");
+
+  const writeEv = res11.events.find(e => e.data.custom_name === "Write Image");
+  assert(writeEv && writeEv.data.file_path === "/path/to/output.png", "WriteBinaryFile path mismatch");
+  assert(writeEv.data.data_property_name === "imageProp", "WriteBinaryFile data_property_name mismatch");
+
+  // Round-trip export test
+  const exported11 = exportN8nWorkflow("Exported Binary Flow", res11.events);
+  assert(exported11.nodes.length === 2, "Exported binary nodes length mismatch");
+  const expRead = exported11.nodes.find(n => n.name === "Read Image");
+  assert(expRead && (expRead.type === "n8n-nodes-base.readBinaryFile" || expRead.type === "n8n-nodes-base.readWriteFile"), "Exported ReadBinaryFile type mismatch");
+  console.log("PASS: Test 11 passed.");
+
+  console.log("\nALL 11 TEST SUITES (IMPORT, EXPORT, RESILIENCE & BINARY PIPELINE) PASSED SUCCESSFULLY!");
 }
 
 runTests().catch((err) => {

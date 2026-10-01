@@ -249,3 +249,33 @@ fn test_input_and_env_expressions() {
     assert_eq!(render("{{ $workflow.id }}", &ctx), json!("exec_123"));
 }
 
+#[test]
+fn binary_expressions() {
+    let items = vec![json!({
+        "json": { "id": 1 },
+        "binary": {
+            "data": {
+                "fileName": "invoice.pdf",
+                "fileSize": "12 kB",
+                "mimeType": "application/pdf"
+            }
+        }
+    })];
+    let mut nodes = HashMap::new();
+    nodes.insert("DownloadNode".to_string(), items.clone());
+    let ctx = ExprContext {
+        items: &items,
+        item_index: 0,
+        run_index: 0,
+        node_outputs: &nodes,
+        variables: &HashMap::new(),
+        execution_id: "exec_bin",
+        credentials: None,
+    };
+
+    assert_eq!(render("{{ $binary.data.fileName }}", &ctx), json!("invoice.pdf"));
+    assert_eq!(render("{{ $binary.data.mimeType }}", &ctx), json!("application/pdf"));
+    assert_eq!(render("{{ $('DownloadNode').item.binary.data.fileName }}", &ctx), json!("invoice.pdf"));
+    assert_eq!(render("{{ $('DownloadNode').first().binary.data.fileSize }}", &ctx), json!("12 kB"));
+}
+

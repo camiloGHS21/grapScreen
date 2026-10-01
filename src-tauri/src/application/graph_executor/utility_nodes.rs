@@ -86,37 +86,39 @@ pub fn run_execute_command(data: &Value, items: Vec<Value>) -> Result<Vec<Value>
 /// Native runner for `ReadWriteFile` / `ReadBinaryFile` / `WriteBinaryFile`.
 pub fn run_read_write_file(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, String> {
     let op = cfg_str(data, "operation", &["mode"]).to_lowercase();
-    if op == "write" {
+    if op == "write" || op == "writebinaryfile" {
         run_write_file(data, items)
     } else {
         run_read_file(data, items)
     }
 }
 
-/// Native runner for `read_file` (delegating to core_nodes with normalized path).
+/// Native runner for `read_file` (delegating to core_nodes or binary_data).
 pub fn run_read_file(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, String> {
+    if super::binary_data::is_binary_op(data, &items) {
+        return super::binary_data::run_read_binary_file(data, items);
+    }
     let path = cfg_str(data, "file_path", &["filePath", "path", "filename"]);
     let mut normalized = data.clone();
     if !path.is_empty() {
         normalized["file_path"] = Value::String(path);
     }
     let res = super::core_nodes::run_read_file(&normalized, items)?;
-    let mapped = res
-        .into_iter()
-        .map(|mut it| {
-            if let Value::Object(ref mut map) = it {
-                if let Some(d) = map.get("data").cloned() {
-                    map.entry("content".to_string()).or_insert(d);
-                }
+    Ok(res.into_iter().map(|mut it| {
+        if let Value::Object(ref mut map) = it {
+            if let Some(d) = map.get("data").cloned() {
+                map.entry("content".to_string()).or_insert(d);
             }
-            it
-        })
-        .collect();
-    Ok(mapped)
+        }
+        it
+    }).collect())
 }
 
-/// Native runner for `write_file` (delegating to core_nodes with normalized path/content).
+/// Native runner for `write_file` (delegating to core_nodes or binary_data).
 pub fn run_write_file(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, String> {
+    if super::binary_data::is_binary_op(data, &items) {
+        return super::binary_data::run_write_binary_file(data, items);
+    }
     let path = cfg_str(data, "file_path", &["filePath", "path", "filename"]);
     let content = cfg_str(data, "content", &["data", "value"]);
     let mut normalized = data.clone();

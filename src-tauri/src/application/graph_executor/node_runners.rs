@@ -54,8 +54,9 @@ impl<'a> GraphEngine<'a> {
                 Ok(self.targets_of(&node.id, None))
             }
             // n8n Core, Utility, Google SDKs & DBs: each item executes once.
-            "read_file" | "write_file" | "postgres" | "ai_agent" | "run_cmd" | "excel_local" | "code"
-            | "mysql" | "redis" | "mongodb" | "google_docs" | "google_slides" | "google_chat" | "google_drive" => {
+            "read_file" | "write_file" | "read_binary_file" | "write_binary_file" | "postgres" | "ai_agent"
+            | "run_cmd" | "excel_local" | "code" | "mysql" | "redis" | "mongodb" | "google_docs"
+            | "google_slides" | "google_chat" | "google_drive" => {
                 self.exec_action(node)?;
                 Ok(self.targets_of(&node.id, None))
             }
@@ -147,8 +148,8 @@ impl<'a> GraphEngine<'a> {
             "notion" => super::integration_nodes::run_notion(&data, incoming),
             "airtable" => super::integration_nodes::run_airtable(&data, incoming),
             // n8n Core & Utility — Read/Write Files from Disk & native runners.
-            "read_file" => super::utility_nodes::run_read_file(&data, incoming),
-            "write_file" => super::utility_nodes::run_write_file(&data, incoming),
+            "read_file" | "read_binary_file" => super::utility_nodes::run_read_file(&data, incoming),
+            "write_file" | "write_binary_file" => super::utility_nodes::run_write_file(&data, incoming),
             "postgres" => super::postgres_node::run(&data, incoming),
             "ai_agent" => super::ai_agent_runner::run(&data, incoming),
             "run_cmd" => super::utility_nodes::run_execute_command(&data, incoming),

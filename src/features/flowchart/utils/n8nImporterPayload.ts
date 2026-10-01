@@ -41,12 +41,21 @@ export function populateCoreNodeData(
         out.description = nodeName || "Leer archivo";
       }
       out.file_path = String(params.filePath || params.file_path || params.fileName || params.filename || "");
+      if (params.dataPropertyName || params.binaryPropertyName) {
+        out.data_property_name = String(params.dataPropertyName || params.binaryPropertyName);
+      }
+      if (params.asBinary || params.readBinary || params.is_binary) {
+        out.is_binary = true;
+      }
       break;
     }
     case "write_file":
       out.description = nodeName || "Escribir archivo";
       out.file_path = String(params.filePath || params.file_path || params.fileName || params.filename || "");
       out.content = String(params.content || params.data || params.value || "");
+      if (params.dataPropertyName || params.binaryPropertyName) {
+        out.data_property_name = String(params.dataPropertyName || params.binaryPropertyName);
+      }
       break;
     case "excel_local":
       out.description = nodeName || "Archivo Excel/CSV";

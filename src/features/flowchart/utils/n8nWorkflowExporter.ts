@@ -36,6 +36,12 @@ function mapKindToN8nType(kind: string, n8nKey?: string): { type: string; versio
     case "run_cmd":
     case "executecommand":
       return { type: "n8n-nodes-base.executeCommand", version: 1 };
+    case "read_binary_file":
+    case "readbinaryfile":
+      return { type: "n8n-nodes-base.readBinaryFile", version: 1 };
+    case "write_binary_file":
+    case "writebinaryfile":
+      return { type: "n8n-nodes-base.writeBinaryFile", version: 1 };
     case "read_file":
     case "write_file":
     case "readwritefile":
@@ -257,7 +263,6 @@ export function exportN8nWorkflow(workflowName: string, events: RecordedEvent[])
     if (d.next_action_id) targets.push({ targetId: String(d.next_action_id), port: "out" });
     if (d.branch_true_id) targets.push({ targetId: String(d.branch_true_id), port: "true" });
     if (d.branch_false_id) targets.push({ targetId: String(d.branch_false_id), port: "false" });
-
     for (const t of targets) {
       const toInfo = resolveRef(t.targetId);
       if (!toInfo) continue;
@@ -270,9 +275,7 @@ export function exportN8nWorkflow(workflowName: string, events: RecordedEvent[])
     nodes,
     connections,
     pinData: {},
-    settings: {
-      executionOrder: "v1",
-    },
+    settings: { executionOrder: "v1" },
   };
 }
 
@@ -281,13 +284,11 @@ export function exportN8nWorkflow(workflowName: string, events: RecordedEvent[])
  */
 export function downloadN8nWorkflow(workflowName: string, events: RecordedEvent[]): void {
   const data = exportN8nWorkflow(workflowName, events);
-  const jsonStr = JSON.stringify(data, null, 2);
-  const blob = new Blob([jsonStr], { type: "application/json;charset=utf-8" });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  const safeName = (workflowName || "workflow").replace(/[^a-zA-Z0-9_-]/g, "_");
   a.href = url;
-  a.download = `${safeName}.n8n.json`;
+  a.download = `${(workflowName || "workflow").replace(/[^a-zA-Z0-9_-]/g, "_")}.n8n.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
