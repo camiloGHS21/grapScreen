@@ -143,9 +143,6 @@ impl<'a> GraphEngine<'a> {
         if depth > 1000 {
             return Err("Profundidad de ejecución superada (>1000 pasos)".into());
         }
-        if self.stop_flag.load(std::sync::atomic::Ordering::Relaxed) {
-            return Ok(());
-        }
         if self.finished_early {
             return Ok(());
         }

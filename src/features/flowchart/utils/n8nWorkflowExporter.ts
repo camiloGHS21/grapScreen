@@ -46,22 +46,16 @@ function mapKindToN8nType(kind: string, n8nKey?: string): { type: string; versio
     case "write_file":
     case "readwritefile":
       return { type: "n8n-nodes-base.readWriteFile", version: 1 };
-    case "mysql":
-      return { type: "n8n-nodes-base.mySql", version: 2.4 };
-    case "redis":
-      return { type: "n8n-nodes-base.redis", version: 1 };
-    case "mongodb":
-      return { type: "n8n-nodes-base.mongoDb", version: 1.1 };
-    case "postgres":
-      return { type: "n8n-nodes-base.postgres", version: 2.5 };
-    case "google_docs":
-      return { type: "n8n-nodes-base.googleDocs", version: 2 };
-    case "google_slides":
-      return { type: "n8n-nodes-base.googleSlides", version: 1 };
-    case "google_chat":
-      return { type: "n8n-nodes-base.googleChat", version: 1 };
-    case "google_drive":
-      return { type: "n8n-nodes-base.googleDrive", version: 3 };
+    case "merge":
+      return { type: "n8n-nodes-base.merge", version: 3 };
+    case "mysql": return { type: "n8n-nodes-base.mySql", version: 2.4 };
+    case "redis": return { type: "n8n-nodes-base.redis", version: 1 };
+    case "mongodb": return { type: "n8n-nodes-base.mongoDb", version: 1.1 };
+    case "postgres": return { type: "n8n-nodes-base.postgres", version: 2.5 };
+    case "google_docs": return { type: "n8n-nodes-base.googleDocs", version: 2 };
+    case "google_slides": return { type: "n8n-nodes-base.googleSlides", version: 1 };
+    case "google_chat": return { type: "n8n-nodes-base.googleChat", version: 1 };
+    case "google_drive": return { type: "n8n-nodes-base.googleDrive", version: 3 };
     case "excel_local":
     case "spreadsheetfile":
       return { type: "n8n-nodes-base.spreadsheetFile", version: 2 };
@@ -126,17 +120,20 @@ function extractN8nParameters(event: RecordedEvent): Record<string, unknown> {
       return { operation: "read", fileName: d.file_path || d.path || "" };
     case "write_file":
       return { operation: "write", fileName: d.file_path || d.path || "", dataPropertyName: "data" };
+    case "merge":
+      return {
+        mode: d.mode || "append",
+        ...(d.combinationMode ? { combinationMode: d.combinationMode } : {}),
+        ...(d.joinMode ? { joinMode: d.joinMode } : {}),
+        ...(d.field1 ? { propertyName1: d.field1 } : {}),
+        ...(d.field2 ? { propertyName2: d.field2 } : {}),
+      };
     case "mysql":
-    case "postgres":
-      return { query: d.query || d.sql || "" };
-    case "redis":
-      return { operation: d.operation || "get", keyName: d.key || "" };
-    case "mongodb":
-      return { collection: d.collection || "", query: d.query || "{}" };
-    case "code":
-      return { jsCode: d.code || "" };
-    default:
-      return {};
+    case "postgres": return { query: d.query || d.sql || "" };
+    case "redis": return { operation: d.operation || "get", keyName: d.key || "" };
+    case "mongodb": return { collection: d.collection || "", query: d.query || "{}" };
+    case "code": return { jsCode: d.code || "" };
+    default: return {};
   }
 }
 

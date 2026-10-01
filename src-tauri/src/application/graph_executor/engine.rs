@@ -17,7 +17,6 @@ pub const PASSTHROUGH_KINDS: &[&str] = &[
     "file_change",
     "hotkey_trigger",
     "note",
-    "merge",
     "error_handler",
     "end",
     // Phase 11 — NoOp passes items through untouched; polling is a trigger

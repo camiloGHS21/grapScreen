@@ -66,6 +66,12 @@ export function populateCoreNodeData(
     case "merge":
       out.description = nodeName || "Merge";
       out.mode = String(params.mode || "append");
+      if (params.combinationMode) out.combinationMode = String(params.combinationMode);
+      if (params.joinMode) out.joinMode = String(params.joinMode);
+      if (params.outputType) out.outputType = String(params.outputType);
+      if (params.output) out.output = String(params.output);
+      if (params.propertyName1 || params.field1) out.field1 = String(params.propertyName1 || params.field1);
+      if (params.propertyName2 || params.field2) out.field2 = String(params.propertyName2 || params.field2);
       break;
     case "http_request":
       out.description = nodeName || "HTTP Request";

@@ -131,13 +131,25 @@ async function runTests() {
   assert(agentEvent && agentEvent.data.provider === "openai" && agentEvent.data.model === "gpt-4o", "Agent parity failed");
   console.log("PASS: Test 4 passed.");
 
-  console.log("Running Test 5: Merge Node (Two Inputs: in1 & in2)");
+  console.log("Running Test 5: Merge Node (Two Inputs: in1 & in2, Advanced Modes)");
   const mergeWorkflow = {
     name: "Merge Streams",
     nodes: [
       { id: "src-1", name: "Stream A", type: "n8n-nodes-base.noOp", position: [100, 100] },
       { id: "src-2", name: "Stream B", type: "n8n-nodes-base.noOp", position: [100, 300] },
-      { id: "merge-1", name: "Combine", type: "n8n-nodes-base.merge", position: [400, 200] },
+      {
+        id: "merge-1",
+        name: "Combine",
+        type: "n8n-nodes-base.merge",
+        position: [400, 200],
+        parameters: {
+          mode: "combine",
+          combinationMode: "mergeByFields",
+          joinMode: "inner",
+          propertyName1: "userId",
+          propertyName2: "id",
+        },
+      },
     ],
     connections: {
       "Stream A": { main: [[{ node: "Combine", type: "main", index: 0 }]] },
@@ -148,6 +160,21 @@ async function runTests() {
   const meta5 = res5.events.find((e) => e.kind === "layout_metadata")?.data;
   const mergeTargetPorts = meta5.connections.map((c) => c.targetPortId);
   assert(mergeTargetPorts.includes("in1") && mergeTargetPorts.includes("in2"), "Merge inputs mismatch");
+
+  const mergeEv = res5.events.find((e) => e.data.custom_name === "Combine");
+  assert(mergeEv && mergeEv.kind === "merge", "Merge kind mismatch");
+  assert(mergeEv.data.mode === "combine", "Merge mode mismatch");
+  assert(mergeEv.data.combinationMode === "mergeByFields", "Merge combinationMode mismatch");
+  assert(mergeEv.data.joinMode === "inner", "Merge joinMode mismatch");
+  assert(mergeEv.data.field1 === "userId", "Merge field1 mismatch");
+  assert(mergeEv.data.field2 === "id", "Merge field2 mismatch");
+
+  // Round-trip export test for Merge
+  const exported5 = exportN8nWorkflow("Exported Merge", res5.events);
+  const expMerge = exported5.nodes.find(n => n.name === "Combine");
+  assert(expMerge && expMerge.type === "n8n-nodes-base.merge", "Exported Merge type mismatch");
+  assert(expMerge.parameters.mode === "combine", "Exported Merge mode mismatch");
+  assert(expMerge.parameters.combinationMode === "mergeByFields", "Exported Merge combinationMode mismatch");
   console.log("PASS: Test 5 passed.");
 
   console.log("Running Test 6: Sticky Notes & Disabled Nodes");

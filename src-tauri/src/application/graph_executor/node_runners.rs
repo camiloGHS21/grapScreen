@@ -48,6 +48,10 @@ impl<'a> GraphEngine<'a> {
             "loop" => self.exec_loop(node, depth),
             "split_batches" => self.exec_split_batches(node, depth),
             "sub_workflow" => self.exec_sub_workflow(node, depth),
+            "merge" => {
+                super::merge_nodes::exec_merge(&self.outgoing, self.node_event(node).map(|e| &e.data), &node.id, &self.node_label(node))?;
+                Ok(self.targets_of(&node.id, None))
+            }
             // Phase 11 — action nodes: each item triggers one external call.
             "send_email" | "slack_webhook" | "discord_webhook" | "notion" | "airtable" => {
                 self.exec_action(node)?;
