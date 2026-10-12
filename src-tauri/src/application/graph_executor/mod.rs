@@ -86,6 +86,9 @@ pub(crate) fn trigger_payload_items(body: &str) -> Vec<serde_json::Value> {
 }
 
 /// Entry point used by the replay service: executes the whole graph.
+// Param-struct refactor would churn many call sites and tests; the graph-run
+// surface is stable and mirrors n8n's own run parameters.
+#[allow(clippy::too_many_arguments)]
 pub fn run_graph(
     service: &ReplayServiceImpl,
     file_id: &str,
@@ -102,6 +105,7 @@ pub fn run_graph(
 
 /// Full-options graph run; `stop_after` limits execution to a target node
 /// (n8n "Execute previous nodes"). Returns the per-node status log.
+#[allow(clippy::too_many_arguments)]
 pub fn run_graph_with_options(
     service: &ReplayServiceImpl,
     file_id: &str,
@@ -180,6 +184,7 @@ pub fn run_graph_with_options(
 /// This is n8n's "Execute step": only the requested node runs, with no upstream
 /// walk, so the user can inspect a node's real input and output without
 /// replaying (and side-effecting) everything before it.
+#[allow(clippy::too_many_arguments)]
 pub fn run_single_node_with_options(
     service: &ReplayServiceImpl,
     file_id: &str,

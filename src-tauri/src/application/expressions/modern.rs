@@ -1,6 +1,6 @@
 use super::context::{current_payload, num, unwrap_item, ExprContext};
 use chrono::Local;
-use serde_json::{Map, Value};
+use serde_json::Value;
 
 /// Resolves `$json...`, `$node...`, `$items...`, `$now`, `$index`, `$credentials` and `$('NodeName')`.
 pub fn resolve_dollar(token: &str, ctx: &ExprContext) -> Option<Value> {

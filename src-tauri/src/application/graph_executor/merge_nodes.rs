@@ -124,7 +124,7 @@ pub fn merge_items(item1: &Value, item2: &Value) -> Value {
 }
 
 /// Extracts a string representation of a field for joining.
-fn get_field_val<'a>(item: &'a Value, field: &str) -> Option<String> {
+fn get_field_val(item: &Value, field: &str) -> Option<String> {
     let unwrapped = crate::application::expressions::unwrap_item(item);
     if let Value::Object(map) = unwrapped {
         if let Some(val) = map.get(field) {
@@ -247,11 +247,10 @@ fn run_merge_by_fields(data: &Value, input1: Vec<Value>, input2: Vec<Value>) -> 
             }
         }
 
-        if !found {
-            if join_mode == "keepnonmatches" || join_mode == "left" || join_mode == "enrichinput1" || join_mode == "outer" || join_mode == "keepall" || join_mode.is_empty() {
+        if !found
+            && (join_mode == "keepnonmatches" || join_mode == "left" || join_mode == "enrichinput1" || join_mode == "outer" || join_mode == "keepall" || join_mode.is_empty()) {
                 out.push(it1.clone());
             }
-        }
     }
 
     // Right / outer joins append unmatched items from input 2

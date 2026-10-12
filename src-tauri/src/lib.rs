@@ -4,10 +4,10 @@ pub mod infrastructure;
 pub mod presentation;
 pub mod isolated;
 
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 use std::sync::{Arc, Mutex, OnceLock};
 use std::collections::HashMap;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager};
 use crate::domain::ports_out::StoragePort;
 use crate::domain::ports_in::ReplayUseCase;
 

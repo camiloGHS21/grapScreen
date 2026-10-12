@@ -20,7 +20,7 @@ pub fn handle_custom_event(
             let exe = event.data["exe"].as_str().unwrap_or("");
             let exe_interp = interpolate_variables(exe);
             if !exe_interp.is_empty() {
-                let _ = std::process::Command::new("cmd").args(&["/C", "start", "", &exe_interp]).spawn();
+                let _ = std::process::Command::new("cmd").args(["/C", "start", "", &exe_interp]).spawn();
             }
             Some(true)
         }
@@ -33,7 +33,7 @@ pub fn handle_custom_event(
                 } else {
                     format!("{}.exe", name_interp)
                 };
-                let _ = std::process::Command::new("taskkill").args(&["/F", "/IM", &process_name]).spawn();
+                let _ = std::process::Command::new("taskkill").args(["/F", "/IM", &process_name]).spawn();
             }
             Some(true)
         }

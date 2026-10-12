@@ -1,9 +1,15 @@
-use crate::domain::credentials::entity::{VaultCredential, CredentialType};
+use crate::domain::credentials::entity::VaultCredential;
 use crate::domain::credentials::ports::CredentialVaultPort;
 use crate::infrastructure::security::filesystem_vault::FilesystemVaultAdapter;
 
 pub struct VaultService {
     port: Box<dyn CredentialVaultPort>,
+}
+
+impl Default for VaultService {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl VaultService {

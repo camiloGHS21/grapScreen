@@ -152,6 +152,26 @@ pub fn execute_excel_local(event: &RecordedEvent) -> bool {
     result.is_ok()
 }
 
+fn normalize_ext(path: &Path, format: &str) -> PathBuf {
+    let s = path.to_string_lossy().to_string();
+    let lower = s.to_lowercase();
+    if format == "xlsx" {
+        if lower.ends_with(".xlsx") {
+            path.to_path_buf()
+        } else {
+            let base = lower.strip_suffix(".csv").unwrap_or(&s);
+            PathBuf::from(format!("{}.xlsx", base))
+        }
+    } else {
+        if lower.ends_with(".xlsx") {
+            let base = &s[..s.len() - ".xlsx".len()];
+            PathBuf::from(format!("{}.csv", base))
+        } else {
+            path.to_path_buf()
+        }
+    }
+}
+
 #[cfg(test)]
 mod template_seed_tests {
     //! End-to-end tests for the "Formulario → Excel" template.
@@ -312,7 +332,7 @@ mod template_seed_tests {
 
         /// The full body of one `if (type === "…")` seed branch, however many
         /// lines it spans.
-        fn branch<'a>(src: &'a str, needle: &str) -> String {
+        fn branch(src: &str, needle: &str) -> String {
             let lines: Vec<&str> = src.lines().collect();
             let start = lines
                 .iter()
@@ -381,25 +401,5 @@ mod template_seed_tests {
             "the Sheets step must write the form's variables instead of a blank \
              row: {sheets}"
         );
-    }
-}
-
-fn normalize_ext(path: &Path, format: &str) -> PathBuf {
-    let s = path.to_string_lossy().to_string();
-    let lower = s.to_lowercase();
-    if format == "xlsx" {
-        if lower.ends_with(".xlsx") {
-            path.to_path_buf()
-        } else {
-            let base = lower.strip_suffix(".csv").unwrap_or(&s);
-            PathBuf::from(format!("{}.xlsx", base))
-        }
-    } else {
-        if lower.ends_with(".xlsx") {
-            let base = &s[..s.len() - ".xlsx".len()];
-            PathBuf::from(format!("{}.csv", base))
-        } else {
-            path.to_path_buf()
-        }
     }
 }

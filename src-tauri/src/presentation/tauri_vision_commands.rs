@@ -5,7 +5,7 @@ use tauri::State;
 use serde::Serialize;
 use std::cmp::Ordering;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use strsim::normalized_levenshtein;
 use image::imageops::crop_imm;
 
@@ -218,7 +218,7 @@ pub fn find_visual_template(
     _click: Option<bool>,
 ) -> std::result::Result<VisualMatch, String> {
     let started = std::time::Instant::now();
-    let threshold = threshold.unwrap_or(0.86).clamp(0.0, 1.0);
+    let _threshold = threshold.unwrap_or(0.86).clamp(0.0, 1.0);
     
     // Read the template file as base64
     let path = template_path(&template_id)?;

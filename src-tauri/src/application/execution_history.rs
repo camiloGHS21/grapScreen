@@ -87,7 +87,7 @@ pub fn list_runs(automation_id: Option<String>) -> Vec<ExecutionRecord> {
     ensure_loaded();
     let h = history().lock().unwrap();
     h.iter()
-        .filter(|r| automation_id.as_deref().map_or(true, |id| r.automation_id == id))
+        .filter(|r| automation_id.as_deref().is_none_or(|id| r.automation_id == id))
         .cloned()
         .collect()
 }

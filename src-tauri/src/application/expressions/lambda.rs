@@ -23,8 +23,7 @@ pub fn eval_lambda(lambda_str: &str, elem: &Value, ctx: &ExprContext) -> Value {
             return elem.clone();
         }
 
-        if body.starts_with(param) {
-            let tail = &body[param.len()..];
+        if let Some(tail) = body.strip_prefix(param) {
             if tail.starts_with('.') || tail.starts_with('[') {
                 if tail.contains('(') && tail.ends_with(')') {
                     if let Some(dot) = super::parser::last_top_level_dot(tail) {
@@ -87,8 +86,7 @@ fn eval_lambda_part(part: &str, param: &str, elem: &Value, ctx: &ExprContext) ->
     if part == param {
         return elem.clone();
     }
-    if part.starts_with(param) {
-        let tail = &part[param.len()..];
+    if let Some(tail) = part.strip_prefix(param) {
         if tail.starts_with('.') || tail.starts_with('[') {
             return resolve_elem_field(elem, tail);
         }

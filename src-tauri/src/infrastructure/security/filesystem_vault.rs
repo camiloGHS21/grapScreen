@@ -6,6 +6,12 @@ use super::win32_dpapi::{decrypt_bytes, encrypt_bytes};
 
 pub struct FilesystemVaultAdapter;
 
+impl Default for FilesystemVaultAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FilesystemVaultAdapter {
     pub fn new() -> Self {
         Self

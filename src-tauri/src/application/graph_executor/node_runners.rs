@@ -3,7 +3,6 @@ use super::extract::GraphNode;
 use crate::application::replay_helpers;
 use crate::domain::entities::RecordedEvent;
 use serde_json::Value;
-use std::collections::HashSet;
 
 impl<'a> GraphEngine<'a> {
     pub(crate) fn node_event(&self, node: &GraphNode) -> Option<&RecordedEvent> {
@@ -78,7 +77,7 @@ impl<'a> GraphEngine<'a> {
                 let msg = data
                     .get("message")
                     .and_then(|v| v.as_str())
-                    .map(|s| replay_helpers::interpolate_variables(s))
+                    .map(replay_helpers::interpolate_variables)
                     .unwrap_or_else(|| "Detenido por nodo Stop & Error".into());
                 Err(msg)
             }
@@ -152,8 +151,13 @@ impl<'a> GraphEngine<'a> {
             "notion" => super::integration_nodes::run_notion(&data, incoming),
             "airtable" => super::integration_nodes::run_airtable(&data, incoming),
             // n8n Core & Utility — Read/Write Files from Disk & native runners.
-            "read_file" | "read_binary_file" => super::utility_nodes::run_read_file(&data, incoming),
-            "write_file" | "write_binary_file" => super::utility_nodes::run_write_file(&data, incoming),
+            "read_file" => super::utility_nodes::run_read_file(&data, incoming),
+            "write_file" => super::utility_nodes::run_write_file(&data, incoming),
+            // Binary kinds are binary by declaration. Routing them through the
+            // text runners' `is_binary_op` guess means a node configured without
+            // `operation` silently degrades into a text read/write.
+            "read_binary_file" => super::binary_data::run_read_binary_file(&data, incoming),
+            "write_binary_file" => super::binary_data::run_write_binary_file(&data, incoming),
             "postgres" => super::postgres_node::run(&data, incoming),
             "ai_agent" => super::ai_agent_runner::run(&data, incoming),
             "run_cmd" => super::utility_nodes::run_execute_command(&data, incoming),

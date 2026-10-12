@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 use tauri::State;
 use crate::AppState;
 
@@ -173,11 +172,10 @@ pub fn export_automation_exe(
 
     // Sanitize destination path if Windows FileDialog appended .exe to non-windows targets
     let mut final_path = dest_path;
-    if target == "linux" && final_path.ends_with(".AppImage.exe") {
-        final_path = final_path.trim_end_matches(".exe").to_string();
-    } else if target == "macos" && final_path.ends_with(".app.exe") {
-        final_path = final_path.trim_end_matches(".exe").to_string();
-    } else if target == "json" && final_path.ends_with(".json.exe") {
+    let carries_stale_exe_suffix = (target == "linux" && final_path.ends_with(".AppImage.exe"))
+        || (target == "macos" && final_path.ends_with(".app.exe"))
+        || (target == "json" && final_path.ends_with(".json.exe"));
+    if carries_stale_exe_suffix {
         final_path = final_path.trim_end_matches(".exe").to_string();
     }
 

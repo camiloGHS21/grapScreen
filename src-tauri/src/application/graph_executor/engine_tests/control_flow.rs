@@ -8,7 +8,7 @@
 use crate::application::graph_executor::testkit::{cfg, payloads, Graph, Harness, Runner};
 use serde_json::json;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn scratch(name: &str) -> PathBuf {
     let dir = std::env::temp_dir().join("grapscreen_engine_tests").join(name);
@@ -17,12 +17,12 @@ fn scratch(name: &str) -> PathBuf {
     dir
 }
 
-fn read(path: &PathBuf) -> String {
+fn read(path: &Path) -> String {
     fs::read_to_string(path).unwrap_or_default()
 }
 
 /// A `write_file` node that leaves a mark only if it runs.
-fn mark_node(id: &str, dir: &PathBuf) -> (String, String, serde_json::Value) {
+fn mark_node(id: &str, dir: &Path) -> (String, String, serde_json::Value) {
     let file = dir.join(format!("{}.txt", id));
     (
         id.to_string(),

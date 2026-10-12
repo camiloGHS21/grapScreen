@@ -5,3 +5,4 @@ pub mod input_listener;
 pub mod automation;
 pub mod screen_capture;
 pub mod security;
+pub mod scripting;

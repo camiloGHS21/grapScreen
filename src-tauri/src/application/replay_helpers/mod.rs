@@ -18,13 +18,13 @@ use tauri::Emitter;
 
 thread_local! {
     pub static VARIABLES: RefCell<HashMap<String, String>> = RefCell::new(HashMap::new());
-    pub static CURRENT_ITEMS: RefCell<Vec<Value>> = RefCell::new(Vec::new());
+    pub static CURRENT_ITEMS: RefCell<Vec<Value>> = const { RefCell::new(Vec::new()) };
     /// Output items produced by each executed node, keyed by node id AND label.
     /// This is what `{{ $node["My Node"].json.field }}` reads from.
     pub static NODE_OUTPUTS: RefCell<HashMap<String, Vec<Value>>> = RefCell::new(HashMap::new());
     /// Data of the credential attached to the node currently executing, if any.
     /// Exposed to expressions as `{{ $credentials.field }}`.
-    pub static CURRENT_CREDENTIAL: RefCell<Option<Value>> = RefCell::new(None);
+    pub static CURRENT_CREDENTIAL: RefCell<Option<Value>> = const { RefCell::new(None) };
 }
 
 /// Clears all thread-local execution state. Called before every graph run so a
@@ -181,9 +181,11 @@ pub fn eval_condition_typed(expr: &str) -> bool {
     crate::application::expressions::eval_condition(expr, &ctx)
 }
 
-static FORM_TX: OnceLock<Mutex<Option<mpsc::Sender<(String, HashMap<String, String>)>>>> = OnceLock::new();
+type FormTx = Mutex<Option<mpsc::Sender<(String, HashMap<String, String>)>>>;
 
-pub fn get_form_tx() -> &'static Mutex<Option<mpsc::Sender<(String, HashMap<String, String>)>>> {
+static FORM_TX: OnceLock<FormTx> = OnceLock::new();
+
+pub fn get_form_tx() -> &'static FormTx {
     FORM_TX.get_or_init(|| Mutex::new(None))
 }
 
@@ -265,17 +267,6 @@ pub fn interpolate_variables(input: &str) -> String {
         return input.to_string();
     }
     eval_template(input)
-}
-
-/// Legacy single-item path resolver, retained for callers that need a raw
-/// string out of the first item without full expression semantics.
-fn resolve_item_path<'a>(item: &'a Value, path: &str) -> Option<String> {
-    let value = crate::application::expressions::get_path(item, &format!(".{}", path));
-    if value.is_null() {
-        None
-    } else {
-        Some(crate::application::expressions::stringify(&value))
-    }
 }
 
 pub fn warn_ui(warning: &str, detail: &str) {

@@ -7,6 +7,12 @@ use super::uia_helpers::{resolve_element_at_coords, uia_log};
 /// Infrastructure adapter implementing AutomationBackendPort using UIAutomation.
 pub struct UiaBackend;
 
+impl Default for UiaBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl UiaBackend {
     pub fn new() -> Self {
         Self
@@ -198,13 +204,13 @@ impl AutomationBackendPort for UiaBackend {
     }
 
     fn can_handle(&self, action: &ActionRequest) -> bool {
-        match action {
-            ActionRequest::Click { .. } => true,
-            ActionRequest::TypeText { .. } => true,
-            ActionRequest::Scroll { .. } => true,
-            ActionRequest::WindowFocus { .. } => true,
-            _ => false,
-        }
+        matches!(
+            action,
+            ActionRequest::Click { .. }
+                | ActionRequest::TypeText { .. }
+                | ActionRequest::Scroll { .. }
+                | ActionRequest::WindowFocus { .. }
+        )
     }
 
     fn execute(&self, action: &ActionRequest) -> ActionResult {

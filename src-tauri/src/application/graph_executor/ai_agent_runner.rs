@@ -16,7 +16,7 @@ pub fn run(data: &Value, incoming: Vec<Value>) -> Result<Vec<Value>, String> {
     let configured_prompt = data
         .get("prompt")
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default();
 
     let user_prompt = if !configured_prompt.trim().is_empty() {

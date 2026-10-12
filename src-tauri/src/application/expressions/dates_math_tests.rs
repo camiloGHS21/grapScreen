@@ -134,7 +134,7 @@ fn test_math_constants_and_parse() {
 
     assert_eq!(render("{{ parseInt('42') }}", &ctx), json!(42));
     assert_eq!(render("{{ parseInt('0xFF', 16) }}", &ctx), json!(255));
-    assert_eq!(render("{{ parseFloat('3.14159') }}", &ctx), json!(3.14159));
+    assert_eq!(render("{{ parseFloat('12.34567') }}", &ctx), json!(12.34567));
 }
 
 #[test]

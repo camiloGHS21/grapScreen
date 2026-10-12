@@ -11,7 +11,7 @@ use serde_json::{json, Map, Value};
 fn cfg(data: &Value, key: &str) -> String {
     data.get(key)
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default()
 }
 
@@ -25,6 +25,7 @@ fn cfg(data: &Value, key: &str) -> String {
 ///     attributes, where the text is stored directly (`"a"`, not
 ///     `{"#text": "a"}`) so `{{ $json.a }}` yields the value,
 ///   - repeated sibling elements collapse into a JSON array.
+///
 /// Namespace prefixes are stripped from element names.
 pub fn xml_to_value(xml: &str) -> Result<Value, String> {
     xml_to_value_named(xml).map(|(_, value)| value)

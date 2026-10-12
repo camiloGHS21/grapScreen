@@ -121,7 +121,7 @@ fn spawn_recorder(ffmpeg: &Path, output: &Path) -> std::io::Result<Child> {
     {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
-        cmd.args(&[
+        cmd.args([
             "-f", "gdigrab",
             "-framerate", "15",
             "-i", "desktop",

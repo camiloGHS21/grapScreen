@@ -8,7 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 thread_local! {
-    pub static IS_BACKGROUND: std::cell::Cell<bool> = std::cell::Cell::new(false);
+    pub static IS_BACKGROUND: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 
 pub(crate) struct ReplayServiceInner {
@@ -146,12 +146,12 @@ impl ReplayServiceImpl {
             }
             "button_press" => {
                 let (x, y) = self.inner.last_mouse_pos.lock().map(|p| *p).unwrap_or((0, 0));
-                let button = MouseButton::from_str(event.data["button"].as_str().unwrap_or("Left"));
+                let button = MouseButton::from_name(event.data["button"].as_str().unwrap_or("Left"));
                 Some(ActionRequest::Click { x, y, button, window: window_ctx })
             }
             "button_release" => {
                 let (x, y) = self.inner.last_mouse_pos.lock().map(|p| *p).unwrap_or((0, 0));
-                let button = MouseButton::from_str(event.data["button"].as_str().unwrap_or("Left"));
+                let button = MouseButton::from_name(event.data["button"].as_str().unwrap_or("Left"));
                 Some(ActionRequest::ButtonRelease { x, y, button, window: window_ctx })
             }
             "wheel" => {
@@ -486,14 +486,12 @@ mod recording_replay_tests {
         // move → press → release → key → wheel: the canonical recorded flow.
         // Every raw input event must map to exactly one action, in order.
         let svc = service();
-        let recording = vec![
-            ev(0, "mouse_move", json!({ "x": 100, "y": 200 })),
+        let recording = [ev(0, "mouse_move", json!({ "x": 100, "y": 200 })),
             ev(50, "button_press", json!({ "button": "Left" })),
             ev(90, "button_release", json!({ "button": "Left" })),
             ev(150, "key_press", json!({ "key": "KeyH" })),
             ev(170, "key_release", json!({ "key": "KeyH" })),
-            ev(260, "wheel", json!({ "x": 0, "y": -120 })),
-        ];
+            ev(260, "wheel", json!({ "x": 0, "y": -120 }))];
         let actions: Vec<ActionRequest> = recording
             .iter()
             .map(|e| to_action(&svc, e, false).expect("every recorded input event must replay"))

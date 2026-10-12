@@ -157,6 +157,8 @@ pub(crate) fn normalize_webhook_path(raw: &str, fallback_key: &str) -> String {
     }
 }
 
+// Mirrors the webhook config surface; a param struct would churn call sites.
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn run_webhook_server(
     stop: Arc<AtomicBool>,
     app: tauri::AppHandle,

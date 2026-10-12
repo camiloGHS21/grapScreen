@@ -8,6 +8,12 @@ use imageproc::template_matching::{find_extremes, match_template, MatchTemplateM
 /// Infrastructure adapter implementing VisionPort using template matching.
 pub struct TemplateMatchAdapter;
 
+impl Default for TemplateMatchAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TemplateMatchAdapter {
     pub fn new() -> Self {
         Self

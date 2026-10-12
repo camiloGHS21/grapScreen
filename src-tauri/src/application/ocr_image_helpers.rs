@@ -1,4 +1,3 @@
-use std::time::Instant;
 use std::path::PathBuf;
 use crate::domain::ports_out::OcrPort;
 use super::replay_helpers::interpolate_variables;

@@ -65,7 +65,7 @@ pub fn execute_social(event: &RecordedEvent, creds: &Credentials) -> bool {
                     }
                 }).collect();
                 let url = format!("https://web.whatsapp.com/send?phone={}&text={}", to_interp, encoded_msg);
-                let _ = Command::new("cmd").args(&["/C", "start", &url]).spawn();
+                let _ = Command::new("cmd").args(["/C", "start", &url]).spawn();
                 true
             } else {
                 let token = event.data["token"].as_str().unwrap_or(&creds.whatsapp_token);

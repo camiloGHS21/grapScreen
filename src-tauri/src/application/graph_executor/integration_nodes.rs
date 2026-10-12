@@ -21,7 +21,7 @@ use serde_json::{json, Map, Value};
 fn cfg(data: &Value, key: &str) -> String {
     data.get(key)
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default()
 }
 
@@ -599,12 +599,9 @@ pub fn parse_feed(xml: &str) -> Result<Vec<Value>, String> {
                 // alone — the enclosing element may still be accumulating text.
                 let name = String::from_utf8_lossy(e.name().as_ref()).to_string();
                 let local = name.split(':').next_back().unwrap_or(&name).to_string();
-                if local == "link" && current.is_some() {
-                    if let Some(href) = atom_link_href(&e) {
-                        current
-                            .as_mut()
-                            .unwrap()
-                            .insert("link".into(), Value::String(href));
+                if local == "link" {
+                    if let (Some(cur), Some(href)) = (current.as_mut(), atom_link_href(&e)) {
+                        cur.insert("link".into(), Value::String(href));
                     }
                 }
             }

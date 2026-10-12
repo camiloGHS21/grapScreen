@@ -13,9 +13,11 @@
 //! `walk_order.rs`     — the walker: fan-out, ports, visited, disabled, stop.
 //! `control_flow.rs`   — condition, switch, loop, split_batches, error_handler.
 //! `routing.rs`        — per-kind dispatch and the catch-all.
+//! `utility_kinds.rs`  — file, binary and spreadsheet runners.
 //! `ledger.rs`         — what is tested, what is declared untestable, and why.
 
 mod control_flow;
 mod ledger;
 mod routing;
+mod utility_kinds;
 mod walk_order;

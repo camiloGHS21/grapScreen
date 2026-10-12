@@ -165,13 +165,11 @@ pub fn focus_target_window(target: &TargetApp) -> bool {
         let _ = AllowSetForegroundWindow(0xFFFF_FFFF);
         let mut wp: WINDOWPLACEMENT = std::mem::zeroed();
         wp.length = std::mem::size_of::<WINDOWPLACEMENT>() as u32;
-        let mut should_maximize = false;
-        
-        if GetWindowPlacement(hwnd, &mut wp) != 0 {
-            should_maximize = wp.show_cmd == 3 || (wp.flags & 2) != 0;
+        let should_maximize = if GetWindowPlacement(hwnd, &mut wp) != 0 {
+            wp.show_cmd == 3 || (wp.flags & 2) != 0
         } else {
-            should_maximize = IsZoomed(hwnd) != 0;
-        }
+            IsZoomed(hwnd) != 0
+        };
 
         if IsIconic(hwnd) != 0 {
             if should_maximize {

@@ -147,7 +147,7 @@ pub fn apply_helper(value: &Value, method: &str, args: &[String], ctx: &ExprCont
         "sort" => {
             if let Value::Array(arr) = value {
                 let mut sorted = arr.clone();
-                sorted.sort_by(|a, b| stringify(a).cmp(&stringify(b)));
+                sorted.sort_by_key(stringify);
                 return Some(Value::Array(sorted));
             }
             Some(value.clone())

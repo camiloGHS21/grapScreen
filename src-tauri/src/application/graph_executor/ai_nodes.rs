@@ -155,7 +155,7 @@ fn preview(s: &str) -> String {
 fn cfg(data: &Value, key: &str) -> String {
     data.get(key)
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default()
 }
 
@@ -448,10 +448,7 @@ fn extract_json_object(reply: &str) -> Option<Value> {
     };
 
     let bytes = haystack.as_bytes();
-    let start = match haystack.find('{') {
-        Some(s) => s,
-        None => return None,
-    };
+    let start = haystack.find('{')?;
 
     let mut depth = 0i32;
     let mut in_string = false;

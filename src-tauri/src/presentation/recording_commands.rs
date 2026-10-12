@@ -2,7 +2,6 @@ use crate::domain::entities::AutomationFile;
 use crate::AppState;
 use serde_json;
 use tauri::{AppHandle, Manager, State, Emitter, WebviewUrl};
-use tauri::webview::Color;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
@@ -118,7 +117,7 @@ fn restore_main_window(app: &AppHandle) {
 
 fn stop_recording_internal(app: &AppHandle) -> std::result::Result<Option<AutomationFile>, String> {
     restore_main_window(app);
-    destroy_recording_overlay(&app);
+    destroy_recording_overlay(app);
     let state = app.state::<AppState>();
 
     // Clean up the border overlay window

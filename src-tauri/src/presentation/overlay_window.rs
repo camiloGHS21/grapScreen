@@ -1,25 +1,23 @@
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
 
 #[cfg(target_os = "windows")]
 use windows::core::w;
 #[cfg(target_os = "windows")]
 use windows::Win32::Foundation::{COLORREF, HWND, LPARAM, WPARAM};
 #[cfg(target_os = "windows")]
-use windows::Win32::Graphics::Gdi::{CreateSolidBrush, DeleteObject, HBRUSH};
+use windows::Win32::Graphics::Gdi::{CreateSolidBrush, DeleteObject};
 #[cfg(target_os = "windows")]
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 #[cfg(target_os = "windows")]
 use windows::Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, DestroyWindow, GetMessageW, GetSystemMetrics, LoadCursorW, RegisterClassW,
-    ShowWindow, CS_HREDRAW, CS_VREDRAW, HCURSOR, HICON, IDC_ARROW, SM_CXSCREEN, SM_CYSCREEN,
+    ShowWindow, CS_HREDRAW, CS_VREDRAW, HICON, IDC_ARROW, SM_CXSCREEN, SM_CYSCREEN,
     SW_SHOW, WM_DESTROY, WNDCLASSW, WS_EX_LAYERED, WS_EX_NOACTIVATE, WS_EX_TOPMOST,
     WS_EX_TRANSPARENT, WS_POPUP, MSG,
 };
 #[cfg(target_os = "windows")]
-use super::overlay_proc::{border_wnd_proc, btn_wnd_proc, WindowData};
+use super::overlay_proc::border_wnd_proc;
 
 #[cfg(target_os = "windows")]
 pub struct RecordOverlay {
@@ -33,15 +31,15 @@ pub struct RecordOverlay {
 #[cfg(target_os = "windows")]
 impl RecordOverlay {
     pub fn show(
-        stop_flag: Arc<AtomicBool>,
-        cancel_flag: Arc<AtomicBool>,
-        pause_flag: Arc<AtomicBool>,
-        paused: Arc<AtomicBool>,
+        _stop_flag: Arc<AtomicBool>,
+        _cancel_flag: Arc<AtomicBool>,
+        _pause_flag: Arc<AtomicBool>,
+        _paused: Arc<AtomicBool>,
     ) -> Self {
         let running = Arc::new(AtomicBool::new(true));
         let running_clone = running.clone();
         let elapsed_secs = Arc::new(AtomicU64::new(0));
-        let elapsed_clone = elapsed_secs.clone();
+        let _elapsed_clone = elapsed_secs.clone();
         let _start = std::time::Instant::now();
 
         let (tx, rx) = std::sync::mpsc::channel::<isize>();

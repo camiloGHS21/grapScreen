@@ -1,8 +1,7 @@
-use std::ffi::c_void;
 use crate::domain::entities::RecordedEvent;
 use super::win_types::*;
 use super::win_api::*;
-use super::win_app_utils::{children_of, process_exe};
+use super::win_app_utils::children_of;
 
 unsafe fn unicode_char(vk: u32, sc: u32, mods: &KeyMods) -> u16 {
     let mut keystate = [0u8; 256];
@@ -111,7 +110,7 @@ pub unsafe fn simulate_real(ev: &RecordedEvent, origin: (i32, i32), last_mouse: 
             if let Some(vk) = key_to_vk(ev.data["key"].as_str().unwrap_or("")) {
                 let down = ev.kind == "key_press";
                 let mut flags = if down { 0 } else { KEYEVENTF_KEYUP };
-                if vk >= 0x21 && vk <= 0x2E { flags |= KEYEVENTF_EXTENDEDKEY; }
+                if (0x21..=0x2E).contains(&vk) { flags |= KEYEVENTF_EXTENDEDKEY; }
                 inputs.push(INPUT {
                     type_: INPUT_KEYBOARD,
                     u: INPUT_UNION {
@@ -204,6 +203,9 @@ unsafe fn find_leaf_child_window(hwnd: HWND, pt: POINT, depth: usize) -> (HWND, 
     }
 }
 
+/// # Safety
+/// `hwnd` must be a valid window handle; the function posts synthesized input
+/// messages to it through USER32.
 pub unsafe fn post_event(hwnd: HWND, ev: &RecordedEvent, origin: (i32, i32), mods: &mut KeyMods) {
     let screen_x = ev.data["x"].as_f64().unwrap_or(0.0) as i32;
     let screen_y = ev.data["y"].as_f64().unwrap_or(0.0) as i32;
@@ -213,8 +215,7 @@ pub unsafe fn post_event(hwnd: HWND, ev: &RecordedEvent, origin: (i32, i32), mod
     let mut target_hwnd = hwnd;
 
     if ev.kind == "mouse_move" || ev.kind == "button_press" || ev.kind == "button_release" || ev.kind == "wheel" {
-        let (leaf_hwnd, leaf_pt) = find_leaf_child_window(hwnd, POINT { x: cx, y: cy }, 0);
-        target_hwnd = leaf_hwnd;
+        let (leaf_hwnd, _leaf_pt) = find_leaf_child_window(hwnd, POINT { x: cx, y: cy }, 0);
         mods.last_hwnd = leaf_hwnd;
         click_offscreen(hwnd, ev.kind.as_str(), cx, cy, &ev.data);
         return;

@@ -283,27 +283,18 @@ fn lookup<'a>(
         // matched case-insensitively, exactly like the flat lookup did.
         let mut parts = name.split('.');
         let first = parts.next().unwrap_or(name);
-        let mut current: &Value = match map.get(first).or_else(|| {
+        let mut current: &Value = map.get(first).or_else(|| {
             map.iter()
                 .find(|(k, _)| k.eq_ignore_ascii_case(first))
                 .map(|(_, v)| v)
-        }) {
-            Some(found) => found,
-            None => return None,
-        };
+        })?;
         for part in parts {
-            let obj = match current.as_object() {
-                Some(o) => o,
-                None => return None,
-            };
-            current = match obj.get(part).or_else(|| {
+            let obj = current.as_object()?;
+            current = obj.get(part).or_else(|| {
                 obj.iter()
                     .find(|(k, _)| k.eq_ignore_ascii_case(part))
                     .map(|(_, v)| v)
-            }) {
-                Some(found) => found,
-                None => return None,
-            };
+            })?;
         }
         return Some(current.clone());
     }

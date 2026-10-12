@@ -34,7 +34,7 @@ const MAX_ROWS: usize = 100_000;
 fn cfg_str(data: &Value, key: &str) -> String {
     data.get(key)
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default()
 }
 

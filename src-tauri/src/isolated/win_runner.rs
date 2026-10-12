@@ -10,7 +10,7 @@ use windows::core::HSTRING;
 use super::win_types::*;
 use super::win_api::*;
 use super::win_app_utils::bg_log;
-use super::win_window_search::{find_window_on_desktop, open_target_app};
+use super::win_window_search::find_window_on_desktop;
 use super::win_event_sim::simulate_real;
 use super::win_preview::capture_window_png;
 use crate::domain::entities::RecordedEvent;
@@ -22,6 +22,7 @@ pub fn teardown(process: Option<HANDLE>, desktop: HDESK) {
         if !h.is_null() {
             unsafe {
                 TerminateProcess(h, 0);
+                WaitForSingleObject(h, 1000);
                 CloseHandle(h);
             }
         }
@@ -95,7 +96,7 @@ pub fn execute_isolated(
             Some(res) => res,
             None => {
                 eprintln!("[grapScreen] failed to launch target on isolated desktop");
-                unsafe { CloseDesktop(h_desk); }
+                teardown(None, h_desk);
                 stop.store(false, Ordering::Relaxed);
                 let _ = app.emit("automation-finished", json!({ "id": id }));
                 return;
@@ -117,11 +118,7 @@ pub fn execute_isolated(
             Some(h) => h,
             None => {
                 eprintln!("[grapScreen] target window never appeared on isolated desktop");
-                unsafe {
-                    TerminateProcess(h_process, 0);
-                    CloseHandle(h_process);
-                    CloseDesktop(h_desk);
-                }
+                teardown(Some(h_process), h_desk);
                 stop.store(false, Ordering::Relaxed);
                 let _ = app.emit("automation-finished", json!({ "id": id }));
                 return;
@@ -144,7 +141,7 @@ pub fn execute_isolated(
         let app_prev = app.clone();
         let stop_prev = stop.clone();
         let preview_hwnd = hwnd;
-        let preview_desk = h_desk.clone();
+        let preview_desk = h_desk;
         thread::spawn(move || {
             unsafe { SetThreadDesktop(preview_desk); }
             while stop_prev.load(Ordering::Relaxed) {
@@ -161,7 +158,7 @@ pub fn execute_isolated(
         let mut previous: u64 = 0;
         let mut last_emit = Instant::now();
         
-        let replay_desk = h_desk.clone();
+        let replay_desk = h_desk;
         let replay_target = target.clone();
         let replay_app = app.clone();
         let replay_stop = stop.clone();
@@ -214,12 +211,7 @@ pub fn execute_isolated(
         thread::sleep(Duration::from_millis(200));
 
         bg_log("bg: terminating target process and closing desktop");
-        unsafe {
-            TerminateProcess(h_process, 0);
-            WaitForSingleObject(h_process, 1000);
-            CloseHandle(h_process);
-            CloseDesktop(h_desk);
-        }
+        teardown(Some(h_process), h_desk);
 
         remove_isolated(&app, &id);
         let _ = app.emit("automation-finished", json!({ "id": id }));

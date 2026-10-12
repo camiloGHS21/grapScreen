@@ -6,6 +6,12 @@ use std::path::PathBuf;
 /// Infrastructure adapter implementing StoragePort using local filesystem JSON files.
 pub struct FileStorageAdapter;
 
+impl Default for FileStorageAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileStorageAdapter {
     pub fn new() -> Self {
         Self
@@ -45,20 +51,18 @@ impl StoragePort for FileStorageAdapter {
         let dir = self.get_automation_dir(project_name)?;
         let mut list = Vec::new();
         let paths = fs::read_dir(dir).map_err(|e| DomainError::Io(e.to_string()))?;
-        for entry in paths {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if path.extension().and_then(|s| s.to_str()) == Some("json") {
-                    if let Ok(content) = fs::read_to_string(&path) {
-                        if let Ok(file) = serde_json::from_str::<AutomationFile>(&content) {
-                            list.push(file);
-                        }
+        for entry in paths.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                if let Ok(content) = fs::read_to_string(&path) {
+                    if let Ok(file) = serde_json::from_str::<AutomationFile>(&content) {
+                        list.push(file);
                     }
                 }
             }
         }
         // Sort by created_at descending
-        list.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        list.sort_by_key(|a| std::cmp::Reverse(a.created_at));
         Ok(list)
     }
 }

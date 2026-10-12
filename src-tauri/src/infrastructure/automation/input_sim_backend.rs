@@ -74,6 +74,12 @@ fn parse_key(name: &str) -> Option<Key> {
 /// Infrastructure adapter implementing AutomationBackendPort using rdev simulation (intrusive).
 pub struct InputSimBackend;
 
+impl Default for InputSimBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl InputSimBackend {
     pub fn new() -> Self {
         Self

@@ -2,7 +2,7 @@
 
 use crate::domain::entities::{ActionRequest, ActionResult, WindowContext};
 use crate::domain::ports_out::AutomationBackendPort;
-use super::uia_helpers::{resolve_element_at_coords, uia_log};
+use super::uia_helpers::resolve_element_at_coords;
 use std::io::Write;
 
 fn a11y_log(msg: &str) {
@@ -15,6 +15,12 @@ fn a11y_log(msg: &str) {
 
 /// Infrastructure adapter implementing AutomationBackendPort using aggressive UIA tree traversal.
 pub struct AccessibilityBackend;
+
+impl Default for AccessibilityBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl AccessibilityBackend {
     pub fn new() -> Self {
@@ -156,12 +162,12 @@ impl AutomationBackendPort for AccessibilityBackend {
     }
 
     fn can_handle(&self, action: &ActionRequest) -> bool {
-        match action {
-            ActionRequest::Click { .. } => true,
-            ActionRequest::TypeText { .. } => true,
-            ActionRequest::Scroll { .. } => true,
-            _ => false,
-        }
+        matches!(
+            action,
+            ActionRequest::Click { .. }
+                | ActionRequest::TypeText { .. }
+                | ActionRequest::Scroll { .. }
+        )
     }
 
     fn execute(&self, action: &ActionRequest) -> ActionResult {

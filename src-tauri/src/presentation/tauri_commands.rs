@@ -79,7 +79,7 @@ pub fn get_automations() -> std::result::Result<Vec<ProjectSummary>, String> {
                     for sub_entry in fs::read_dir(&automations_dir).map_err(|e| e.to_string())? {
                         let sub_entry = sub_entry.map_err(|e| e.to_string())?;
                         let sub_path = sub_entry.path();
-                        if sub_path.is_file() && sub_path.extension().map_or(false, |ext| ext == "json") {
+                        if sub_path.is_file() && sub_path.extension().is_some_and(|ext| ext == "json") {
                             if let Ok(text) = fs::read_to_string(&sub_path) {
                                 if let Ok(file) = serde_json::from_str::<AutomationFile>(&text) {
                                     let mp4 = automations_dir.join(format!("{}.mp4", file.id));
@@ -98,7 +98,7 @@ pub fn get_automations() -> std::result::Result<Vec<ProjectSummary>, String> {
                         }
                     }
                 }
-                automations.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+                automations.sort_by_key(|a| std::cmp::Reverse(a.created_at));
                 projects.push(ProjectSummary {
                     name: project_name,
                     automations,
@@ -131,7 +131,7 @@ pub fn save_automation(state: State<AppState>, project_name: String, id: String,
 /// blank and the user starts from a real, configurable entry point.
 fn seed_empty_events() -> Vec<RecordedEvent> {
     let trigger_id = uuid::Uuid::new_v4().to_string();
-    let mut trigger = RecordedEvent {
+    let trigger = RecordedEvent {
         at_ms: 0,
         kind: "trigger".to_string(),
         data: serde_json::json!({
@@ -150,10 +150,7 @@ fn seed_empty_events() -> Vec<RecordedEvent> {
             "disabledNodeIds": []
         }),
     };
-    let mut events: Vec<RecordedEvent> = Vec::new();
-    events.push(trigger);
-    events.push(layout);
-    events
+    vec![trigger, layout]
 }
 
 

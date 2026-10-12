@@ -39,7 +39,7 @@ pub enum MouseButton {
 }
 
 impl MouseButton {
-    pub fn from_str(s: &str) -> Self {
+    pub fn from_name(s: &str) -> Self {
         match s {
             "Right" => Self::Right,
             "Middle" => Self::Middle,

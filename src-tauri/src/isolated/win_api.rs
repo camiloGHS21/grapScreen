@@ -16,7 +16,6 @@ extern "system" {
     pub fn ChildWindowFromPoint(h_wnd: HWND, pt: POINT) -> HWND;
     pub fn OpenDesktopW(lpsz_desktop: *const u16, dw_flags: u32, f_inherit: BOOL, dw_desired_access: u32) -> HDESK;
     pub fn SetThreadDesktop(h_desktop: HDESK) -> BOOL;
-    pub fn SwitchDesktop(h_desktop: HDESK) -> BOOL;
     pub fn CloseDesktop(h_desktop: HDESK) -> BOOL;
     pub fn EnumDesktopWindows(h_desktop: HDESK, lpfn: Option<unsafe extern "system" fn(HWND, LPARAM) -> BOOL>, l_param: LPARAM) -> BOOL;
     pub fn PostMessageW(h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPARAM) -> BOOL;
@@ -35,7 +34,6 @@ extern "system" {
     pub fn ReleaseDC(hwnd: HWND, hdc: HDC) -> i32;
     pub fn BitBlt(hdc: HDC, x: i32, y: i32, cx: i32, cy: i32, hdc_src: HDC, x1: i32, y1: i32, rop: u32) -> BOOL;
     pub fn SendInput(c_inputs: u32, p_inputs: *const INPUT, cb_size: i32) -> u32;
-    pub fn GetMessageExtraInfo() -> LPARAM;
     pub fn GetSystemMetrics(n_index: i32) -> i32;
     pub fn GetCursorPos(lp_point: *mut POINT) -> BOOL;
     pub fn SetCursorPos(x: i32, y: i32) -> BOOL;
@@ -80,9 +78,4 @@ extern "system" {
     pub fn SelectObject(hdc: HDC, h: *mut c_void) -> *mut c_void;
     pub fn GetDIBits(hdc: HDC, hbmp: HBITMAP, u_start_scan: u32, c_scan_lines: u32, lpv_bits: *mut c_void, lpbi: *mut BITMAPINFO, u_usage: u32) -> i32;
     pub fn DeleteObject(h: *mut c_void) -> i32;
-}
-
-#[link(name = "ole32")]
-extern "system" {
-    pub fn CoIncrementMTAUsage() -> i32;
 }

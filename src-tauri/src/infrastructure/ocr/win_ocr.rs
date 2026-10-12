@@ -1,7 +1,7 @@
 use crate::domain::entities::{Result, DomainError, OcrScan, OcrBox};
 use crate::domain::ports_out::OcrPort;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 use screenshots::Screen;
 
@@ -18,6 +18,12 @@ use windows::Storage::StorageFile;
 
 /// Infrastructure adapter implementing OcrPort using Windows Media OCR.
 pub struct WinOcrAdapter;
+
+impl Default for WinOcrAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl WinOcrAdapter {
     pub fn new() -> Self {
@@ -41,7 +47,7 @@ fn capture_primary(path: &PathBuf) -> std::result::Result<(u32, u32), DomainErro
 }
 
 #[cfg(target_os = "windows")]
-fn recognize_native(path: &PathBuf, width: u32, height: u32) -> std::result::Result<OcrScan, DomainError> {
+fn recognize_native(path: &Path, width: u32, height: u32) -> std::result::Result<OcrScan, DomainError> {
     let started = std::time::Instant::now();
     let clean_path = path.canonicalize().map_err(|e| DomainError::Io(e.to_string()))?.to_string_lossy().replace("\\\\?\\", "");
     let file = StorageFile::GetFileFromPathAsync(&HSTRING::from(clean_path))
@@ -80,7 +86,7 @@ fn recognize_native(path: &PathBuf, width: u32, height: u32) -> std::result::Res
 }
 
 #[cfg(not(target_os = "windows"))]
-fn recognize_native(path: &PathBuf, width: u32, height: u32) -> std::result::Result<OcrScan, DomainError> {
+fn recognize_native(path: &Path, width: u32, height: u32) -> std::result::Result<OcrScan, DomainError> {
     let started = std::time::Instant::now();
 
     // Try to run tesseract CLI

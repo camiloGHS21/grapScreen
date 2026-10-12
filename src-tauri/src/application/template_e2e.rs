@@ -152,7 +152,7 @@ mod tests {
     /// stand in for what the substituted steps would have produced — the caller
     /// seeds those, because a run resets the environment before it starts.
     fn graph_for(
-        events: &mut Vec<RecordedEvent>,
+        events: &mut [RecordedEvent],
         dir: &Path,
     ) -> (Graph, Vec<&'static str>, Vec<(String, String)>) {
         let mut graph = Graph::new();

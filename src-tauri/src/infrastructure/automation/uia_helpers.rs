@@ -94,10 +94,6 @@ pub fn resolve_element_at_coords(
         None
     } else {
         let point = uiautomation::types::Point::new(x, y);
-        if let Ok(el) = automation.element_from_point(point) {
-            Some(el)
-        } else {
-            None
-        }
+        automation.element_from_point(point).ok()
     }
 }

@@ -37,7 +37,7 @@ const MAX_ITEMS: usize = 100_000;
 fn cfg(data: &Value, key: &str) -> String {
     data.get(key)
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default()
 }
 
@@ -115,18 +115,6 @@ fn item_with_result(item: Option<&Value>, result: Map<String, Value>) -> Value {
         obj.insert(k, v);
     }
     Value::Object(obj)
-}
-
-/// An item's payload as an object, so callers can insert keys into it.
-fn payload_object(item: &Value) -> Map<String, Value> {
-    match crate::application::expressions::unwrap_item(item) {
-        Value::Object(m) => m,
-        other => {
-            let mut m = Map::new();
-            m.insert("value".to_string(), other);
-            m
-        }
-    }
 }
 
 // ─────────────────────────────── Split Out ───────────────────────────────
@@ -566,7 +554,7 @@ fn rename_value(
                     for (re, to) in compiled {
                         if let Some(re) = re {
                             let replaced = re.replace_all(&new_key, to.as_str()).to_string();
-                            if &replaced != &new_key {
+                            if replaced != new_key {
                                 new_key = replaced;
                                 touched = true;
                             }

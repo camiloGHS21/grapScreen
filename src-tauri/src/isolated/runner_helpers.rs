@@ -1,6 +1,4 @@
-use std::sync::{Arc, Mutex};
-use std::collections::HashMap;
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut};
 use crate::AppendedFlowState;
 use crate::AppState;

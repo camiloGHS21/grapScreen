@@ -1,3 +1,7 @@
+// Win32 SDK names (HWND, WPARAM, wVirtualKeyCode, …) mirror the official C
+// headers verbatim; renaming them would make the FFI mapping harder to audit.
+#![allow(non_snake_case, clippy::upper_case_acronyms)]
+
 use std::ffi::c_void;
 
 #[repr(transparent)]
@@ -198,22 +202,12 @@ pub const KEYEVENTF_KEYUP: u32 = 0x0002;
 pub const SM_CXSCREEN: i32 = 0;
 pub const SM_CYSCREEN: i32 = 1;
 
-pub const WM_MOUSEMOVE: u32 = 0x0200;
-pub const WM_LBUTTONDOWN: u32 = 0x0201;
-pub const WM_LBUTTONUP: u32 = 0x0202;
-pub const WM_RBUTTONDOWN: u32 = 0x0204;
-pub const WM_RBUTTONUP: u32 = 0x0205;
-pub const WM_MOUSEWHEEL: u32 = 0x020A;
 pub const WM_KEYDOWN: u32 = 0x0100;
 pub const WM_KEYUP: u32 = 0x0101;
 pub const WM_CHAR: u32 = 0x0102;
 pub const WM_SETFOCUS: u32 = 0x0007;
 pub const WM_ACTIVATE: u32 = 0x0006;
 pub const WM_NCACTIVATE: u32 = 0x0086;
-pub const MK_LBUTTON: u32 = 0x0001;
-pub const MK_RBUTTON: u32 = 0x0002;
-pub const SWP_NOMOVE: u32 = 0x0002;
-pub const SWP_NOSIZE: u32 = 0x0001;
 pub const SWP_NOZORDER: u32 = 0x0004;
 pub const SWP_NOACTIVATE: u32 = 0x0010;
 pub const SWP_SHOWWINDOW: u32 = 0x0040;
@@ -221,7 +215,6 @@ pub const CREATE_NEW_CONSOLE: u32 = 0x00000010;
 pub const PROCESS_QUERY_INFORMATION: u32 = 0x0400;
 pub const PROCESS_VM_READ: u32 = 0x0010;
 pub const GENERIC_ALL: u32 = 0x10000000;
-pub const PW_CLIENTONLY: u32 = 0x00000001;
 pub const STD_INPUT_HANDLE: u32 = 0xFFFFFFF6;
 pub const KEY_EVENT: u16 = 0x0001;
 

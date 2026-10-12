@@ -2,11 +2,11 @@
 //! - ExecuteCommand: executes shell commands, capturing stdout/stderr/exitCode
 //! - ReadWriteFile: reads or writes files on the local filesystem
 //! - SpreadsheetFile: reads or writes Excel (.xlsx) / CSV files
-//! - Code: executes JavaScript (Node.js) or Python scripts
+//! - Code: executes JavaScript on the embedded Boa engine (or Python via interpreter)
 
 use crate::application::replay_helpers::{self, interpolate_variables};
 use serde_json::{json, Map, Value};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Resolves a config value by checking direct fields and `n8n_config`.
 pub fn cfg_str(data: &Value, key: &str, alt_keys: &[&str]) -> String {
@@ -192,8 +192,14 @@ pub fn run_spreadsheet_file(data: &Value, items: Vec<Value>) -> Result<Vec<Value
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
     }
+    // Engine items arrive wrapped in the `{"json": …}` envelope; the columns
+    // are the payload's fields — exactly what `$json` resolves against.
+    let payloads: Vec<Value> = items
+        .iter()
+        .map(crate::application::expressions::unwrap_item)
+        .collect();
     let mut headers: Vec<String> = Vec::new();
-    for it in &items {
+    for it in &payloads {
         if let Value::Object(obj) = it {
             for k in obj.keys() {
                 if !headers.contains(k) {
@@ -203,7 +209,7 @@ pub fn run_spreadsheet_file(data: &Value, items: Vec<Value>) -> Result<Vec<Value
         }
     }
     let mut rows: Vec<Vec<String>> = Vec::new();
-    for it in &items {
+    for it in &payloads {
         if let Value::Object(obj) = it {
             let mut r = Vec::new();
             for h in &headers {
@@ -233,39 +239,77 @@ pub fn run_spreadsheet_file(data: &Value, items: Vec<Value>) -> Result<Vec<Value
     Ok(items)
 }
 
-/// Native runner for `Code` (executes JavaScript via node or Python via python).
+/// Native runner for `Code` (n8n `code`).
+///
+/// JavaScript runs on the **embedded Boa engine inside the Rust process**: no
+/// `node`, no temp files, no subprocess. The script body is interpolated first
+/// so `{{ ... }}` expressions (e.g. `{{ $json.file_path }}`) resolve against the
+/// node's items/vars exactly like they do in n8n.
+///
+/// Result contract (kept from the external runner): an explicit `return`
+/// becomes the items (array → items, single value → one item); otherwise the
+/// last printed JSON line wins; otherwise the logs become `{ output }`; and a
+/// script that produced nothing lets the incoming items flow through.
 pub fn run_code(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, String> {
     let raw_code = cfg_str(data, "code", &["jsCode", "pythonCode", "script"]);
     if raw_code.trim().is_empty() {
         return Ok(items);
     }
+    let code = replay_helpers::eval_template(&raw_code);
     let lang = cfg_str(data, "language", &["lang"]).to_lowercase();
-    let is_py = lang.starts_with("py");
-    let (exe, ext) = if is_py { ("python", "py") } else { ("node", "js") };
+    if lang.starts_with("py") {
+        return run_code_python(&code, items);
+    }
 
-    let items_json = serde_json::to_string(&items).unwrap_or_else(|_| "[]".to_string());
-    let file_path = std::env::temp_dir().join(format!("grapscreen_run_code_{}.{}", std::process::id(), ext));
-
-    let wrapped_script = if is_py {
-        format!(
-            "import sys, json\n_input = json.loads('''{}''')\ndef main():\n{}\nif __name__ == '__main__':\n    res = main()\n    if res is not None:\n        print(json.dumps(res))\n",
-            items_json.replace('\\', "\\\\").replace('\'', "\\'"),
-            raw_code.lines().map(|l| format!("    {}", l)).collect::<Vec<_>>().join("\n")
-        )
-    } else {
-        format!(
-            "const $input = {{ all: () => ({0}), first: () => (({0})[0] || {{}}) }};\nconst $json = ($input.first() || {{}});\nasync function run() {{\n{1}\n}}\nrun().then(res => {{ if (res !== undefined) console.log(JSON.stringify(res)); }}).catch(e => {{ console.error(e); process.exit(1); }});\n",
-            items_json,
-            raw_code
-        )
+    let env = crate::infrastructure::scripting::js_shims::JsEnv {
+        items: items.clone(),
+        node_outputs: replay_helpers::get_node_outputs(),
+        vars: replay_helpers::get_all_vars()
+            .into_iter()
+            .map(|(k, v)| (k, Value::String(v)))
+            .collect(),
+        execution_id: String::new(),
     };
 
+    let outcome = crate::infrastructure::scripting::run_js(&code, &env)?;
+    if let Some(result_items) = outcome.items {
+        return Ok(result_items);
+    }
+    if !outcome.logs.is_empty() {
+        let joined = outcome.logs.join("\n");
+        if let Ok(parsed) = serde_json::from_str::<Value>(joined.trim()) {
+            return Ok(match parsed {
+                Value::Array(arr) => arr,
+                other => vec![other],
+            });
+        }
+        for line in outcome.logs.iter().rev() {
+            if let Ok(parsed) = serde_json::from_str::<Value>(line.trim()) {
+                return Ok(match parsed {
+                    Value::Array(arr) => arr,
+                    other => vec![other],
+                });
+            }
+        }
+        return Ok(vec![json!({ "output": joined })]);
+    }
+    Ok(items)
+}
+
+/// Python `Code` scripts still go through an interpreter (RustPython is not
+/// bundled yet); JavaScript never leaves the Rust process.
+fn run_code_python(code: &str, items: Vec<Value>) -> Result<Vec<Value>, String> {
+    let items_json = serde_json::to_string(&items).unwrap_or_else(|_| "[]".to_string());
+    let file_path = std::env::temp_dir().join(format!("grapscreen_run_code_{}.py", std::process::id()));
+    let wrapped_script = format!(
+        "import sys, json\n_input = json.loads('''{}''')\ndef main():\n{}\nif __name__ == '__main__':\n    res = main()\n    if res is not None:\n        print(json.dumps(res))\n",
+        items_json.replace('\\', "\\\\").replace('\'', "\\'"),
+        code.lines().map(|l| format!("    {}", l)).collect::<Vec<_>>().join("\n")
+    );
     std::fs::write(&file_path, &wrapped_script)
         .map_err(|e| format!("Code: no se pudo escribir script temporal: {}", e))?;
-
-    let result = std::process::Command::new(exe).arg(&file_path).output();
+    let result = std::process::Command::new("python").arg(&file_path).output();
     let _ = std::fs::remove_file(&file_path);
-
     match result {
         Ok(out) => {
             let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
@@ -274,16 +318,16 @@ pub fn run_code(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, String> {
                 return Err(format!("Code: script terminó con error: {}", if stderr.is_empty() { stdout } else { stderr }));
             }
             if let Ok(parsed) = serde_json::from_str::<Value>(&stdout) {
-                if let Value::Array(arr) = parsed {
-                    return Ok(arr);
-                }
-                return Ok(vec![parsed]);
+                return Ok(match parsed {
+                    Value::Array(arr) => arr,
+                    other => vec![other],
+                });
             }
             if !stdout.is_empty() {
                 return Ok(vec![json!({ "output": stdout })]);
             }
             Ok(items)
         }
-        Err(e) => Err(format!("Code: no se encontró '{}' ({})", exe, e)),
+        Err(e) => Err(format!("Code: no se encontró 'python' ({})", e)),
     }
 }

@@ -6,14 +6,22 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Instant;
 
+type ActiveSender = Arc<Mutex<Option<(Sender<RecordedEvent>, Instant)>>>;
+
 /// Infrastructure adapter implementing InputListenerPort using rdev.
 pub struct RdevListenerAdapter {
-    active_sender: Arc<Mutex<Option<(Sender<RecordedEvent>, Instant)>>>,
+    active_sender: ActiveSender,
+}
+
+impl Default for RdevListenerAdapter {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RdevListenerAdapter {
     pub fn new() -> Self {
-        let active_sender: Arc<Mutex<Option<(Sender<RecordedEvent>, Instant)>>> = Arc::new(Mutex::new(None));
+        let active_sender: ActiveSender = Arc::new(Mutex::new(None));
         
         let sender_clone = active_sender.clone();
         thread::spawn(move || {

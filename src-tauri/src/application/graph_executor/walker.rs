@@ -2,7 +2,6 @@ use super::engine::{GraphEngine, ITEM_AWARE_KINDS, STOPPED};
 use super::extract::GraphNode;
 use super::node_options::{build_input_json, build_output_json, NodeOptions};
 use crate::application::replay_helpers;
-use std::collections::HashMap;
 use std::collections::HashSet;
 use std::time::Instant;
 
@@ -195,8 +194,7 @@ impl<'a> GraphEngine<'a> {
             .node_event(&node)
             .and_then(|ev| ev.data.get("pinnedData").cloned());
 
-        let (exec_res, output_json, was_continued) = if is_pinned && pinned_val.is_some() {
-            let pdata = pinned_val.unwrap();
+        let (exec_res, output_json, was_continued) = if let (true, Some(pdata)) = (is_pinned, pinned_val) {
             if let Some(arr) = pdata.as_array() {
                 replay_helpers::set_items(arr.clone());
             } else if let Some(obj) = pdata.as_object() {

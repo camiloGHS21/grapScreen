@@ -128,13 +128,13 @@ pub extern "system" fn btn_wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam
                 ) as *mut WindowData;
                 if !ptr.is_null() {
                     let data = &mut *ptr;
-                    if x >= 150 && x <= 230 && y >= 16 && y <= 48 {
+                    if (150..=230).contains(&x) && (16..=48).contains(&y) {
                         let now = !data.paused.load(Ordering::Relaxed);
                         data.paused.store(now, Ordering::Relaxed);
                         data.pause_flag.store(true, Ordering::Relaxed);
-                    } else if x >= 240 && x <= 330 && y >= 16 && y <= 48 {
+                    } else if (240..=330).contains(&x) && (16..=48).contains(&y) {
                         data.stop_flag.store(true, Ordering::Relaxed);
-                    } else if x >= 340 && x <= 424 && y <= 48 {
+                    } else if (340..=424).contains(&x) && y <= 48 {
                         data.cancel_flag.store(true, Ordering::Relaxed);
                     }
                     let _ = InvalidateRect(hwnd, None, false);
@@ -146,6 +146,8 @@ pub extern "system" fn btn_wnd_proc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam
     }
 }
 
+// A GDI draw helper's coordinates are naturally positional arguments.
+#[allow(clippy::too_many_arguments)]
 fn draw_button(hdc: HDC, x: i32, y: i32, w: i32, h: i32, label: &str, fill: u32, text_color: u32) {
     unsafe {
         let bg = CreateSolidBrush(COLORREF(fill));

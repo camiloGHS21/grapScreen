@@ -12,10 +12,6 @@ use crate::application::expressions::{self, ExprContext};
 use crate::application::replay_helpers;
 use serde_json::Value;
 
-/// Maximum items any single node may emit, to keep a runaway flow from
-/// exhausting memory. n8n caps similarly.
-const MAX_ITEMS: usize = 100_000;
-
 /// Builds an expression context over the given items, reading the current
 /// thread-local variables and node outputs.
 ///
@@ -56,7 +52,7 @@ pub(crate) fn wrap(v: Value) -> Value {
 pub(crate) fn cfg_str(data: &Value, key: &str) -> String {
     data.get(key)
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default()
 }
 
@@ -105,7 +101,7 @@ pub fn run_sort(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, String> {
     let raw_fields = data
         .get("fields")
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default();
 
     let specs: Vec<(String, bool)> = raw_fields
@@ -181,12 +177,12 @@ fn compare_values(a: &Value, b: &Value) -> std::cmp::Ordering {
 pub fn run_limit(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, String> {
     let skip = data
         .get("skip")
-        .map(|v| as_usize(v))
+        .map(as_usize)
         .unwrap_or(0);
     let max = data
         .get("max_items")
         .or_else(|| data.get("maxItems"))
-        .map(|v| as_usize(v))
+        .map(as_usize)
         .unwrap_or(items.len());
 
     let out: Vec<Value> = items.into_iter().skip(skip).take(max).collect();
@@ -308,7 +304,7 @@ pub fn run_compare_datasets(data: &Value, items: Vec<Value>) -> Result<Vec<Value
     let key = data
         .get("key")
         .and_then(|v| v.as_str())
-        .map(|s| replay_helpers::interpolate_variables(s))
+        .map(replay_helpers::interpolate_variables)
         .unwrap_or_default();
     let key = key.trim();
     if key.is_empty() {
@@ -607,8 +603,7 @@ pub fn run_edit_fields(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, St
 ///   - `format`   (default): rewrite `field` using `format` (chrono strftime)
 ///   - `add`:     add `amount` `unit` (seconds/minutes/hours/days/weeks/months)
 ///   - `subtract`: same, backwards
-///   - `diff`:    `result_field` = difference between `field` and `compare_to`
-///                in the given `unit`
+///   - `diff`:    `result_field` = difference between `field` and `compare_to` in the given `unit`
 ///   - `now`:     write the current timestamp into `result_field`
 pub fn run_date_time(data: &Value, items: Vec<Value>) -> Result<Vec<Value>, String> {
     use chrono::{DateTime, Datelike, Duration, FixedOffset, Local, NaiveDate, NaiveDateTime, TimeZone, Timelike, Utc};

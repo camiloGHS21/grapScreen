@@ -61,11 +61,13 @@ unsafe fn is_blank_bits(buf: &[u8], w: i32, h: i32) -> bool {
     range < 6
 }
 
+/// # Safety
+/// `hwnd` must be a valid window handle; the function calls GDI/USER32 on it.
 pub unsafe fn capture_window_png(hwnd: HWND) -> Option<Vec<u8>> {
     let mut rect = RECT { left: 0, top: 0, right: 0, bottom: 0 };
     GetWindowRect(hwnd, &mut rect);
-    let w = ((rect.right - rect.left).max(1)) as i32;
-    let h = ((rect.bottom - rect.top).max(1)) as i32;
+    let w = (rect.right - rect.left).max(1) ;
+    let h = (rect.bottom - rect.top).max(1) ;
 
     let screen = GetDC(WinHandle(std::ptr::null_mut()));
     if screen.is_null() {
@@ -73,19 +75,19 @@ pub unsafe fn capture_window_png(hwnd: HWND) -> Option<Vec<u8>> {
     }
     let mem = CreateCompatibleDC(screen);
     let bmp = CreateCompatibleBitmap(screen, w, h);
-    let old = SelectObject(mem, bmp as *mut c_void);
+    let old = SelectObject(mem, bmp);
 
     // PW_RENDERFULLCONTENT (2) forces DWM to paint even GPU-accelerated content,
     // which is what most modern apps (Chrome, Electron, WPF) need.
     let grab_print = |flag: u32| -> Option<Vec<u8>> {
-        SelectObject(mem, bmp as *mut c_void);
+        SelectObject(mem, bmp);
         let _ = PrintWindow(hwnd, mem, flag);
         read_window_bits(mem, bmp, w, h)
     };
     // BitBlt of the on-screen pixels is the most reliable fallback, though it
     // can include overlapping windows.
     let grab_blit = || -> Option<Vec<u8>> {
-        SelectObject(mem, bmp as *mut c_void);
+        SelectObject(mem, bmp);
         let _ = BitBlt(mem, 0, 0, w, h, screen, rect.left, rect.top, SRCCOPY);
         read_window_bits(mem, bmp, w, h)
     };
@@ -97,7 +99,7 @@ pub unsafe fn capture_window_png(hwnd: HWND) -> Option<Vec<u8>> {
         .or_else(|| grab_print(2));
 
     SelectObject(mem, old);
-    DeleteObject(bmp as *mut c_void);
+    DeleteObject(bmp);
     DeleteDC(mem);
     ReleaseDC(WinHandle(std::ptr::null_mut()), screen);
 

@@ -16,7 +16,12 @@
     "verify:credentials": "node scripts/n8n-credential-audit.mjs --check",
     "verify:templates": "node scripts/verify-templates.mjs",
     "verify:templates-ui": "node scripts/verify-template-ui.mjs",
-    "verify:importer": "node scripts/verify-n8n-importer.mjs"
+    "verify:importer": "node scripts/verify-n8n-importer.mjs",
+    "test": "npm run verify:templates && npm run verify:importer && npm run test:rust",
+    "test:rust": "cargo test --lib --manifest-path src-tauri/Cargo.toml",
+    "lint": "npm run lint:ts && npm run lint:rust",
+    "lint:ts": "tsc --noEmit",
+    "lint:rust": "cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.5.0",

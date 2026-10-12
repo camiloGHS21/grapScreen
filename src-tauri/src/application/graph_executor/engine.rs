@@ -170,6 +170,9 @@ pub struct GraphEngine<'a> {
 }
 
 impl<'a> GraphEngine<'a> {
+    // Mirrors run_graph's parameter surface; a param struct would churn every
+    // construction site and test for no gain.
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         service: &'a ReplayServiceImpl,
         file_id: &'a str,
@@ -264,7 +267,7 @@ impl<'a> GraphEngine<'a> {
             None => Vec::new(),
             Some(conns) => conns
                 .iter()
-                .filter(|c| port.map_or(true, |p| c.sourcePortId == p))
+                .filter(|c| port.is_none_or(|p| c.sourcePortId == p))
                 .map(|c| c.targetNodeId.clone())
                 .collect(),
         }

@@ -66,6 +66,7 @@ sha1 = "0.10"
 md-5 = "0.10"
 # n8n "Rename Keys" core node in Regex mode.
 regex = "1"
+boa_engine = "0.22.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58", features = ["Foundation", "Foundation_Collections", "Globalization", "Graphics_Imaging", "Media_Ocr", "Storage", "Storage_Streams", "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"] }

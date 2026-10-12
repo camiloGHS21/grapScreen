@@ -1,4 +1,7 @@
 #![cfg(target_os = "windows")]
+// Win32 SDK names (HWND, WPARAM, RECT fields, …) mirror the official C headers
+// verbatim; renaming them would make the FFI mapping harder to audit.
+#![allow(non_snake_case, clippy::upper_case_acronyms)]
 
 use crate::domain::entities::{ActionRequest, ActionResult, MouseButton, WindowContext};
 use crate::domain::ports_out::AutomationBackendPort;
@@ -37,7 +40,6 @@ const MK_RBUTTON: u32 = 0x0002;
 #[link(name = "user32")]
 extern "system" {
     fn GetForegroundWindow() -> HWND;
-    fn SendMessageW(h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPARAM) -> LPARAM;
     fn PostMessageW(h_wnd: HWND, msg: u32, w_param: WPARAM, l_param: LPARAM) -> BOOL;
     fn MapVirtualKeyW(u_code: u32, u_map_type: u32) -> u32;
     fn GetWindowRect(h_wnd: HWND, lp_rect: *mut RECT) -> BOOL;
@@ -53,7 +55,7 @@ struct RECT {
 }
 
 fn make_lparam(x: i32, y: i32) -> LPARAM {
-    ((y as i32 & 0xFFFF) << 16 | (x as i32 & 0xFFFF)) as LPARAM
+    ((y & 0xFFFF) << 16 | (x & 0xFFFF)) as LPARAM
 }
 
 fn key_to_vk(name: &str) -> Option<u32> {
@@ -81,6 +83,12 @@ fn key_to_vk(name: &str) -> Option<u32> {
 
 /// Infrastructure adapter implementing AutomationBackendPort using raw Win32 PostMessage.
 pub struct Win32MsgBackend;
+
+impl Default for Win32MsgBackend {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl Win32MsgBackend {
     pub fn new() -> Self {

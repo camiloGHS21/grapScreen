@@ -34,7 +34,7 @@ mod dpapi_win {
     const CRYPTPROTECT_UI_FORBIDDEN: u32 = 0x1;
 
     pub fn encrypt(data: &[u8]) -> Result<Vec<u8>, String> {
-        let mut in_blob = DataBlob {
+        let in_blob = DataBlob {
             cb_data: data.len() as u32,
             pb_data: data.as_ptr() as *mut u8,
         };
@@ -45,7 +45,7 @@ mod dpapi_win {
 
         let res = unsafe {
             CryptProtectData(
-                &mut in_blob,
+                &in_blob,
                 std::ptr::null(),
                 std::ptr::null(),
                 std::ptr::null_mut(),
@@ -66,7 +66,7 @@ mod dpapi_win {
     }
 
     pub fn decrypt(data: &[u8]) -> Result<Vec<u8>, String> {
-        let mut in_blob = DataBlob {
+        let in_blob = DataBlob {
             cb_data: data.len() as u32,
             pb_data: data.as_ptr() as *mut u8,
         };
@@ -77,7 +77,7 @@ mod dpapi_win {
 
         let res = unsafe {
             CryptUnprotectData(
-                &mut in_blob,
+                &in_blob,
                 std::ptr::null_mut(),
                 std::ptr::null(),
                 std::ptr::null_mut(),
