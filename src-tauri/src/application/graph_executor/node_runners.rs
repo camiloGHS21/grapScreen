@@ -2,7 +2,6 @@ use super::engine::{GraphEngine, PASSTHROUGH_KINDS, TRANSFORM_KINDS};
 use super::extract::GraphNode;
 use crate::application::replay_helpers;
 use crate::domain::entities::RecordedEvent;
-use serde_json::Value;
 
 impl<'a> GraphEngine<'a> {
     pub(crate) fn node_event(&self, node: &GraphNode) -> Option<&RecordedEvent> {
@@ -138,7 +137,6 @@ impl<'a> GraphEngine<'a> {
         Ok(())
     }
 
-
     /// Phase 11 — runs an external-service action node once per incoming item.
     /// Called from `exec_node` for `send_email`, `slack_webhook`, etc.
     pub(crate) fn exec_action(&self, node: &GraphNode) -> Result<(), String> {
@@ -180,9 +178,10 @@ impl<'a> GraphEngine<'a> {
             // reports that instead of calling an API root.
             "n8n_node" => {
                 let n8n_key = data.get("n8n_key").and_then(|v| v.as_str()).unwrap_or("");
-                let n8n_name = data.get("n8n_name").and_then(|v| v.as_str()).unwrap_or("");
                 let key_lower = n8n_key.to_ascii_lowercase();
-                if n8n_key.eq_ignore_ascii_case("postgres") {
+                if let Some(res) = super::n8n_core_router::run_n8n_core_or_transform(&key_lower, &data, incoming.clone()) {
+                    res
+                } else if n8n_key.eq_ignore_ascii_case("postgres") {
                     super::postgres_node::run(&data, incoming)
                 } else if is_agent_key(n8n_key) {
                     super::ai_agent_runner::run(&data, incoming)
@@ -215,6 +214,7 @@ impl<'a> GraphEngine<'a> {
                 } else if has_explicit_overrides(&data) {
                     super::declarative::runner::run(&data, incoming)
                 } else {
+                    let n8n_name = data.get("n8n_name").and_then(|v| v.as_str()).unwrap_or("");
                     Err(format!(
                         "El nodo '{}' todavía no puede ejecutarse: su petición no está capturada. \
                          Elige otro nodo o define la URL base y la ruta en las opciones avanzadas.",
@@ -268,11 +268,7 @@ impl<'a> GraphEngine<'a> {
 }
 
 /// Whether the node carries request details the user typed themselves.
-///
-/// Those are the escape hatch for an API this engine has no mapping for: with a
-/// base URL and a path filled in, the generic runner is doing what the user
-/// asked, so it is allowed to run. Without them there is nothing to send.
-fn has_explicit_overrides(data: &Value) -> bool {
+fn has_explicit_overrides(data: &serde_json::Value) -> bool {
     ["n8n_base_url", "n8n_path", "n8n_qs", "n8n_body"]
         .iter()
         .any(|field| {
@@ -283,18 +279,6 @@ fn has_explicit_overrides(data: &Value) -> bool {
 }
 
 /// The catalogue keys the agent runner executes, matched whole.
-///
-/// This was a substring test (`key.contains("agent")`), which quietly claimed
-/// two nodes that are not agents at all: `Magento2` and `MessageAnAgent` both
-/// contain the letters. `ai_agent_runner` returns `Ok` with a summary line even
-/// when no model was ever called, so those two nodes reported success and did
-/// nothing — the worst failure mode there is, because the flow carries on as if
-/// the step had run. Matching the two real keys costs one comparison and makes
-/// the false green impossible; `routing.rs` holds the regression test.
-///
-/// `AgentV1` is the deprecated version of the same node: it is no longer in the
-/// palette, but a flow saved before it was dropped still resolves to the runner
-/// its parameters were written for.
 pub(crate) fn is_agent_key(key: &str) -> bool {
     matches!(key.to_ascii_lowercase().as_str(), "agent" | "agentv1")
 }

@@ -24,6 +24,7 @@ pub mod database_nodes;
 pub mod node_options;
 pub mod binary_data;
 pub mod merge_nodes;
+pub mod n8n_core_router;
 
 #[cfg(test)]
 pub mod testkit;
@@ -275,4 +276,3 @@ mod trigger_payload_tests {
         assert!(trigger_payload_items("[]").is_empty());
     }
 }
-
