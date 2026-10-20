@@ -67,6 +67,14 @@ md-5 = "0.10"
 # n8n "Rename Keys" core node in Regex mode.
 regex = "1"
 boa_engine = "0.22.0"
+# Python `Code` scripts run inside the Rust binary too: RustPython is an
+# interpreter written in pure Rust, so a shipped .exe/.dmg never needs a
+# `python` install. `rustpython-pylib` freezes the Python stdlib (json, re,
+# datetime…) into the binary and `rustpython-stdlib` contributes the native
+# module half — nothing is read from the user's machine.
+rustpython-vm = { version = "0.6", features = ["freeze-stdlib", "serde"] }
+rustpython-stdlib = "0.6"
+rustpython-pylib = { version = "0.6", features = ["freeze-stdlib"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58", features = ["Foundation", "Foundation_Collections", "Globalization", "Graphics_Imaging", "Media_Ocr", "Storage", "Storage_Streams", "Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging", "Win32_System_LibraryLoader"] }

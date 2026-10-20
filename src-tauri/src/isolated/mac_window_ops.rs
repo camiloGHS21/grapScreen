@@ -178,22 +178,19 @@ pub fn capture_window_png(hwnd_val: isize) -> Option<Vec<u8>> {
     let tmp = std::env::temp_dir()
         .join(format!("grapscreen_cap_{}.png", hwnd_val));
 
-    // Get CGWindowID for the PID
+    // Get CGWindowID for the PID via osascript/JXA + CoreGraphics — osascript
+    // viene con macOS, no requiere python3 ni PyObjC instalados.
     let script = format!(
-        r#"
-import Quartz
-wl = Quartz.CGWindowListCopyWindowInfo(
-    Quartz.kCGWindowListOptionOnScreenOnly, Quartz.kCGNullWindowID)
-for w in wl:
-    if w.get('kCGWindowOwnerPID', 0) == {}:
-        print(w.get('kCGWindowNumber', 0))
-        break
-"#,
-        hwnd_val
+        r#"ObjC.import("CoreGraphics");
+const wins = ObjC.deepUnwrap($.CGWindowListCopyWindowInfo($.kCGWindowListOptionOnScreenOnly, $.kCGNullWindowID)) || [];
+for (const w of wins) {{
+  if (w.kCGWindowOwnerPID === {hwnd_val}) {{ console.log(w.kCGWindowNumber); break; }}
+}}"#,
+        hwnd_val = hwnd_val
     );
 
-    let cg_wid = Command::new("python3")
-        .args(["-c", &script])
+    let cg_wid = Command::new("osascript")
+        .args(["-l", "JavaScript", "-e", &script])
         .output()
         .ok()
         .and_then(|o| {

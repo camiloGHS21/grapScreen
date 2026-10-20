@@ -2,6 +2,8 @@ use super::context::{current_payload, num, unwrap_item, ExprContext};
 use chrono::Local;
 use serde_json::Value;
 
+pub use super::path::get_path;
+
 /// Resolves `$json...`, `$node...`, `$items...`, `$now`, `$index`, `$credentials` and `$('NodeName')`.
 pub fn resolve_dollar(token: &str, ctx: &ExprContext) -> Option<Value> {
     // ── Modern n8n v1+ syntax: $('NodeName').item.json.field ──
@@ -121,6 +123,17 @@ pub fn resolve_dollar(token: &str, ctx: &ExprContext) -> Option<Value> {
         }
     }
 
+    // ── $prevNode ──
+    if token == "$prevNode" || token.starts_with("$prevNode.") {
+        let prev_name = ctx.variables.get("prevNode.name").map(|s| s.as_str()).unwrap_or("");
+        if token == "$prevNode" {
+            return Some(serde_json::json!({ "name": prev_name }));
+        }
+        if token == "$prevNode.name" {
+            return Some(Value::String(prev_name.to_string()));
+        }
+    }
+
     None
 }
 
@@ -162,6 +175,18 @@ pub fn resolve_modern_node(token: &str, ctx: &ExprContext) -> Option<Value> {
     if let Some(rest) = after_paren.strip_prefix(".last()") {
         let last_item = items_opt.and_then(|l| l.last()).cloned().unwrap_or(Value::Null);
         return Some(resolve_item_tail(&last_item, rest));
+    }
+
+    if let Some(rest) = after_paren.strip_prefix(".itemMatching(") {
+        let (idx, tail) = parse_indexed_call(rest, ctx.item_index);
+        let matched = items_opt.and_then(|l| l.get(idx).or_else(|| l.first())).cloned().unwrap_or(Value::Null);
+        return Some(resolve_item_tail(&matched, &tail));
+    }
+
+    if let Some(rest) = after_paren.strip_prefix(".item(") {
+        let (idx, tail) = parse_indexed_call(rest, ctx.item_index);
+        let matched = items_opt.and_then(|l| l.get(idx).or_else(|| l.first())).cloned().unwrap_or(Value::Null);
+        return Some(resolve_item_tail(&matched, &tail));
     }
 
     let item = items_opt.and_then(|l| l.get(ctx.item_index).or_else(|| l.first())).cloned().unwrap_or(Value::Null);
@@ -232,55 +257,14 @@ pub fn resolve_node_ref(rest: &str, ctx: &ExprContext) -> Option<Value> {
     Some(get_path(&value, tail))
 }
 
-/// Walks a `.a.b[0].c` style path into a JSON value.
-pub fn get_path(root: &Value, path: &str) -> Value {
-    let mut curr = root;
-    let mut rest = path.trim();
-    if rest.is_empty() {
-        return curr.clone();
+fn parse_indexed_call(rest: &str, fallback: usize) -> (usize, String) {
+    if let Some(close) = rest.find(')') {
+        let arg = rest[..close].trim();
+        let idx = arg.parse::<usize>().unwrap_or(fallback);
+        let tail = rest[close + 1..].to_string();
+        (idx, tail)
+    } else {
+        (fallback, rest.to_string())
     }
-    if !rest.starts_with('.') && !rest.starts_with('[') {
-        let end = rest.find(['.', '[']).unwrap_or(rest.len());
-        let key = &rest[..end];
-        curr = match curr.get(key) {
-            Some(v) => v,
-            None => return Value::Null,
-        };
-        rest = &rest[end..];
-    }
-    while !rest.is_empty() {
-        if let Some(r) = rest.strip_prefix('.') {
-            let end = r.find(['.', '[']).unwrap_or(r.len());
-            let key = &r[..end];
-            curr = match curr.get(key) {
-                Some(v) => v,
-                None => return Value::Null,
-            };
-            rest = &r[end..];
-            continue;
-        }
-        if let Some(r) = rest.strip_prefix('[') {
-            let close = match r.find(']') {
-                Some(c) => c,
-                None => return Value::Null,
-            };
-            let inner = r[..close].trim();
-            let unquoted = inner.trim_matches(|c| c == '"' || c == '\'');
-            if let Ok(idx) = unquoted.parse::<usize>() {
-                curr = match curr.get(idx) {
-                    Some(v) => v,
-                    None => return Value::Null,
-                };
-            } else {
-                curr = match curr.get(unquoted) {
-                    Some(v) => v,
-                    None => return Value::Null,
-                };
-            }
-            rest = &r[close + 1..];
-            continue;
-        }
-        break;
-    }
-    curr.clone()
 }
+

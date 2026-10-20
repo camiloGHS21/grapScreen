@@ -70,9 +70,11 @@ impl<'a> GraphEngine<'a> {
                 break;
             }
             replay_helpers::set_items(vec![item.clone()]);
-            replay_helpers::set_var("item.index", &i.to_string());
+            let i_str = i.to_string();
+            replay_helpers::set_var("item.index", &i_str);
+            replay_helpers::set_var("itemIndex", &i_str);
+            replay_helpers::set_var("$itemIndex", &i_str);
             replay_helpers::set_var("item.count", &total.to_string());
-            replay_helpers::set_var("runIndex", &i.to_string());
 
             let res = self.exec_node_with_retry(node, depth, &opts);
 
@@ -180,10 +182,17 @@ impl<'a> GraphEngine<'a> {
 
         let is_item_based = !ITEM_AWARE_KINDS.contains(&node.kind.as_str());
         let incoming = replay_helpers::get_items();
-        if is_item_based && incoming.len() > 1 {
-            let result = self.walk_item_based(&node, incoming, visited, depth);
-            super::credentials::restore(prev_credential);
-            return result;
+        if is_item_based {
+            if incoming.len() > 1 {
+                let result = self.walk_item_based(&node, incoming, visited, depth);
+                super::credentials::restore(prev_credential);
+                return result;
+            } else {
+                replay_helpers::set_var("item.index", "0");
+                replay_helpers::set_var("itemIndex", "0");
+                replay_helpers::set_var("$itemIndex", "0");
+                replay_helpers::set_var("item.count", &incoming.len().to_string());
+            }
         }
 
         let is_pinned = self

@@ -315,13 +315,9 @@ mod tests {
     /// The test the whole catalog exists to pass.
     #[test]
     fn every_locally_verifiable_template_runs_through_the_engine() {
-        // `node` runs the Código steps; without it the subset would silently
-        // shrink, so the absence is reported as a failure rather than skipped.
-        assert!(
-            std::process::Command::new("node").arg("--version").output().map(|o| o.status.success()).unwrap_or(false),
-            "hace falta `node` en PATH para ejecutar las plantillas con el nodo Código"
-        );
-
+        // Los pasos Código corren en los motores embebidos (Boa / RustPython):
+        // no hace falta ningún runtime externo, la ausencia de `node`/`python`
+        // en PATH ya no puede encoger el subconjunto verificable.
         let outcomes = outcomes();
         assert!(!outcomes.is_empty(), "no se ejecutó ninguna plantilla");
 

@@ -106,3 +106,36 @@ pub fn value_to_items(value: &Value) -> Option<Vec<Value>> {
         other => Some(vec![other.clone()]),
     }
 }
+
+/// Turns what a script produced into the node's outgoing items.
+///
+/// Keeps the contract the external runners established: an explicit return
+/// wins; otherwise printed output decides (the whole log parsed as JSON, else
+/// the last printed JSON line); otherwise the logs become `{ output }`; and a
+/// script that produced nothing lets the incoming items flow through.
+pub fn outcome_to_items(outcome: &ScriptOutcome, fallback: Vec<Value>) -> Vec<Value> {
+    if let Some(result_items) = &outcome.items {
+        return result_items.clone();
+    }
+    if !outcome.logs.is_empty() {
+        let joined = outcome.logs.join("\n");
+        if let Some(items) = parse_json_items(&joined) {
+            return items;
+        }
+        for line in outcome.logs.iter().rev() {
+            if let Some(items) = parse_json_items(line) {
+                return items;
+            }
+        }
+        return vec![serde_json::json!({ "output": joined })];
+    }
+    fallback
+}
+
+fn parse_json_items(text: &str) -> Option<Vec<Value>> {
+    let parsed = serde_json::from_str::<Value>(text.trim()).ok()?;
+    Some(match parsed {
+        Value::Array(arr) => arr,
+        other => vec![other],
+    })
+}

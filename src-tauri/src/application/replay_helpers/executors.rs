@@ -1,5 +1,6 @@
-use super::{interpolate_variables, set_items, set_var, warn_ui};
+use super::{get_all_vars, get_items, get_node_outputs, interpolate_variables, set_items, set_var, warn_ui};
 use crate::application::http_client::{self, HttpError, HttpRequest};
+use crate::infrastructure::scripting;
 use serde_json::Value;
 
 /// Higher timeout than the client default: an HTTP Request node is often
@@ -85,46 +86,51 @@ pub fn execute_http_request(data: &Value) -> bool {
     }
 }
 
+/// Runs a `Code` node on the embedded engines (Boa for JavaScript, RustPython
+/// for Python): no `node`/`python` install, no temp files, no subprocess.
+///
+/// What the script printed becomes the node's text output (`output_var`) and
+/// the script's result becomes the items, like the external runner did.
 pub fn execute_code_node(data: &Value) -> bool {
     let language = data["language"].as_str().unwrap_or("javascript").to_lowercase();
     let code = interpolate_variables(data["code"].as_str().unwrap_or(""));
     let output_var = data["output_var"].as_str().unwrap_or("code_output").to_string();
-    let (exe, ext) = if language.starts_with("py") { ("python", "py") } else { ("node", "js") };
 
-    let file_path = std::env::temp_dir().join(format!("grapscreen_code_{}.{}", std::process::id(), ext));
-    if std::fs::write(&file_path, &code).is_err() {
-        warn_ui("code", "No se pudo escribir el script temporal.");
-        return false;
-    }
-    let result = std::process::Command::new(exe).arg(&file_path).output();
-    let _ = std::fs::remove_file(&file_path);
+    let env = crate::infrastructure::scripting::js_shims::JsEnv {
+        items: get_items(),
+        node_outputs: get_node_outputs(),
+        vars: get_all_vars()
+            .into_iter()
+            .map(|(name, value)| (name, Value::String(value)))
+            .collect(),
+        execution_id: String::new(),
+    };
 
-    match result {
-        Ok(out) => {
-            let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
-            let res_text = if stdout.is_empty() { &stderr } else { &stdout };
-            set_var(&output_var, res_text);
+    let outcome = if language.starts_with("py") {
+        scripting::run_py(&code, &env)
+    } else {
+        scripting::run_js(&code, &env)
+    };
 
-            if let Ok(json_val) = serde_json::from_str::<Value>(res_text) {
-                if let Value::Array(arr) = json_val {
-                    set_items(arr);
-                } else if json_val.is_object() {
-                    set_items(vec![json_val]);
-                }
-            }
-
-            if out.status.success() {
-                true
+    match outcome {
+        Ok(outcome) => {
+            let printed = outcome.logs.join("\n").trim().to_string();
+            let text = if printed.is_empty() {
+                outcome
+                    .items
+                    .as_ref()
+                    .and_then(|items| serde_json::to_string(items).ok())
+                    .unwrap_or_default()
             } else {
-                let short: String = stderr.chars().take(200).collect();
-                warn_ui("code", &format!("El script terminó con error: {}", short));
-                false
-            }
+                printed
+            };
+            set_var(&output_var, &text);
+            set_items(scripting::outcome_to_items(&outcome, get_items()));
+            true
         }
-        Err(e) => {
-            warn_ui("code", &format!("No se encontró el intérprete '{}' ({}). Instálalo o cambia el lenguaje.", exe, e));
-            set_var(&output_var, &format!("ERROR: {}", e));
+        Err(message) => {
+            warn_ui("code", &message);
+            set_var(&output_var, &format!("ERROR: {}", message));
             false
         }
     }

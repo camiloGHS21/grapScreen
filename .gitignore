@@ -28,6 +28,7 @@ Thumbs.db
 graphify-out/
 .gemini/
 .n8n-cache/
+.pi-tasks/
 
 # Large binaries and sidecars
 src-tauri/resources/*.exe

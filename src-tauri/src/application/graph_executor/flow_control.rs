@@ -63,16 +63,32 @@ impl<'a> GraphEngine<'a> {
         };
 
         let total = items.len();
+        let batch_size = self
+            .node_event(node)
+            .and_then(|ev| {
+                ev.data
+                    .get("batch_size")
+                    .or_else(|| ev.data.get("batchSize"))
+                    .and_then(|v| v.as_u64().or_else(|| v.as_str().and_then(|s| s.parse().ok())))
+            })
+            .unwrap_or(1)
+            .max(1) as usize;
+
+        let chunks: Vec<Vec<serde_json::Value>> = items.chunks(batch_size).map(|c| c.to_vec()).collect();
+        let total_batches = chunks.len();
         let mut processed_results: Vec<serde_json::Value> = Vec::new();
 
-        for (i, item) in items.into_iter().enumerate() {
+        for (run_idx, batch) in chunks.into_iter().enumerate() {
             self.check_stop()?;
-            let single_item_list = vec![item.clone()];
-            replay_helpers::set_items(single_item_list);
+            replay_helpers::set_items(batch.clone());
 
-            replay_helpers::set_var("item.index", &i.to_string());
+            let run_idx_str = run_idx.to_string();
+            replay_helpers::set_var("runIndex", &run_idx_str);
+            replay_helpers::set_var("$runIndex", &run_idx_str);
+            replay_helpers::set_var("loop.index", &run_idx_str);
+            replay_helpers::set_var("item.index", &run_idx_str);
             replay_helpers::set_var("item.count", &total.to_string());
-            replay_helpers::set_var("loop.index", &i.to_string());
+            replay_helpers::set_var("batch.count", &total_batches.to_string());
 
             let mut body_visited = HashSet::new();
             body_visited.insert(node.id.clone());
@@ -81,10 +97,10 @@ impl<'a> GraphEngine<'a> {
             }
 
             let iter_items = replay_helpers::get_items();
-            if let Some(last_out) = iter_items.last() {
-                processed_results.push(last_out.clone());
+            if !iter_items.is_empty() {
+                processed_results.extend(iter_items);
             } else {
-                processed_results.push(item);
+                processed_results.extend(batch);
             }
         }
 
@@ -170,4 +186,3 @@ impl<'a> GraphEngine<'a> {
         Ok(self.targets_of(&node.id, None))
     }
 }
-
