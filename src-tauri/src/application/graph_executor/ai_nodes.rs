@@ -425,7 +425,7 @@ fn normalize_category(reply: &str, categories: &[String]) -> String {
 /// Models wrap JSON in markdown fences, add a sentence before it, or append a
 /// trailing note. Rather than trusting the whole reply to parse, we locate the
 /// outermost balanced `{...}` (ignoring braces inside strings) and parse that.
-fn extract_json_object(reply: &str) -> Option<Value> {
+pub(crate) fn extract_json_object(reply: &str) -> Option<Value> {
     let text = reply.trim();
 
     // Fast path: the reply is already pure JSON.

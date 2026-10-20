@@ -132,7 +132,19 @@ pub fn run(data: &Value, incoming: Vec<Value>) -> Result<Vec<Value>, String> {
     replay_helpers::set_var("chatResponse", &response_text);
     replay_helpers::set_var("output", &response_text);
 
-    let output_item = json!({
+    // Save conversation turn into memory buffer
+    let history_key = format!(
+        "ai_agent_history_{}",
+        data.get("id").and_then(|v| v.as_str()).unwrap_or("default")
+    );
+    let mut history = replay_helpers::get_var(&history_key).unwrap_or_default();
+    if !history.is_empty() {
+        history.push('\n');
+    }
+    history.push_str(&format!("User: {}\nAssistant: {}", user_prompt, response_text));
+    replay_helpers::set_var(&history_key, &history);
+
+    let mut output_item = json!({
         "output": response_text,
         "chatResponse": response_text,
         "text": response_text,
@@ -140,5 +152,60 @@ pub fn run(data: &Value, incoming: Vec<Value>) -> Result<Vec<Value>, String> {
         "chatInput": user_prompt,
     });
 
+    // If response contains structured JSON (e.g. OutputParserStructured), extract fields into the output item
+    if let Some(Value::Object(parsed_obj)) = super::ai_nodes::extract_json_object(&response_text) {
+        if let Some(map) = output_item.as_object_mut() {
+            for (k, v) in parsed_obj {
+                map.entry(k).or_insert(v);
+            }
+        }
+    }
+
     Ok(vec![output_item])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ai_agent_runner_fallback_and_memory() {
+        let node_data = json!({
+            "id": "agent_test_1",
+            "prompt": "Explica la fotosíntesis",
+            "modelKey": "LmChatOpenAi"
+        });
+        let res = run(&node_data, vec![]).expect("Agent must execute cleanly");
+        assert_eq!(res.len(), 1);
+        assert!(res[0].get("output").is_some());
+        assert_eq!(res[0]["chatInput"], "Explica la fotosíntesis");
+
+        // Verify conversation turn saved in replay memory
+        let history = replay_helpers::get_var("ai_agent_history_agent_test_1");
+        assert!(history.is_some());
+        assert!(history.unwrap().contains("Explica la fotosíntesis"));
+    }
+
+    #[test]
+    fn test_ai_agent_structured_output_extraction() {
+        // Mock a structured response via pre-set variable
+        replay_helpers::set_var("ai_response", r#"```json
+{
+  "summary": "Reporte financiero",
+  "score": 95,
+  "status": "APPROVED"
+}
+```"#);
+
+        let node_data = json!({
+            "id": "agent_test_structured",
+            "prompt": "Genera el reporte en JSON"
+        });
+        let res = run(&node_data, vec![]).expect("Agent must execute cleanly");
+        assert_eq!(res.len(), 1);
+        let item = &res[0];
+        assert_eq!(item["summary"], "Reporte financiero");
+        assert_eq!(item["score"], 95);
+        assert_eq!(item["status"], "APPROVED");
+    }
 }
