@@ -8,6 +8,8 @@
 //!   `src/data/n8n-descriptors.json`.
 //! * [`auth`] — turns an n8n credential type plus vault data into headers and
 //!   query parameters.
+//! * [`base_url`] — resolves tenant/instance and well-known service roots.
+//! * [`helpers`] — HTTP, query, and item mapping utilities.
 //! * [`runner`] — builds and sends the request, then maps the response onto the
 //!   item list.
 //!
@@ -19,9 +21,12 @@
 //! [`runner::poll_once`] and [`runner::credential_for`] are public.
 
 pub mod auth;
+pub mod base_url;
 pub mod descriptor;
+pub mod helpers;
 pub mod runner;
 
+pub use base_url::resolve_base_url;
 pub use descriptor::{CredentialSpec, DescriptorRegistry, NodeDescriptor, RequestTemplate};
 pub use runner::{credential_for, poll_once, PollOutcome};
 

@@ -10,6 +10,24 @@ use crate::application::replay_integrations;
 use crate::domain::entities::RecordedEvent;
 use serde_json::{json, Value};
 
+fn resolve_model_provider(data: &Value) -> Option<&'static str> {
+    let key = data
+        .get("modelKey")
+        .or_else(|| data.get("n8n_key"))
+        .and_then(|v| v.as_str())?;
+    match key {
+        "LmChatAnthropic" | "Anthropic" => Some("anthropic"),
+        "LmChatGroq" | "Groq" => Some("groq"),
+        "LmChatMistralCloud" | "MistralAi" => Some("mistral"),
+        "LmChatDeepSeek" | "DeepSeek" => Some("deepseek"),
+        "LmChatGoogleGemini" | "GoogleGemini" => Some("gemini"),
+        "LmChatOllama" | "Ollama" => Some("ollama"),
+        "LmChatOpenRouter" | "OpenRouter" => Some("openrouter"),
+        "LmChatOpenAi" | "OpenAi" => Some("openai"),
+        _ => None,
+    }
+}
+
 /// Executes the AI Agent node for the current graph execution step.
 pub fn run(data: &Value, incoming: Vec<Value>) -> Result<Vec<Value>, String> {
     // 1. Determine user prompt from config expression, incoming items, or variables
@@ -51,6 +69,9 @@ pub fn run(data: &Value, incoming: Vec<Value>) -> Result<Vec<Value>, String> {
         if !obj.contains_key("output_var") {
             obj.insert("output_var".to_string(), json!("ai_response"));
         }
+        if let Some(p) = resolve_model_provider(data) {
+            obj.insert("provider".to_string(), json!(p));
+        }
     }
 
     let dummy_event = RecordedEvent {
@@ -61,8 +82,32 @@ pub fn run(data: &Value, incoming: Vec<Value>) -> Result<Vec<Value>, String> {
 
     // 3. Resolve credentials
     let mut creds = replay_integrations::load_credentials();
-    if let Some(key) = data.get("api_key").or_else(|| data.get("apiKey")).and_then(|v| v.as_str()).filter(|s| !s.trim().is_empty()) {
+    if let Some(key) = data
+        .get("api_key")
+        .or_else(|| data.get("apiKey"))
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.trim().is_empty())
+    {
         creds.openai_key = key.trim().to_string();
+    } else if let Some(cred_val) =
+        crate::application::graph_executor::declarative::credential_for(data)
+    {
+        let map = cred_val
+            .get("data")
+            .and_then(|d| d.as_object())
+            .or_else(|| cred_val.as_object());
+        if let Some(map) = map {
+            for &k in &["apiKey", "api_key", "token", "accessToken", "access_token"] {
+                if let Some(val) = map
+                    .get(k)
+                    .and_then(|v| v.as_str())
+                    .filter(|s| !s.trim().is_empty())
+                {
+                    creds.openai_key = val.trim().to_string();
+                    break;
+                }
+            }
+        }
     }
 
     // 4. Run AI Agent execution

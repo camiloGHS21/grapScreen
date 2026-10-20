@@ -15,16 +15,6 @@
  *   6. blocked and runnable agree: nothing executable is disabled and nothing
  *      unexecutable is offered as a step.
  *
- * Two assertions changed with the policy, and why:
- *   - the dedupe check used to require the *loser* to be invisible on both
- *     sides ("kept the own node ⇒ no n8n entry with that key"). The catalogue is
- *     now shown whole, so a duplicate that cannot run stays on screen as a
- *     blocked entry; the assertion now requires the kept side to be present and
- *     checks the loser by the rule that actually matters (see the invariant
- *     section), instead of by absence.
- *   - the hidden-key check used to accept any set of hidden catalogue entries.
- *     It now pins the exact two keys, so a third cannot appear unnoticed.
- *
  * Run with: node scripts/verify-palette.mjs
  */
 import { createServer } from "vite";
@@ -97,14 +87,15 @@ try {
     console.log(`  ${portId.padEnd(13)} ${config.sections.flatMap((s) => s.items).map((i) => i.n8nKey).join(", ")}`);
   }
   // The port panels say what the runner does with each slot: only the chat model
-  // reaches it, so everything else has to say so on the entry itself. The five
-  // unmarked keys below are the providers `ai_agent_runner` can actually call —
-  // they are the exception the check is built around, not a hole in it.
+  // reaches it, so everything else has to say so on the entry itself.
   const PROVIDERS_WITH_A_RUNNER = [
     "LmChatOpenAi",
-    "LmChatDeepSeek",
+    "LmChatAnthropic",
     "LmChatGoogleGemini",
     "LmChatOllama",
+    "LmChatDeepSeek",
+    "LmChatGroq",
+    "LmChatMistralCloud",
     "LmChatOpenRouter",
   ];
   const unmarked = portItems.filter((i) => !i.setupNote).map((i) => i.n8nKey);
@@ -124,12 +115,6 @@ try {
   );
 
   console.log("\n== Catálogo n8n completo ==");
-  // Two keys stay out, and the list is asserted exactly so a third cannot be
-  // added without this check failing:
-  //   AgentV1 — deprecated in n8n; the palette shows one agent.
-  //   Agent   — the catalogue agent keeps its parameters in `n8n_config`, and
-  //             `ai_agent_runner` reads the node's own fields, so this entry
-  //             would ignore the prompt the user typed.
   const shownKeys = new Set(all.filter((i) => i.n8nKey).map((i) => i.n8nKey));
   const hidden = n8nEntries
     .filter((e) => !shownKeys.has(e.key))
@@ -156,14 +141,10 @@ try {
 
   console.log("\n== Invariante: ninguna capacidad sin nodo ==");
   const flat = Object.values(catalog.CATALOG_ITEMS).flat();
-  // A hand-written entry is identified by its own type with no catalogue key.
   const ownVisible = (type) => flat.some((i) => i.type === type && !i.n8nKey);
   const n8nVisible = (key) => flat.some((i) => i.n8nKey === key);
   const orphans = [];
   for (const d of parity.DEDUPE_DECISIONS) {
-    // Both sides may be on screen (the catalogue entry is then shown blocked):
-    // what must never happen is a capability whose *both* nodes are gone, which
-    // is how a policy change silently removes a feature.
     if (!ownVisible(d.own) && !n8nVisible(d.n8nKey)) orphans.push(d.own);
     check(
       `${d.own} ↔ ${d.n8nKey} (${d.displayName})`,
@@ -201,9 +182,6 @@ try {
   check("cada entrada bloqueada explica el motivo", soon.every((i) => i.comingSoonReason));
   check(
     "un bloqueo nunca se anuncia como un simple dato que falta",
-    // A blocked entry carries a reason and no setup note; a note means the node
-    // runs. Without this, "requiere URL base" would read as "this node works if
-    // you fill one field" on a node with no runner behind it.
     soon.every((i) => !i.setupNote) && notes.every((i) => !i.comingSoon),
   );
 
@@ -225,17 +203,9 @@ try {
   );
 
   console.log("\n== Buscador ==");
-  // The search runs through the same list and the same matcher the panel uses
-  // (`SEARCHABLE_ITEMS` + `matchesCatalogQuery`), so this is the real path and
-  // not a re-implementation of it. Every query below names a node that is
-  // blocked: the search used to drop exactly those, so a user who could browse
-  // to a node could not find it by name.
   const queries = [
     ["kafka", "KafkaTrigger"],
     ["filter", "Filter"],
-    // Magento2 used to sit here as "looks like an agent" — the capture now runs
-    // it, so the stable blocked pick is a Core node the engine never runs. The
-    // query must be a label the search indexes ("sort", not "sort data").
     ["sort", "Sort"],
     ["imap", "EmailReadImap"],
     ["message an agent", "MessageAnAgent"],
@@ -267,9 +237,6 @@ try {
   );
 
   console.log("\n== Presentación del bloqueo ==");
-  // Static check of the stylesheet, not of a rendering: it proves the rules the
-  // disabled state depends on exist, and that the reason is not clipped the way
-  // the description is (`.fsp-item-desc` truncates with an ellipsis).
   const css = readFileSync("src/styles.css", "utf8");
   check("existe un estilo para el nodo bloqueado", /\.fsp-item:disabled\s*\{/.test(css));
   check(

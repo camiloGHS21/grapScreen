@@ -11,13 +11,7 @@ import { N8N_BY_KEY, type N8nCatalogEntry } from "./n8nParity";
  * `ai_memory`, `ai_tool` and `ai_outputParser` connectors, and the palette that
  * opens from each port lists exactly those nodes. Every entry here is a real
  * catalogue node: the label, the description and the logo are read back from
- * `src/data/n8n-catalog.json` by its key, so the list cannot drift from n8n's
- * own names the way a hand-copied one did (it used to name OpenAI models that
- * do not exist in n8n at all, with camelCase keys that matched nothing).
- *
- * The engine's agent runs against an OpenAI-compatible endpoint, so the models
- * whose provider it supports say so in the description and the rest are marked
- * as not wired to the runner instead of silently pretending.
+ * `src/data/n8n-catalog.json` by its key.
  */
 
 export interface PortCatalogSection {
@@ -35,13 +29,14 @@ export interface PortCatalogConfig {
 
 /**
  * Providers the Rust agent runner can call (`integration_ai::execute_ai`).
- * Everything else would be sent to the OpenAI endpoint and fail there, which is
- * worth saying up front.
  */
 const SUPPORTED_PROVIDERS: Record<string, string> = {
   LmChatOpenAi: "openai",
-  LmChatDeepSeek: "deepseek",
+  LmChatAnthropic: "anthropic",
   LmChatGoogleGemini: "gemini",
+  LmChatDeepSeek: "deepseek",
+  LmChatGroq: "groq",
+  LmChatMistralCloud: "mistral",
   LmChatOllama: "ollama",
   LmChatOpenRouter: "openrouter",
 };
@@ -68,13 +63,6 @@ function initialOf(entry: N8nCatalogEntry): string | undefined {
 
 /**
  * What the agent runner does with each port, as a badge on every entry.
- *
- * Only the chat model reaches the runner: `ai_agent_runner` reads the node's
- * prompt, its system prompt, its key and the provider the wired model names, and
- * calls the model endpoint. Memory, tools and output parsers are saved with the
- * agent and then ignored — the runner has no code that reads them. Saying so on
- * the entry is the difference between a slot the user can trust and one that
- * silently accepts a configuration nothing consumes.
  */
 const PORT_RUNNER_NOTE: Record<string, string> = {
   memory: "se guarda con el agente; el ejecutor todavía no la usa",
@@ -84,8 +72,7 @@ const PORT_RUNNER_NOTE: Record<string, string> = {
 
 /**
  * Builds one palette entry out of a catalogue key. Returns `null` for a key
- * that is not in the catalogue: a missing node must not silently become a
- * blank row (the acceptance check greps for exactly this).
+ * that is not in the catalogue.
  */
 export function subNodeItem(key: string, portId: string): CatalogItem | null {
   const entry = N8N_BY_KEY.get(key);
@@ -93,7 +80,7 @@ export function subNodeItem(key: string, portId: string): CatalogItem | null {
   const provider = SUPPORTED_PROVIDERS[key];
   const unsupportedModel = portId === "model" && !provider;
   const desc = unsupportedModel
-    ? `${entry.description} · no conectado al ejecutor: el agente usa OpenAI, DeepSeek, Gemini, Ollama u OpenRouter`
+    ? `${entry.description} · no conectado al ejecutor: el agente soporta OpenAI, Anthropic, Gemini, DeepSeek, Groq, Mistral, Ollama u OpenRouter`
     : entry.description;
   return {
     type: "n8n_node",
@@ -104,8 +91,6 @@ export function subNodeItem(key: string, portId: string): CatalogItem | null {
     n8nIcon: entry.icon,
     n8nInitial: initialOf(entry),
     n8nCategory: entry.appCategory,
-    // The badge, not a block: wiring one of these is a real edit to the agent
-    // and the value is kept — it is the runner that does not read it yet.
     setupNote: unsupportedModel ? "no conectado al ejecutor" : PORT_RUNNER_NOTE[portId],
     accent: ACCENT[portId],
   };
@@ -118,9 +103,7 @@ function items(portId: string, keys: string[]): CatalogItem[] {
 }
 
 /**
- * Chat models, in n8n's own order. Kept to the models this engine can talk to
- * plus the ones n8n ships for the same slot, so the list reads like n8n's
- * without promising a provider that has no runner behind it.
+ * Chat models, in n8n's own order.
  */
 const MODEL_KEYS = [
   "LmChatOpenAi",
@@ -163,7 +146,7 @@ export const AI_PORT_CONFIGS: Record<string, PortCatalogConfig> = {
     title: "Modelos de lenguaje",
     icon: Sparkles,
     banner:
-      "El nodo de chat model conectado define el proveedor y el modelo que el agente usa al ejecutarse. Los modelos marcados no están conectados al ejecutor: el agente seguirá usando un proveedor compatible con OpenAI.",
+      "El nodo de chat model conectado define el proveedor y el modelo que el agente usa al ejecutarse. Compatible con OpenAI, Anthropic, Gemini, DeepSeek, Groq, Mistral y Ollama local.",
     sections: [{ items: items("model", MODEL_KEYS) }],
   },
   memory: {

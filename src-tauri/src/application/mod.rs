@@ -14,6 +14,7 @@ pub mod integration_excel;
 pub mod integration_social;
 pub mod integration_google;
 pub mod integration_ai;
+pub mod integration_ai_tools;
 pub mod vault_service;
 pub mod expressions;
 pub mod http_client;
